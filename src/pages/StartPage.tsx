@@ -7,6 +7,28 @@ import { useLinks } from '../hooks/useLinks.ts';
 import type { WikiPageSummary } from '../types/wiki.ts';
 import { fetchWikiPages } from '../api/wiki.ts';
 
+interface InternalApp {
+  readonly title: string;
+  readonly description: string;
+  readonly to: string;
+  readonly icon: string;
+}
+
+const INTERNAL_APPS: InternalApp[] = [
+  {
+    title: 'Brand Voice',
+    description: 'Rewrite or draft text in brand voice',
+    to: '/brand-voice',
+    icon: 'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z',
+  },
+  {
+    title: 'Shared Templates',
+    description: 'Email and WhatsApp message templates',
+    to: '/templates',
+    icon: 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  },
+];
+
 export function StartPage(): JSX.Element {
   const { links, isLoading: linksLoading } = useLinks();
   const [pinnedPages, setPinnedPages] = useState<WikiPageSummary[]>([]);
@@ -45,6 +67,18 @@ export function StartPage(): JSX.Element {
         (link.description?.toLowerCase().includes(q) ?? false),
     );
   }, [links, search]);
+
+  const filteredInternalApps = useMemo(() => {
+    if (!search.trim()) return INTERNAL_APPS;
+    const q = search.toLowerCase();
+    return INTERNAL_APPS.filter(
+      (app) =>
+        app.title.toLowerCase().includes(q) ||
+        app.description.toLowerCase().includes(q),
+    );
+  }, [search]);
+
+  const hasNoResults = search && filteredLinks.length === 0 && filteredInternalApps.length === 0;
 
   return (
     <AppShell>
@@ -88,26 +122,69 @@ export function StartPage(): JSX.Element {
               )}
             </div>
           </div>
-          <h2 className="text-xl font-bold text-pav-blue">
-            {search ? `Results for "${search}"` : 'Quick Links'}
-          </h2>
-          {linksLoading ? (
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 4 }, (_, i) => (
-                <div
-                  key={i}
-                  className="h-24 animate-pulse rounded-xl bg-pav-tan/30"
-                />
-              ))}
+
+          {/* Team Tools */}
+          {filteredInternalApps.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-pav-blue">
+                {search ? `Results for "${search}"` : 'Team Tools'}
+              </h2>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredInternalApps.map((app) => (
+                  <Link
+                    key={app.to}
+                    to={app.to}
+                    className="group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-white p-5 shadow-sm transition hover:border-pav-gold hover:shadow-md"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pav-gold/15">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="h-5 w-5 text-pav-terra"
+                          aria-hidden="true"
+                        >
+                          <path d={app.icon} />
+                        </svg>
+                      </div>
+                      <h3 className="text-sm font-semibold text-pav-blue group-hover:text-pav-terra">
+                        {app.title}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-pav-grey/60">{app.description}</p>
+                  </Link>
+                ))}
+              </div>
             </div>
-          ) : filteredLinks.length === 0 && search ? (
+          )}
+
+          {/* Quick Links */}
+          {(!search || filteredLinks.length > 0) && (
+            <>
+              <h2 className="text-xl font-bold text-pav-blue">
+                {search && filteredInternalApps.length > 0 ? 'Quick Links' : search ? `Results for "${search}"` : 'Quick Links'}
+              </h2>
+              {linksLoading ? (
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="h-24 animate-pulse rounded-xl bg-pav-tan/30"
+                    />
+                  ))}
+                </div>
+              ) : filteredLinks.length > 0 ? (
+                <div className="mt-4">
+                  <LinkGrid links={filteredLinks} />
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {hasNoResults && (
             <p className="mt-8 text-center text-sm text-pav-grey/50">
               No apps matching &ldquo;{search}&rdquo;
             </p>
-          ) : (
-            <div className="mt-4">
-              <LinkGrid links={filteredLinks} />
-            </div>
           )}
         </div>
 

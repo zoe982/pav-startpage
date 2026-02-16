@@ -52,12 +52,6 @@ export function Header(): JSX.Element {
               >
                 Wiki
               </Link>
-              <Link
-                to="/brand-voice"
-                className="text-sm font-medium text-pav-grey transition hover:text-pav-blue"
-              >
-                Brand Voice
-              </Link>
               {user?.isAdmin && (
                 <Link
                   to="/admin"

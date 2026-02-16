@@ -43,6 +43,16 @@ const ManageBrandRulesPage = lazy(async () =>
     default: m.ManageBrandRulesPage,
   })),
 );
+const TemplatesPage = lazy(async () =>
+  import('./pages/TemplatesPage.tsx').then((m) => ({
+    default: m.TemplatesPage,
+  })),
+);
+const TemplateEditPage = lazy(async () =>
+  import('./pages/TemplateEditPage.tsx').then((m) => ({
+    default: m.TemplateEditPage,
+  })),
+);
 
 function AdminFallback(): JSX.Element {
   return (
@@ -90,6 +100,36 @@ export default function App(): JSX.Element {
                   <AuthGuard>
                     <Suspense fallback={<AdminFallback />}>
                       <BrandVoicePage />
+                    </Suspense>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/templates"
+                element={
+                  <AuthGuard>
+                    <Suspense fallback={<AdminFallback />}>
+                      <TemplatesPage />
+                    </Suspense>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/templates/new"
+                element={
+                  <AuthGuard>
+                    <Suspense fallback={<AdminFallback />}>
+                      <TemplateEditPage />
+                    </Suspense>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/templates/:id"
+                element={
+                  <AuthGuard>
+                    <Suspense fallback={<AdminFallback />}>
+                      <TemplateEditPage />
                     </Suspense>
                   </AuthGuard>
                 }
