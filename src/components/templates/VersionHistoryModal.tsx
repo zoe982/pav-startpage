@@ -31,7 +31,7 @@ export function VersionHistoryModal({
   useEffect(() => {
     void fetchTemplateVersions(templateId).then((data) => {
       setVersions(data);
-      if (data.length > 0) setSelected(data[0]);
+      if (data.length > 0) setSelected(data[0] ?? null);
       setIsLoading(false);
     });
   }, [templateId]);

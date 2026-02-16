@@ -15,6 +15,7 @@ export interface AuthContextValue {
   readonly user: User | null;
   readonly isLoading: boolean;
   readonly isAuthenticated: boolean;
+  readonly authError: string | null;
   readonly logout: () => Promise<void>;
   readonly refreshUser: () => Promise<void>;
 }
@@ -25,15 +26,22 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { readonly children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const refreshUser = useCallback(async () => {
     try {
       setIsLoading(true);
+      setAuthError(null);
       const currentUser = await fetchCurrentUser();
       setUser(currentUser);
     } catch (error) {
+      setUser(null);
       if (error instanceof ApiError && error.status === 401) {
-        setUser(null);
+        // Expected when not logged in
+      } else if (error instanceof ApiError) {
+        setAuthError(`Auth check failed: ${error.message} (HTTP ${error.status})`);
+      } else {
+        setAuthError(`Auth check failed: ${error instanceof Error ? error.message : 'Network error'}`);
       }
     } finally {
       setIsLoading(false);
@@ -54,10 +62,11 @@ export function AuthProvider({ children }: { readonly children: ReactNode }): JS
       user,
       isLoading,
       isAuthenticated: user !== null,
+      authError,
       logout,
       refreshUser,
     }),
-    [user, isLoading, logout, refreshUser],
+    [user, isLoading, authError, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
