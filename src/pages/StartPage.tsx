@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { AppShell } from '../components/layout/AppShell.tsx';
 import { LinkGrid } from '../components/links/LinkGrid.tsx';
@@ -10,6 +10,8 @@ import { fetchWikiPages } from '../api/wiki.ts';
 export function StartPage(): JSX.Element {
   const { links, isLoading: linksLoading } = useLinks();
   const [pinnedPages, setPinnedPages] = useState<WikiPageSummary[]>([]);
+  const [search, setSearch] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void fetchWikiPages().then((pages) => {
@@ -17,11 +19,75 @@ export function StartPage(): JSX.Element {
     });
   }, []);
 
+  // Cmd/Ctrl+K to focus search
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+      if (e.key === 'Escape' && document.activeElement === inputRef.current) {
+        setSearch('');
+        inputRef.current?.blur();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const filteredLinks = useMemo(() => {
+    if (!search.trim()) return links;
+    const q = search.toLowerCase();
+    return links.filter(
+      (link) =>
+        link.title.toLowerCase().includes(q) ||
+        (link.description?.toLowerCase().includes(q) ?? false),
+    );
+  }, [links, search]);
+
   return (
     <AppShell>
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-bold text-pav-blue">Quick Links</h1>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl font-bold text-pav-blue">Quick Links</h1>
+            <div className="relative w-full sm:w-72">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-pav-grey/40"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                ref={inputRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search apps..."
+                className="w-full rounded-lg border border-pav-tan/40 bg-white py-2 pl-9 pr-12 text-sm text-pav-grey placeholder:text-pav-grey/40 transition focus:border-pav-gold focus:outline-none focus:ring-2 focus:ring-pav-gold/30"
+              />
+              {search ? (
+                <button
+                  onClick={() => { setSearch(''); inputRef.current?.focus(); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-pav-grey/40 hover:text-pav-grey"
+                  aria-label="Clear search"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                  </svg>
+                </button>
+              ) : (
+                <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-pav-tan/40 bg-pav-cream px-1.5 py-0.5 text-[10px] font-medium text-pav-grey/50">
+                  ⌘K
+                </kbd>
+              )}
+            </div>
+          </div>
           {linksLoading ? (
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 4 }, (_, i) => (
@@ -31,9 +97,13 @@ export function StartPage(): JSX.Element {
                 />
               ))}
             </div>
+          ) : filteredLinks.length === 0 && search ? (
+            <p className="mt-8 text-center text-sm text-pav-grey/50">
+              No apps matching &ldquo;{search}&rdquo;
+            </p>
           ) : (
             <div className="mt-4">
-              <LinkGrid links={links} />
+              <LinkGrid links={filteredLinks} />
             </div>
           )}
         </div>
