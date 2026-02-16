@@ -13,3 +13,4 @@ bucket_name = "pavinfo-start-assets"
 
 [vars]
 GOOGLE_REDIRECT_URI = "https://start.pavinfo.app/api/auth/google-callback"
+AI_GATEWAY_ENDPOINT = "https://gateway.ai.cloudflare.com/v1/4392783e6cdaccb136cacda5f9800ba6/pav-cf-ai-gateway/compat"

@@ -5,6 +5,7 @@ const adminLinks = [
   { to: '/admin', label: 'Dashboard' },
   { to: '/admin/links', label: 'Manage Links' },
   { to: '/admin/wiki', label: 'Manage Wiki' },
+  { to: '/admin/brand-rules', label: 'Brand Voice Rules' },
 ] as const;
 
 export function Sidebar(): JSX.Element {

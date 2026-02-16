@@ -33,6 +33,17 @@ export function AdminDashboard(): JSX.Element {
                 Create and edit wiki pages for company documentation.
               </p>
             </Link>
+            <Link
+              to="/admin/brand-rules"
+              className="rounded-xl border border-pav-tan/30 bg-white p-6 shadow-sm transition hover:border-pav-gold hover:shadow-md"
+            >
+              <h2 className="text-lg font-semibold text-pav-blue">
+                Brand Voice Rules
+              </h2>
+              <p className="mt-1 text-sm text-pav-grey/60">
+                Define brand guidelines used by the AI text rewriter.
+              </p>
+            </Link>
           </div>
         </div>
       </div>

@@ -7,6 +7,8 @@ export interface Env {
   readonly SESSION_SECRET: string;
   readonly ADMIN_EMAILS: string;
   readonly ALLOWED_EMAILS: string;
+  readonly CF_AI_GATEWAY_TOKEN: string;
+  readonly AI_GATEWAY_ENDPOINT: string;
 }
 
 export interface SessionUser {

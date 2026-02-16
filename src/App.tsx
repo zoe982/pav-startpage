@@ -33,6 +33,16 @@ const EditWikiPage = lazy(async () =>
     default: m.EditWikiPage,
   })),
 );
+const BrandVoicePage = lazy(async () =>
+  import('./pages/BrandVoicePage.tsx').then((m) => ({
+    default: m.BrandVoicePage,
+  })),
+);
+const ManageBrandRulesPage = lazy(async () =>
+  import('./pages/admin/ManageBrandRulesPage.tsx').then((m) => ({
+    default: m.ManageBrandRulesPage,
+  })),
+);
 
 function AdminFallback(): JSX.Element {
   return (
@@ -71,6 +81,16 @@ export default function App(): JSX.Element {
                 element={
                   <AuthGuard>
                     <WikiViewPage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/brand-voice"
+                element={
+                  <AuthGuard>
+                    <Suspense fallback={<AdminFallback />}>
+                      <BrandVoicePage />
+                    </Suspense>
                   </AuthGuard>
                 }
               />
@@ -120,6 +140,16 @@ export default function App(): JSX.Element {
                   <AdminGuard>
                     <Suspense fallback={<AdminFallback />}>
                       <EditWikiPage />
+                    </Suspense>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/admin/brand-rules"
+                element={
+                  <AdminGuard>
+                    <Suspense fallback={<AdminFallback />}>
+                      <ManageBrandRulesPage />
                     </Suspense>
                   </AdminGuard>
                 }
