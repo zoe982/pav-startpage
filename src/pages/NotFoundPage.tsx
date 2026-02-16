@@ -7,10 +7,10 @@ export function NotFoundPage(): JSX.Element {
     <AppShell>
       <div className="flex flex-col items-center justify-center py-20">
         <h1 className="text-6xl font-bold text-pav-tan">404</h1>
-        <p className="mt-4 text-lg text-pav-grey/60">Page not found</p>
+        <p className="mt-4 text-lg text-on-surface-variant">Page not found</p>
         <Link
           to="/"
-          className="mt-6 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
+          className="state-layer mt-6 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
         >
           Go home
         </Link>

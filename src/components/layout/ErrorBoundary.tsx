@@ -24,20 +24,20 @@ export class ErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-white">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-surface-container-lowest">
           <h1 className="text-2xl font-bold text-pav-blue">
             Something went wrong
           </h1>
-          <p className="mt-2 text-sm text-pav-grey/60">
+          <p className="mt-2 text-sm text-on-surface-variant">
             Please try refreshing the page.
           </p>
           {this.state.error && (
-            <div className="mt-4 w-full max-w-lg rounded-lg bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-800">
+            <div className="mt-4 w-full max-w-lg rounded-lg bg-error-container p-4">
+              <p className="text-sm font-medium text-on-error-container">
                 {this.state.error.message}
               </p>
               {this.state.error.stack && (
-                <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap text-xs text-red-600/80">
+                <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap text-xs text-on-error-container/80">
                   {this.state.error.stack}
                 </pre>
               )}
@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
             onClick={() => {
               this.setState({ hasError: false, error: null });
             }}
-            className="mt-4 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
+            className="state-layer mt-4 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
           >
             Try again
           </button>

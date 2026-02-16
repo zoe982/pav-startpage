@@ -35,7 +35,7 @@ describe('ManageLinksPage', () => {
   it('shows loading skeleton initially', () => {
     vi.mocked(fetchAdminLinks).mockReturnValue(new Promise(() => {}));
     const { container } = renderPage();
-    expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.skeleton-shimmer').length).toBeGreaterThan(0);
   });
 
   it('shows empty state when no links', async () => {

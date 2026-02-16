@@ -82,7 +82,7 @@ export function StartPage(): JSX.Element {
 
   return (
     <AppShell>
-      <div className="space-y-8">
+      <div className="animate-fade-up space-y-8">
         <div>
           <div className="mb-6">
             <div className="relative mx-auto max-w-xl">
@@ -91,7 +91,7 @@ export function StartPage(): JSX.Element {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
-                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-pav-grey/40"
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-outline"
                 aria-hidden="true"
               >
                 <circle cx="11" cy="11" r="8" />
@@ -103,12 +103,12 @@ export function StartPage(): JSX.Element {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search apps..."
-                className="w-full rounded-xl border border-pav-tan/40 bg-white py-3.5 pl-12 pr-16 text-base text-pav-grey shadow-sm placeholder:text-pav-grey/40 transition focus:border-pav-gold focus:outline-none focus:ring-2 focus:ring-pav-gold/30"
+                className="w-full rounded-xl border border-pav-tan/40 bg-surface-container-lowest py-3.5 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)] placeholder:text-outline motion-standard focus-visible:border-pav-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-gold/30"
               />
               {search ? (
                 <button
                   onClick={() => { setSearch(''); inputRef.current?.focus(); }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-md p-1 text-pav-grey/40 transition hover:bg-pav-tan/20 hover:text-pav-grey"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-md p-1 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
                   aria-label="Clear search"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
@@ -116,7 +116,7 @@ export function StartPage(): JSX.Element {
                   </svg>
                 </button>
               ) : (
-                <kbd className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded border border-pav-tan/40 bg-pav-cream px-2 py-1 text-xs font-medium text-pav-grey/50">
+                <kbd className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded border border-pav-tan/40 bg-pav-cream px-2 py-1 text-xs font-medium text-outline">
                   ⌘K
                 </kbd>
               )}
@@ -134,7 +134,7 @@ export function StartPage(): JSX.Element {
                   <Link
                     key={app.to}
                     to={app.to}
-                    className="group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-white p-5 shadow-sm transition hover:border-pav-gold hover:shadow-md"
+                    className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pav-gold/15">
@@ -151,7 +151,7 @@ export function StartPage(): JSX.Element {
                         {app.title}
                       </h3>
                     </div>
-                    <p className="text-sm text-pav-grey/60">{app.description}</p>
+                    <p className="text-sm text-on-surface-variant">{app.description}</p>
                   </Link>
                 ))}
               </div>
@@ -169,7 +169,7 @@ export function StartPage(): JSX.Element {
                   {Array.from({ length: 4 }, (_, i) => (
                     <div
                       key={i}
-                      className="h-24 animate-pulse rounded-xl bg-pav-tan/30"
+                      className="h-24 skeleton-shimmer rounded-xl"
                     />
                   ))}
                 </div>
@@ -182,7 +182,7 @@ export function StartPage(): JSX.Element {
           )}
 
           {hasNoResults && (
-            <p className="mt-8 text-center text-sm text-pav-grey/50">
+            <p className="mt-8 text-center text-sm text-outline">
               No apps matching &ldquo;{search}&rdquo;
             </p>
           )}
@@ -198,10 +198,10 @@ export function StartPage(): JSX.Element {
                 <Link
                   key={page.id}
                   to={`/wiki/${page.slug}`}
-                  className="rounded-xl border border-pav-tan/30 bg-white p-5 shadow-sm transition hover:border-pav-gold hover:shadow-md"
+                  className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
                 >
                   <h3 className="font-semibold text-pav-blue">{page.title}</h3>
-                  <p className="mt-1 text-sm text-pav-grey/60">View page</p>
+                  <p className="mt-1 text-sm text-on-surface-variant">View page</p>
                 </Link>
               ))}
             </div>

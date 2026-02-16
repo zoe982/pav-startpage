@@ -107,7 +107,7 @@ export function LinkCard({ link }: { readonly link: Link }): JSX.Element {
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-white p-5 shadow-sm transition hover:border-pav-gold hover:shadow-md"
+      className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
     >
       <div className="flex items-center gap-3">
         {iconName && ICON_PATHS[iconName] ? (
@@ -131,7 +131,7 @@ export function LinkCard({ link }: { readonly link: Link }): JSX.Element {
         </h3>
       </div>
       {link.description && (
-        <p className="text-sm text-pav-grey/60">{link.description}</p>
+        <p className="text-sm text-on-surface-variant">{link.description}</p>
       )}
     </a>
   );

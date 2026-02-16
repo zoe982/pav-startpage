@@ -24,17 +24,17 @@ export function TemplatesPage(): JSX.Element {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-5xl animate-fade-up">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-pav-blue">Shared Templates</h1>
-            <p className="mt-1 text-sm text-pav-grey/60">
+            <p className="mt-1 text-sm text-on-surface-variant">
               Reusable email and WhatsApp message templates for the team.
             </p>
           </div>
           <Link
             to="/templates/new"
-            className="shrink-0 rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-blue/90"
+            className="state-layer shrink-0 rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
           >
             New Template
           </Link>
@@ -47,10 +47,10 @@ export function TemplatesPage(): JSX.Element {
               key={f.value}
               type="button"
               onClick={() => { setFilter(f.value); }}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium motion-standard ${
                 filter === f.value
-                  ? 'bg-pav-blue text-white'
-                  : 'bg-pav-cream text-pav-grey hover:bg-pav-tan/30'
+                  ? 'bg-secondary-container text-on-secondary-container'
+                  : 'bg-pav-cream text-on-surface hover:bg-pav-tan/30'
               }`}
             >
               {f.label}
@@ -64,12 +64,12 @@ export function TemplatesPage(): JSX.Element {
             {Array.from({ length: 3 }, (_, i) => (
               <div
                 key={i}
-                className="h-36 animate-pulse rounded-xl bg-pav-tan/30"
+                className="h-36 skeleton-shimmer rounded-xl"
               />
             ))}
           </div>
         ) : sorted.length === 0 ? (
-          <p className="mt-12 text-center text-sm text-pav-grey/50">
+          <p className="mt-12 text-center text-sm text-outline">
             No templates yet. Create your first template to get started.
           </p>
         ) : (

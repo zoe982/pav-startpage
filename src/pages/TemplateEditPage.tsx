@@ -109,7 +109,7 @@ export function TemplateEditPage(): JSX.Element {
     return (
       <AppShell>
         <div className="mx-auto max-w-3xl">
-          <div className="h-8 w-48 animate-pulse rounded bg-pav-tan/30" />
+          <div className="h-8 w-48 skeleton-shimmer rounded" />
         </div>
       </AppShell>
     );
@@ -139,7 +139,7 @@ export function TemplateEditPage(): JSX.Element {
         <button
           type="button"
           onClick={() => void navigate('/templates')}
-          className="mb-4 text-sm text-pav-grey/60 transition hover:text-pav-blue"
+          className="mb-4 text-sm text-on-surface-variant motion-standard hover:text-pav-blue"
         >
           &larr; Back to templates
         </button>
@@ -168,14 +168,14 @@ export function TemplateEditPage(): JSX.Element {
                 <div className="flex items-center gap-2">
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                     template.type === 'email'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'bg-green-50 text-green-700'
+                      ? 'bg-primary-container text-on-primary-container'
+                      : 'bg-success-container text-on-success-container'
                   }`}>
                     {template.type}
                   </span>
                   <h1 className="text-2xl font-bold text-pav-blue">{template.title}</h1>
                 </div>
-                <p className="mt-1 text-xs text-pav-grey/50">
+                <p className="mt-1 text-xs text-outline">
                   Updated by {template.updatedByName} on{' '}
                   {new Date(template.updatedAt).toLocaleDateString('en-US', {
                     month: 'short',
@@ -189,21 +189,21 @@ export function TemplateEditPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => { setShowVersions(true); }}
-                  className="rounded-md px-3 py-1 text-xs font-medium text-pav-grey/70 transition hover:bg-pav-tan/20"
+                  className="rounded-md px-3 py-1 text-xs font-medium text-on-surface-variant motion-standard hover:bg-pav-tan/20"
                 >
                   History
                 </button>
                 <button
                   type="button"
                   onClick={() => { setIsEditing(true); }}
-                  className="rounded-md bg-pav-blue px-3 py-1 text-xs font-medium text-white transition hover:bg-pav-blue/90"
+                  className="state-layer rounded-md bg-pav-blue px-3 py-1 text-xs font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="rounded-md px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                  className="rounded-md px-3 py-1 text-xs font-medium text-error motion-standard hover:bg-error-container"
                 >
                   Delete
                 </button>
@@ -211,14 +211,14 @@ export function TemplateEditPage(): JSX.Element {
             </div>
 
             {/* Content */}
-            <div className="mt-6 rounded-lg border border-pav-tan/30 bg-white p-6 shadow-sm">
+            <div className="mt-6 rounded-lg border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)]">
               {template.type === 'email' && template.subject && (
                 <div className="mb-4 border-b border-pav-tan/20 pb-4">
-                  <span className="text-xs font-medium text-pav-grey/50">SUBJECT</span>
-                  <p className="mt-1 text-sm font-medium text-pav-grey">{template.subject}</p>
+                  <span className="text-xs font-medium text-outline">SUBJECT</span>
+                  <p className="mt-1 text-sm font-medium text-on-surface">{template.subject}</p>
                 </div>
               )}
-              <div className="whitespace-pre-wrap text-sm leading-relaxed text-pav-grey">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
                 {template.content}
               </div>
             </div>

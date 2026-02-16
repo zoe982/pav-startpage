@@ -48,7 +48,7 @@ export function ManageWikiPage(): JSX.Element {
             <h1 className="text-2xl font-bold text-pav-blue">Manage Wiki</h1>
             <Link
               to="/admin/wiki/new"
-              className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
+              className="state-layer rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
             >
               New Page
             </Link>
@@ -60,12 +60,12 @@ export function ManageWikiPage(): JSX.Element {
                 {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
-                    className="h-16 animate-pulse rounded-lg bg-pav-tan/30"
+                    className="h-16 skeleton-shimmer rounded-lg"
                   />
                 ))}
               </div>
             ) : pages.length === 0 ? (
-              <p className="text-sm text-pav-grey/60">
+              <p className="text-sm text-on-surface-variant">
                 No wiki pages yet. Create one to get started.
               </p>
             ) : (
@@ -73,34 +73,34 @@ export function ManageWikiPage(): JSX.Element {
                 {pages.map((page) => (
                   <div
                     key={page.id}
-                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-white px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
                   >
                     <div>
                       <h3 className="text-sm font-medium text-pav-blue">
                         {page.title}
                       </h3>
-                      <p className="text-xs text-pav-grey/60">/{page.slug}</p>
+                      <p className="text-xs text-on-surface-variant">/{page.slug}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {!page.isPublished && (
-                        <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
+                        <span className="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container">
                           Draft
                         </span>
                       )}
                       {page.showOnStart && (
-                        <span className="rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">
+                        <span className="rounded bg-success-container px-2 py-0.5 text-xs text-on-success-container">
                           Pinned
                         </span>
                       )}
                       <Link
                         to={`/admin/wiki/${page.slug}/edit`}
-                        className="rounded px-2 py-1 text-xs text-pav-blue transition hover:bg-pav-gold/20"
+                        className="rounded px-2 py-1 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
                       >
                         Edit
                       </Link>
                       <button
                         onClick={() => void handleDelete(page.slug)}
-                        className="rounded px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+                        className="rounded px-2 py-1 text-xs text-error motion-standard hover:bg-error-container"
                       >
                         Delete
                       </button>

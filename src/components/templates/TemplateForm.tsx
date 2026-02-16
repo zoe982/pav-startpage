@@ -41,7 +41,7 @@ export function TemplateForm({
           required
           value={formData.title}
           onChange={(e) => { onChange({ ...formData, title: e.target.value }); }}
-          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
+          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
           placeholder="Template name"
         />
       </div>
@@ -54,10 +54,10 @@ export function TemplateForm({
               key={opt.value}
               type="button"
               onClick={() => { onChange({ ...formData, type: opt.value }); }}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium motion-standard ${
                 formData.type === opt.value
-                  ? 'bg-pav-blue text-white'
-                  : 'bg-pav-cream text-pav-grey hover:bg-pav-tan/30'
+                  ? 'bg-secondary-container text-on-secondary-container'
+                  : 'bg-pav-cream text-on-surface hover:bg-pav-tan/30'
               }`}
             >
               {opt.label}
@@ -76,7 +76,7 @@ export function TemplateForm({
             type="text"
             value={formData.subject}
             onChange={(e) => { onChange({ ...formData, subject: e.target.value }); }}
-            className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
+            className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
             placeholder="Email subject line"
           />
         </div>
@@ -96,14 +96,14 @@ export function TemplateForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-pav-grey/30 px-4 py-2 text-sm text-pav-grey transition hover:bg-pav-cream/50"
+          className="rounded-md border border-pav-grey/30 px-4 py-2 text-sm text-pav-grey motion-standard hover:bg-pav-cream/50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting || !formData.title.trim()}
-          className="rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-blue/90 disabled:opacity-50"
+          className="rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90 disabled:opacity-50"
         >
           {isSubmitting ? 'Saving...' : submitLabel}
         </button>

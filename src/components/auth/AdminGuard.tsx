@@ -17,9 +17,9 @@ export function AdminGuard({ children }: { readonly children: ReactNode }): JSX.
   if (!isAuthenticated) {
     if (authError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-white gap-4">
-          <div className="rounded-lg bg-red-50 p-4 max-w-md">
-            <p className="text-sm font-medium text-red-800">{authError}</p>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-surface-container-lowest gap-4">
+          <div className="rounded-lg bg-error-container p-4 max-w-md">
+            <p className="text-sm font-medium text-on-error-container">{authError}</p>
           </div>
           <a href="/login" className="text-sm text-pav-blue hover:underline">Go to login</a>
         </div>
@@ -30,9 +30,9 @@ export function AdminGuard({ children }: { readonly children: ReactNode }): JSX.
 
   if (!user?.isAdmin) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white gap-2">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-container-lowest gap-2">
         <h1 className="text-xl font-bold text-pav-blue">Access Denied</h1>
-        <p className="text-sm text-pav-grey/60">
+        <p className="text-sm text-on-surface-variant">
           Your account ({user?.email}) does not have admin access.
         </p>
         <a href="/" className="mt-2 text-sm text-pav-blue hover:underline">Back to home</a>

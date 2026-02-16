@@ -65,7 +65,7 @@ export function ManageBrandRulesPage(): JSX.Element {
         <Sidebar />
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-pav-blue">Brand Voice Rules</h1>
-          <p className="mt-1 text-sm text-pav-grey/60">
+          <p className="mt-1 text-sm text-on-surface-variant">
             Manage the brand guidelines and services description used by the AI writer.
           </p>
 
@@ -74,9 +74,9 @@ export function ManageBrandRulesPage(): JSX.Element {
             <button
               type="button"
               onClick={() => { setActiveTab('voice'); }}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+              className={`rounded-md px-4 py-1.5 text-sm font-medium motion-standard ${
                 activeTab === 'voice'
-                  ? 'bg-white text-pav-blue shadow-sm'
+                  ? 'bg-surface-container-lowest text-pav-blue shadow-sm'
                   : 'text-pav-grey hover:text-pav-blue'
               }`}
             >
@@ -85,9 +85,9 @@ export function ManageBrandRulesPage(): JSX.Element {
             <button
               type="button"
               onClick={() => { setActiveTab('services'); }}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+              className={`rounded-md px-4 py-1.5 text-sm font-medium motion-standard ${
                 activeTab === 'services'
-                  ? 'bg-white text-pav-blue shadow-sm'
+                  ? 'bg-surface-container-lowest text-pav-blue shadow-sm'
                   : 'text-pav-grey hover:text-pav-blue'
               }`}
             >
@@ -101,7 +101,7 @@ export function ManageBrandRulesPage(): JSX.Element {
                 <label className="block text-sm font-medium text-pav-grey">
                   Brand Voice Guidelines (Markdown)
                 </label>
-                <p className="mt-0.5 text-xs text-pav-grey/50">
+                <p className="mt-0.5 text-xs text-outline">
                   Defines tone, word choice, and writing style for the AI rewriter and drafter.
                 </p>
                 <div className="mt-2">
@@ -118,7 +118,7 @@ export function ManageBrandRulesPage(): JSX.Element {
                 <label className="block text-sm font-medium text-pav-grey">
                   Services Description (Markdown)
                 </label>
-                <p className="mt-0.5 text-xs text-pav-grey/50">
+                <p className="mt-0.5 text-xs text-outline">
                   Factual reference about your services. The AI uses this to ensure accuracy when drafting or rewriting content.
                 </p>
                 <div className="mt-2">
@@ -134,7 +134,7 @@ export function ManageBrandRulesPage(): JSX.Element {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover disabled:opacity-50"
+                className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Save All'}
               </button>

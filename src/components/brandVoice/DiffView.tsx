@@ -14,14 +14,14 @@ export function DiffView({ original, rewritten }: DiffViewProps): JSX.Element {
       {changes.map((part, i) => {
         if (part.added) {
           return (
-            <span key={i} className="bg-green-100 text-green-800 rounded-sm px-0.5">
+            <span key={i} className="bg-success-container text-on-success-container rounded px-0.5">
               {part.value}
             </span>
           );
         }
         if (part.removed) {
           return (
-            <span key={i} className="bg-red-100 text-red-800 line-through rounded-sm px-0.5">
+            <span key={i} className="bg-error-container text-on-error-container line-through rounded px-0.5">
               {part.value}
             </span>
           );

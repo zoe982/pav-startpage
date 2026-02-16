@@ -31,7 +31,7 @@ describe('ManageWikiPage', () => {
   it('shows loading skeleton', () => {
     vi.mocked(fetchAdminWikiPages).mockReturnValue(new Promise(() => {}));
     const { container } = renderPage();
-    expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.skeleton-shimmer').length).toBeGreaterThan(0);
   });
 
   it('shows empty state', async () => {

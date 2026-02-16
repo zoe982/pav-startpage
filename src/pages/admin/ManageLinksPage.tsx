@@ -87,7 +87,7 @@ export function ManageLinksPage(): JSX.Element {
             {!showForm && !editingLink && (
               <button
                 onClick={() => { setShowForm(true); }}
-                className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
+                className="state-layer rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
               >
                 Add Link
               </button>
@@ -95,7 +95,7 @@ export function ManageLinksPage(): JSX.Element {
           </div>
 
           {(showForm || editingLink) && (
-            <div className="mt-6 rounded-xl border border-pav-tan/30 bg-white p-6">
+            <div className="mt-6 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6">
               <h2 className="mb-4 text-lg font-semibold text-pav-blue">
                 {editingLink ? 'Edit Link' : 'New Link'}
               </h2>
@@ -128,12 +128,12 @@ export function ManageLinksPage(): JSX.Element {
                 {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
-                    className="h-16 animate-pulse rounded-lg bg-pav-tan/30"
+                    className="h-16 skeleton-shimmer rounded-lg"
                   />
                 ))}
               </div>
             ) : links.length === 0 ? (
-              <p className="text-sm text-pav-grey/60">
+              <p className="text-sm text-on-surface-variant">
                 No links yet. Add one to get started.
               </p>
             ) : (
@@ -141,13 +141,13 @@ export function ManageLinksPage(): JSX.Element {
                 {links.map((link) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-white px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
                   >
                     <div>
                       <h3 className="text-sm font-medium text-pav-blue">
                         {link.title}
                       </h3>
-                      <p className="text-xs text-pav-grey/60">{link.url}</p>
+                      <p className="text-xs text-on-surface-variant">{link.url}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {!link.isVisible && (
@@ -160,13 +160,13 @@ export function ManageLinksPage(): JSX.Element {
                           setEditingLink(link);
                           setShowForm(false);
                         }}
-                        className="rounded px-2 py-1 text-xs text-pav-blue transition hover:bg-pav-gold/20"
+                        className="rounded px-2 py-1 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => void handleDelete(link.id)}
-                        className="rounded px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+                        className="rounded px-2 py-1 text-xs text-error motion-standard hover:bg-error-container"
                       >
                         Delete
                       </button>

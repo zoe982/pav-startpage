@@ -38,14 +38,14 @@ export function VersionHistoryModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="mx-4 flex max-h-[80vh] w-full max-w-4xl flex-col rounded-xl bg-white shadow-xl">
+      <div className="mx-4 flex max-h-[80vh] w-full max-w-4xl flex-col rounded-xl bg-surface-container-lowest shadow-[var(--shadow-elevation-4)]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-pav-tan/30 px-6 py-4">
           <h2 className="text-lg font-bold text-pav-blue">Version History</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-pav-grey/50 transition hover:bg-pav-tan/20 hover:text-pav-grey"
+            className="rounded-md p-1 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
               <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -61,7 +61,7 @@ export function VersionHistoryModal({
             </div>
           ) : versions.length === 0 ? (
             <div className="flex flex-1 items-center justify-center">
-              <p className="text-sm text-pav-grey/50">No version history available.</p>
+              <p className="text-sm text-outline">No version history available.</p>
             </div>
           ) : (
             <>
@@ -72,7 +72,7 @@ export function VersionHistoryModal({
                     key={v.id}
                     type="button"
                     onClick={() => { setSelected(v); }}
-                    className={`w-full border-b border-pav-tan/20 px-4 py-3 text-left transition ${
+                    className={`w-full border-b border-pav-tan/20 px-4 py-3 text-left motion-standard ${
                       selected?.id === v.id
                         ? 'bg-pav-gold/10'
                         : 'hover:bg-pav-cream/50'
@@ -81,10 +81,10 @@ export function VersionHistoryModal({
                     <p className="text-sm font-medium text-pav-blue">
                       v{v.versionNumber}
                     </p>
-                    <p className="mt-0.5 text-xs text-pav-grey/60">
+                    <p className="mt-0.5 text-xs text-on-surface-variant">
                       {v.changedByName}
                     </p>
-                    <p className="text-xs text-pav-grey/40">
+                    <p className="text-xs text-outline">
                       {formatDate(v.createdAt)}
                     </p>
                   </button>
@@ -100,18 +100,18 @@ export function VersionHistoryModal({
                       <div className="mt-1 flex items-center gap-2">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                           selected.type === 'email'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'bg-green-50 text-green-700'
+                            ? 'bg-primary-container text-on-primary-container'
+                            : 'bg-success-container text-on-success-container'
                         }`}>
                           {selected.type}
                         </span>
                       </div>
                       {selected.type === 'email' && selected.subject && (
-                        <p className="mt-2 text-sm text-pav-grey/70">
+                        <p className="mt-2 text-sm text-on-surface-variant">
                           <span className="font-medium">Subject:</span> {selected.subject}
                         </p>
                       )}
-                      <div className="mt-4 whitespace-pre-wrap text-sm text-pav-grey">
+                      <div className="mt-4 whitespace-pre-wrap text-sm text-on-surface">
                         {selected.content}
                       </div>
                     </div>
@@ -121,7 +121,7 @@ export function VersionHistoryModal({
                         <button
                           type="button"
                           onClick={() => { onRestore(selected); }}
-                          className="rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-blue/90"
+                          className="state-layer rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
                         >
                           Restore this version
                         </button>

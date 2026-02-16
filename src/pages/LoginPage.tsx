@@ -30,21 +30,21 @@ export function LoginPage(): JSX.Element {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-white">
-      <div className="w-full max-w-md space-y-8 rounded-xl border border-pav-tan/30 bg-white p-8 shadow-lg">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-surface-container-lowest">
+      <div className="w-full max-w-md space-y-8 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-8 shadow-[var(--shadow-elevation-3)]">
         <div className="text-center">
           <img
             src="/pav-wordmark-horizontal.png"
             alt="Pet Air Valet"
             className="mx-auto h-16"
           />
-          <p className="mt-4 text-sm text-pav-grey/60">
+          <p className="mt-4 text-sm text-on-surface-variant">
             Sign in with your PetAirValet Google account
           </p>
         </div>
         {errorCode && (
-          <div className="rounded-lg bg-red-50 p-3 text-center">
-            <p className="text-sm text-red-700">
+          <div className="rounded-lg bg-error-container p-3 text-center">
+            <p className="text-sm text-on-error-container">
               {ERROR_MESSAGES[errorCode] ?? `Login failed (${errorCode})`}
             </p>
           </div>

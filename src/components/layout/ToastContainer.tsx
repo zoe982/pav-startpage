@@ -20,12 +20,12 @@ export function ToastContainer(): JSX.Element | null {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ${typeStyles[toast.type]}`}
+          className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-on-primary shadow-[var(--shadow-elevation-3)] ${typeStyles[toast.type]}`}
         >
           <span>{toast.message}</span>
           <button
             onClick={() => { removeToast(toast.id); }}
-            className="ml-2 opacity-70 transition hover:opacity-100"
+            className="ml-2 opacity-70 motion-standard hover:opacity-100"
             aria-label="Dismiss"
           >
             &times;

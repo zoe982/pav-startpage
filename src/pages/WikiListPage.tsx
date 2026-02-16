@@ -20,7 +20,7 @@ export function WikiListPage(): JSX.Element {
             ))}
           </div>
         )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-error">{error}</p>}
         {!isLoading && !error && <WikiNav pages={pages} />}
       </div>
     </AppShell>

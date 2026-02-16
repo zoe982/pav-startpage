@@ -24,7 +24,7 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
     : template.content;
 
   return (
-    <div className="group relative flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-white p-5 shadow-sm transition hover:border-pav-gold hover:shadow-md">
+    <div className="state-layer group relative flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]">
       <div className="flex items-center justify-between gap-2">
         <Link
           to={`/templates/${template.id}`}
@@ -32,8 +32,8 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
         >
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
             template.type === 'email'
-              ? 'bg-blue-50 text-blue-700'
-              : 'bg-green-50 text-green-700'
+              ? 'bg-primary-container text-on-primary-container'
+              : 'bg-success-container text-on-success-container'
           }`}>
             {template.type}
           </span>
@@ -44,14 +44,14 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
         <CopyButton text={getCopyText(template)} />
       </div>
       {template.type === 'email' && template.subject && (
-        <p className="text-xs text-pav-grey/70">
+        <p className="text-xs text-on-surface-variant">
           <span className="font-medium">Subject:</span> {template.subject}
         </p>
       )}
       <Link to={`/templates/${template.id}`} className="flex-1">
-        <p className="text-sm text-pav-grey/60 line-clamp-3">{preview}</p>
+        <p className="text-sm text-on-surface-variant line-clamp-3">{preview}</p>
       </Link>
-      <p className="text-xs text-pav-grey/40">
+      <p className="text-xs text-outline">
         Updated {formatDate(template.updatedAt)} by {template.updatedByName}
       </p>
     </div>

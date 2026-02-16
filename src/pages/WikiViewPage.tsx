@@ -32,7 +32,7 @@ export function WikiViewPage(): JSX.Element {
               <div className="h-4 w-3/4 animate-pulse rounded bg-pav-tan/30" />
             </div>
           )}
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-error">{error}</p>}
           {page && (
             <article>
               <h1 className="text-3xl font-bold text-pav-blue">

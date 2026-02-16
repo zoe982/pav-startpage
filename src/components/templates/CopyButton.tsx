@@ -19,10 +19,10 @@ export function CopyButton({ text, className }: CopyButtonProps): JSX.Element {
     <button
       type="button"
       onClick={handleCopy}
-      className={className ?? `rounded-md px-3 py-1 text-xs font-medium transition ${
+      className={className ?? `rounded-md px-3 py-1 text-xs font-medium motion-standard ${
         copied
-          ? 'bg-green-50 text-green-700'
-          : 'text-pav-grey/70 hover:bg-pav-tan/20'
+          ? 'bg-success-container text-on-success-container'
+          : 'text-on-surface-variant hover:bg-pav-tan/20'
       }`}
     >
       {copied ? 'Copied!' : 'Copy'}

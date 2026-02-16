@@ -5,7 +5,7 @@ import { LinkCard } from './LinkCard.tsx';
 export function LinkGrid({ links }: { readonly links: readonly Link[] }): JSX.Element {
   if (links.length === 0) {
     return (
-      <p className="text-center text-sm text-pav-grey/60">
+      <p className="text-center text-sm text-on-surface-variant">
         No links available yet.
       </p>
     );

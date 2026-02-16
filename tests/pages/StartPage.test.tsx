@@ -33,7 +33,7 @@ describe('StartPage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(4);
+    expect(container.querySelectorAll('.skeleton-shimmer')).toHaveLength(4);
   });
 
   it('renders links when loaded', () => {
