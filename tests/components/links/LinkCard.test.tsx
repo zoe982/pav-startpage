@@ -20,13 +20,12 @@ describe('LinkCard', () => {
     expect(img).toHaveAttribute('src', 'https://example.com/icon.png');
   });
 
-  it('renders material icon for known services', () => {
+  it('renders SVG icon for known services', () => {
     const { container } = render(
       <LinkCard link={mockLink({ title: 'Gmail', url: 'https://mail.google.com', iconUrl: null })} />,
     );
-    const icon = container.querySelector('.material-symbols-outlined');
-    expect(icon).toBeInTheDocument();
-    expect(icon?.textContent).toBe('mail');
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
   });
 
   it('renders fallback letter when no icon matches', () => {
