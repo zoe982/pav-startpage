@@ -1,6 +1,28 @@
 import type { JSX } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../../hooks/useAuth.ts';
+
+function UserAvatar({ name, pictureUrl }: { readonly name: string; readonly pictureUrl?: string | null }): JSX.Element {
+  const [failed, setFailed] = useState(false);
+  if (pictureUrl && !failed) {
+    return (
+      <img
+        src={pictureUrl}
+        alt=""
+        className="h-8 w-8 rounded-full"
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pav-terra text-sm font-semibold text-white">
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
 
 export function Header(): JSX.Element {
   const { user, isAuthenticated, logout } = useAuth();
@@ -44,14 +66,7 @@ export function Header(): JSX.Element {
         {isAuthenticated && user && (
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              {user.pictureUrl && (
-                <img
-                  src={user.pictureUrl}
-                  alt=""
-                  className="h-8 w-8 rounded-full"
-                  referrerPolicy="no-referrer"
-                />
-              )}
+              <UserAvatar name={user.name} pictureUrl={user.pictureUrl} />
               <span className="hidden text-sm text-pav-grey sm:block">
                 {user.name}
               </span>
