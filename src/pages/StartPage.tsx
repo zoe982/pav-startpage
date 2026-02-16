@@ -103,7 +103,7 @@ export function StartPage(): JSX.Element {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search apps..."
-                className="w-full rounded-xl border border-pav-tan/40 bg-surface-container-lowest py-3.5 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)] placeholder:text-outline motion-standard focus-visible:border-pav-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-gold/30"
+                className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-3.5 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)] placeholder:text-outline motion-standard focus-visible:border-pav-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-gold/30"
               />
               {search ? (
                 <button

@@ -31,7 +31,7 @@ export function Header(): JSX.Element {
     <header className="border-b border-pav-tan/30 bg-pav-cream">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-3 text-pav-blue">
+          <Link to="/" className="flex items-center gap-3 rounded-lg text-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue focus-visible:ring-offset-2">
             <img src="/pav_logo_clean_flat_2048.webp" alt="" className="h-10 w-10" />
             <div className="flex flex-col leading-tight">
               <span className="font-serif text-lg font-bold">Pet Air Valet</span>
