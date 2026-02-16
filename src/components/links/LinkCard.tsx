@@ -57,6 +57,7 @@ const SERVICE_ICONS: Record<string, string> = {
   'intercom': 'support_agent',
   'stripe': 'payments',
   'analytics.google': 'analytics',
+  'chat.google': 'chat',
   'gemini.google': 'auto_awesome',
   'voice.google': 'phone_in_talk',
   'petairvalet': 'flight_takeoff',
