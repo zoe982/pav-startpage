@@ -9,9 +9,12 @@ export function Header(): JSX.Element {
     <header className="border-b border-pav-tan/30 bg-pav-cream">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-pav-blue">
-            <img src="/pav_logo_clean_flat_2048.webp" alt="" className="h-8 w-8" />
-            Pet Air Valet
+          <Link to="/" className="flex items-center gap-3 text-pav-blue">
+            <img src="/pav_logo_clean_flat_2048.webp" alt="" className="h-10 w-10" />
+            <div className="flex flex-col leading-tight">
+              <span className="font-serif text-lg font-bold">Pet Air Valet</span>
+              <span className="font-serif text-xs italic text-pav-grey/60">Fly Together, In-Cabin</span>
+            </div>
           </Link>
           {isAuthenticated && (
             <nav className="hidden items-center gap-6 sm:flex">
