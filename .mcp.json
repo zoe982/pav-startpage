@@ -2,7 +2,19 @@
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "consult7": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "openai",
+        "sk-proj-94p97bRVUwlUipTFY0Ao7yfo3RTajmn1PDKnmiTGRsrBkyI6Ej6p_GHNgHIJAf"
+      ],
+      "env": {}
     }
   }
 }

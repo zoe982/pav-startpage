@@ -1,4 +1,4 @@
-import type { BrandMode, BrandRules, OutputStyle, RewriteResult } from '../types/brandVoice.ts';
+import type { BrandMode, BrandRules, OutputStyle, RefineRequest, RewriteResult } from '../types/brandVoice.ts';
 import { apiFetch } from './client.ts';
 
 export async function fetchBrandRules(): Promise<BrandRules> {
@@ -20,10 +20,29 @@ export async function rewriteText(
   style: OutputStyle,
   mode: BrandMode,
   signal?: AbortSignal,
+  customStyleDescription?: string,
 ): Promise<RewriteResult> {
   return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
     method: 'POST',
-    body: JSON.stringify({ text, style, mode }),
+    body: JSON.stringify({ text, style, mode, customStyleDescription }),
+    signal,
+  });
+}
+
+export async function refineText(
+  request: RefineRequest,
+  signal?: AbortSignal,
+): Promise<RewriteResult> {
+  return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
+    method: 'POST',
+    body: JSON.stringify({
+      text: request.original,
+      style: request.style,
+      mode: request.mode,
+      customStyleDescription: request.customStyleDescription,
+      currentRewritten: request.currentRewritten,
+      feedback: request.feedback,
+    }),
     signal,
   });
 }

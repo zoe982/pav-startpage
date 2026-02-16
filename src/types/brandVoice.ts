@@ -12,3 +12,12 @@ export interface RewriteResult {
   readonly original: string;
   readonly rewritten: string;
 }
+
+export interface RefineRequest {
+  readonly original: string;
+  readonly currentRewritten: string;
+  readonly feedback: string;
+  readonly style: OutputStyle;
+  readonly mode: BrandMode;
+  readonly customStyleDescription?: string;
+}

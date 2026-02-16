@@ -3,6 +3,7 @@ import {
   fetchBrandRules,
   updateBrandRules,
   rewriteText,
+  refineText,
 } from '../../src/api/brandVoice.ts';
 
 vi.mock('../../src/api/client.ts', () => ({
@@ -51,7 +52,7 @@ describe('rewriteText', () => {
     const result = await rewriteText('Hi', 'email', 'rewrite');
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
+      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite', customStyleDescription: undefined }),
       signal: undefined,
     });
     expect(result).toEqual({ original: 'Hi', rewritten: 'Hello' });
@@ -62,7 +63,7 @@ describe('rewriteText', () => {
     await rewriteText('Write a bio', 'whatsapp', 'draft');
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Write a bio', style: 'whatsapp', mode: 'draft' }),
+      body: JSON.stringify({ text: 'Write a bio', style: 'whatsapp', mode: 'draft', customStyleDescription: undefined }),
       signal: undefined,
     });
   });
@@ -73,7 +74,84 @@ describe('rewriteText', () => {
     await rewriteText('Hi', 'email', 'rewrite', controller.signal);
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
+      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite', customStyleDescription: undefined }),
+      signal: controller.signal,
+    });
+  });
+
+  it('passes customStyleDescription when provided', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
+    await rewriteText('Hi', 'other', 'rewrite', undefined, 'Instagram caption');
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({ text: 'Hi', style: 'other', mode: 'rewrite', customStyleDescription: 'Instagram caption' }),
+      signal: undefined,
+    });
+  });
+});
+
+describe('refineText', () => {
+  it('calls apiFetch with refinement fields', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hello, revised' });
+    const result = await refineText({
+      original: 'Hi',
+      currentRewritten: 'Hello',
+      feedback: 'Make it shorter',
+      style: 'email',
+      mode: 'rewrite',
+    });
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: 'Hi',
+        style: 'email',
+        mode: 'rewrite',
+        customStyleDescription: undefined,
+        currentRewritten: 'Hello',
+        feedback: 'Make it shorter',
+      }),
+      signal: undefined,
+    });
+    expect(result).toEqual({ original: 'Hi', rewritten: 'Hello, revised' });
+  });
+
+  it('passes customStyleDescription through refinement', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hey!' });
+    await refineText({
+      original: 'Hi',
+      currentRewritten: 'Hello',
+      feedback: 'More casual',
+      style: 'other',
+      mode: 'rewrite',
+      customStyleDescription: 'Slack message',
+    });
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: 'Hi',
+        style: 'other',
+        mode: 'rewrite',
+        customStyleDescription: 'Slack message',
+        currentRewritten: 'Hello',
+        feedback: 'More casual',
+      }),
+      signal: undefined,
+    });
+  });
+
+  it('passes AbortSignal when provided', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hey' });
+    const controller = new AbortController();
+    await refineText({
+      original: 'Hi',
+      currentRewritten: 'Hello',
+      feedback: 'Shorter',
+      style: 'email',
+      mode: 'rewrite',
+    }, controller.signal);
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: expect.any(String),
       signal: controller.signal,
     });
   });

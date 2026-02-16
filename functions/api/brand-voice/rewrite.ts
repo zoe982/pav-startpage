@@ -17,6 +17,9 @@ interface RewriteBody {
   text: string;
   style?: string;
   mode?: string;
+  customStyleDescription?: string;
+  currentRewritten?: string;
+  feedback?: string;
 }
 
 interface BrandSettingsRow {
@@ -34,7 +37,7 @@ interface OpenAIResponse {
   choices: OpenAIChoice[];
 }
 
-function buildSystemPrompt(mode: Mode, style: OutputStyle, rules: string, services: string): string {
+function buildSystemPrompt(mode: Mode, styleInstruction: string, rules: string, services: string): string {
   const serviceBlock = services.trim()
     ? `\n\nService Offerings (use as factual reference):\n${services}`
     : '';
@@ -44,7 +47,7 @@ function buildSystemPrompt(mode: Mode, style: OutputStyle, rules: string, servic
 
 Return ONLY the drafted content — no explanations, no preamble.
 
-${STYLE_INSTRUCTIONS[style]}
+${styleInstruction}
 
 Brand Voice Guidelines:
 ${rules}${serviceBlock}`;
@@ -52,7 +55,7 @@ ${rules}${serviceBlock}`;
 
   return `You are a brand voice editor for Pet Air Valet. Your job is to rewrite the user's text so it matches the company's brand voice guidelines below. Use the service offerings as factual reference to ensure accuracy. Return ONLY the rewritten text — no explanations, no preamble, no markdown formatting unless the original text uses it.
 
-${STYLE_INSTRUCTIONS[style]}
+${styleInstruction}
 
 Brand Voice Guidelines:
 ${rules}${serviceBlock}`;
@@ -84,6 +87,24 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     ? body.mode as Mode
     : 'rewrite';
 
+  if (body.customStyleDescription && body.customStyleDescription.length > 500) {
+    return Response.json(
+      { error: 'Custom style description must be under 500 characters' },
+      { status: 400 },
+    );
+  }
+
+  const isRefinement = typeof body.currentRewritten === 'string'
+    && typeof body.feedback === 'string'
+    && body.feedback.trim().length > 0;
+
+  if (isRefinement && body.feedback!.length > 2000) {
+    return Response.json(
+      { error: 'Feedback must be under 2,000 characters' },
+      { status: 400 },
+    );
+  }
+
   const row = await env.DB.prepare(
     'SELECT rules_markdown, services_markdown FROM brand_settings WHERE id = 1',
   ).first<BrandSettingsRow>();
@@ -98,7 +119,23 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     );
   }
 
-  const systemPrompt = buildSystemPrompt(mode, style, rules, services);
+  const styleInstruction = style === 'other' && body.customStyleDescription?.trim()
+    ? `Format the output according to these instructions: ${body.customStyleDescription}`
+    : STYLE_INSTRUCTIONS[style];
+
+  const systemPrompt = buildSystemPrompt(mode, styleInstruction, rules, services);
+
+  const messages: { role: string; content: string }[] = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: body.text },
+  ];
+
+  if (isRefinement) {
+    messages.push(
+      { role: 'assistant', content: body.currentRewritten! },
+      { role: 'user', content: `Please refine based on: ${body.feedback!}` },
+    );
+  }
 
   const response = await fetch(`${env.AI_GATEWAY_ENDPOINT}/chat/completions`, {
     method: 'POST',
@@ -108,10 +145,7 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     },
     body: JSON.stringify({
       model: 'openai/gpt-5.2',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: body.text },
-      ],
+      messages,
     }),
   });
 
