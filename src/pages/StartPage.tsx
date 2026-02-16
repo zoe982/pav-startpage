@@ -36,9 +36,10 @@ export function StartPage(): JSX.Element {
   }, []);
 
   const filteredLinks = useMemo(() => {
-    if (!search.trim()) return links;
+    const sorted = [...links].sort((a, b) => a.title.localeCompare(b.title));
+    if (!search.trim()) return sorted;
     const q = search.toLowerCase();
-    return links.filter(
+    return sorted.filter(
       (link) =>
         link.title.toLowerCase().includes(q) ||
         (link.description?.toLowerCase().includes(q) ?? false),
