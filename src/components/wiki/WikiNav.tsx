@@ -19,8 +19,8 @@ export function WikiNav({
             to={`/wiki/${page.slug}`}
             className={`block rounded-md px-3 py-2 text-sm transition ${
               isActive
-                ? 'bg-blue-100 font-medium text-blue-700'
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-pav-gold/20 font-medium text-pav-blue'
+                : 'text-pav-grey hover:bg-pav-cream/50'
             }`}
           >
             {page.title}
@@ -28,7 +28,7 @@ export function WikiNav({
         );
       })}
       {pages.length === 0 && (
-        <p className="px-3 py-2 text-sm text-gray-500">No pages yet.</p>
+        <p className="px-3 py-2 text-sm text-pav-grey/60">No pages yet.</p>
       )}
     </nav>
   );

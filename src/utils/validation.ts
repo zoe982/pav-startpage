@@ -1,7 +1,7 @@
-import { ALLOWED_DOMAIN } from './constants.ts';
+import { ALLOWED_DOMAINS } from './constants.ts';
 
 export function isAllowedEmail(email: string): boolean {
-  return email.endsWith(`@${ALLOWED_DOMAIN}`);
+  return ALLOWED_DOMAINS.some((d) => email.endsWith(`@${d}`));
 }
 
 export function isValidUrl(url: string): boolean {

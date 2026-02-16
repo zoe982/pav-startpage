@@ -83,11 +83,11 @@ export function ManageLinksPage(): JSX.Element {
         <Sidebar />
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Manage Links</h1>
+            <h1 className="text-2xl font-bold text-pav-blue">Manage Links</h1>
             {!showForm && !editingLink && (
               <button
                 onClick={() => { setShowForm(true); }}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
               >
                 Add Link
               </button>
@@ -95,8 +95,8 @@ export function ManageLinksPage(): JSX.Element {
           </div>
 
           {(showForm || editingLink) && (
-            <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            <div className="mt-6 rounded-xl border border-pav-tan/30 bg-white p-6">
+              <h2 className="mb-4 text-lg font-semibold text-pav-blue">
                 {editingLink ? 'Edit Link' : 'New Link'}
               </h2>
               <LinkForm
@@ -128,12 +128,12 @@ export function ManageLinksPage(): JSX.Element {
                 {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
-                    className="h-16 animate-pulse rounded-lg bg-gray-200"
+                    className="h-16 animate-pulse rounded-lg bg-pav-tan/30"
                   />
                 ))}
               </div>
             ) : links.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-pav-grey/60">
                 No links yet. Add one to get started.
               </p>
             ) : (
@@ -141,17 +141,17 @@ export function ManageLinksPage(): JSX.Element {
                 {links.map((link) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-white px-4 py-3"
                   >
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900">
+                      <h3 className="text-sm font-medium text-pav-blue">
                         {link.title}
                       </h3>
-                      <p className="text-xs text-gray-500">{link.url}</p>
+                      <p className="text-xs text-pav-grey/60">{link.url}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {!link.isVisible && (
-                        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                        <span className="rounded bg-pav-gold/20 px-2 py-0.5 text-xs text-pav-blue">
                           Hidden
                         </span>
                       )}
@@ -160,7 +160,7 @@ export function ManageLinksPage(): JSX.Element {
                           setEditingLink(link);
                           setShowForm(false);
                         }}
-                        className="rounded px-2 py-1 text-xs text-blue-600 transition hover:bg-blue-50"
+                        className="rounded px-2 py-1 text-xs text-pav-blue transition hover:bg-pav-gold/20"
                       >
                         Edit
                       </button>

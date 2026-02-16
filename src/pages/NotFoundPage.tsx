@@ -6,11 +6,11 @@ export function NotFoundPage(): JSX.Element {
   return (
     <AppShell>
       <div className="flex flex-col items-center justify-center py-20">
-        <h1 className="text-6xl font-bold text-gray-300">404</h1>
-        <p className="mt-4 text-lg text-gray-600">Page not found</p>
+        <h1 className="text-6xl font-bold text-pav-tan">404</h1>
+        <p className="mt-4 text-lg text-pav-grey/60">Page not found</p>
         <Link
           to="/"
-          className="mt-6 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+          className="mt-6 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
         >
           Go home
         </Link>

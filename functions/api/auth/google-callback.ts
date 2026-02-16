@@ -75,7 +75,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // Verify email: must be @petairvalet.com domain OR in the ALLOWED_EMAILS list
   const allowedEmails = env.ALLOWED_EMAILS.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
   const emailLower = payload.email.toLowerCase();
-  const isDomainAllowed = emailLower.endsWith('@petairvalet.com');
+  const allowedDomains = ['petairvalet.com', 'marsico.org'];
+  const isDomainAllowed = allowedDomains.some((d) => emailLower.endsWith(`@${d}`));
   const isExplicitlyAllowed = allowedEmails.includes(emailLower);
 
   if (!isDomainAllowed && !isExplicitlyAllowed) {

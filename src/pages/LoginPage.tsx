@@ -9,7 +9,7 @@ export function LoginPage(): JSX.Element {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-pav-blue border-t-transparent" />
       </div>
     );
   }
@@ -19,11 +19,15 @@ export function LoginPage(): JSX.Element {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white">
+      <div className="w-full max-w-md space-y-8 rounded-xl border border-pav-tan/30 bg-white p-8 shadow-lg">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">PavInfo Start</h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <img
+            src="/pav-wordmark-horizontal.png"
+            alt="Pet Air Valet"
+            className="mx-auto h-16"
+          />
+          <p className="mt-4 text-sm text-pav-grey/60">
             Sign in with your PetAirValet Google account
           </p>
         </div>

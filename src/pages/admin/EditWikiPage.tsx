@@ -88,7 +88,7 @@ export function EditWikiPage(): JSX.Element {
         <div className="flex gap-8">
           <Sidebar />
           <div className="flex-1">
-            <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
+            <div className="h-8 w-48 animate-pulse rounded bg-pav-tan/30" />
           </div>
         </div>
       </AppShell>
@@ -100,7 +100,7 @@ export function EditWikiPage(): JSX.Element {
       <div className="flex gap-8">
         <Sidebar />
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-pav-blue">
             {isEditing ? 'Edit Page' : 'New Page'}
           </h1>
 
@@ -108,7 +108,7 @@ export function EditWikiPage(): JSX.Element {
             <div>
               <label
                 htmlFor="wiki-title"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-pav-grey"
               >
                 Title
               </label>
@@ -118,14 +118,14 @@ export function EditWikiPage(): JSX.Element {
                 required
                 value={formData.title}
                 onChange={(e) => { handleTitleChange(e.target.value); }}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
               />
             </div>
 
             <div>
               <label
                 htmlFor="wiki-slug"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-pav-grey"
               >
                 Slug
               </label>
@@ -139,13 +139,13 @@ export function EditWikiPage(): JSX.Element {
                     setAutoSlug(false);
                     setFormData((prev) => ({ ...prev, slug: e.target.value }));
                   }}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-pav-grey">
                 Content
               </label>
               <div className="mt-1">
@@ -170,9 +170,9 @@ export function EditWikiPage(): JSX.Element {
                       isPublished: e.target.checked,
                     }));
                   }}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                  className="h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
                 />
-                <label htmlFor="isPublished" className="text-sm text-gray-700">
+                <label htmlFor="isPublished" className="text-sm text-pav-grey">
                   Published
                 </label>
               </div>
@@ -187,16 +187,16 @@ export function EditWikiPage(): JSX.Element {
                       showOnStart: e.target.checked,
                     }));
                   }}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                  className="h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
                 />
-                <label htmlFor="showOnStart" className="text-sm text-gray-700">
+                <label htmlFor="showOnStart" className="text-sm text-pav-grey">
                   Pin to start page
                 </label>
               </div>
               <div className="flex items-center gap-2">
                 <label
                   htmlFor="wiki-sortOrder"
-                  className="text-sm text-gray-700"
+                  className="text-sm text-pav-grey"
                 >
                   Sort order
                 </label>
@@ -210,7 +210,7 @@ export function EditWikiPage(): JSX.Element {
                       sortOrder: parseInt(e.target.value, 10) || 0,
                     }));
                   }}
-                  className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                  className="w-20 rounded-md border border-pav-grey/30 px-2 py-1 text-sm"
                 />
               </div>
             </div>
@@ -219,14 +219,14 @@ export function EditWikiPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => void navigate('/admin/wiki')}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+                className="rounded-md border border-pav-grey/30 px-4 py-2 text-sm text-pav-grey transition hover:bg-pav-cream/50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Save'}
               </button>

@@ -4,7 +4,7 @@ import { useToast } from '../../hooks/useToast.ts';
 const typeStyles = {
   success: 'bg-green-600',
   error: 'bg-red-600',
-  info: 'bg-blue-600',
+  info: 'bg-pav-blue',
 } as const;
 
 export function ToastContainer(): JSX.Element | null {

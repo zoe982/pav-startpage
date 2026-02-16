@@ -1,5 +1,4 @@
 name = "pavinfo-start"
-account_id = "4392783e6cdaccb136cacda5f9800ba6"
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "dist"
 
@@ -13,6 +12,4 @@ binding = "ASSETS_BUCKET"
 bucket_name = "pavinfo-start-assets"
 
 [vars]
-ADMIN_EMAILS = ""
-ALLOWED_EMAILS = ""
 GOOGLE_REDIRECT_URI = "https://start.pavinfo.app/api/auth/google-callback"

@@ -12,8 +12,8 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps): JSX.El
   return (
     <Suspense
       fallback={
-        <div className="flex h-64 items-center justify-center rounded-md border border-gray-300 bg-gray-50">
-          <span className="text-sm text-gray-500">Loading editor...</span>
+        <div className="flex h-64 items-center justify-center rounded-md border border-pav-grey/30 bg-pav-cream/30">
+          <span className="text-sm text-pav-grey/60">Loading editor...</span>
         </div>
       }
     >

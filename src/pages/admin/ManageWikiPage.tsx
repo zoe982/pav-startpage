@@ -45,10 +45,10 @@ export function ManageWikiPage(): JSX.Element {
         <Sidebar />
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Manage Wiki</h1>
+            <h1 className="text-2xl font-bold text-pav-blue">Manage Wiki</h1>
             <Link
               to="/admin/wiki/new"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+              className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
             >
               New Page
             </Link>
@@ -60,12 +60,12 @@ export function ManageWikiPage(): JSX.Element {
                 {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
-                    className="h-16 animate-pulse rounded-lg bg-gray-200"
+                    className="h-16 animate-pulse rounded-lg bg-pav-tan/30"
                   />
                 ))}
               </div>
             ) : pages.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-pav-grey/60">
                 No wiki pages yet. Create one to get started.
               </p>
             ) : (
@@ -73,13 +73,13 @@ export function ManageWikiPage(): JSX.Element {
                 {pages.map((page) => (
                   <div
                     key={page.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-white px-4 py-3"
                   >
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900">
+                      <h3 className="text-sm font-medium text-pav-blue">
                         {page.title}
                       </h3>
-                      <p className="text-xs text-gray-500">/{page.slug}</p>
+                      <p className="text-xs text-pav-grey/60">/{page.slug}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {!page.isPublished && (
@@ -94,7 +94,7 @@ export function ManageWikiPage(): JSX.Element {
                       )}
                       <Link
                         to={`/admin/wiki/${page.slug}/edit`}
-                        className="rounded px-2 py-1 text-xs text-blue-600 transition hover:bg-blue-50"
+                        className="rounded px-2 py-1 text-xs text-pav-blue transition hover:bg-pav-gold/20"
                       >
                         Edit
                       </Link>

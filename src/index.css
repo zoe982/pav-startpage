@@ -1,1 +1,28 @@
 @import "tailwindcss";
+
+@theme {
+  --color-pav-blue: #15263B;
+  --color-pav-gold: #E3C07C;
+  --color-pav-cream: #F6EDDF;
+  --color-pav-grey: #2F343B;
+  --color-pav-tan: #D2B084;
+  --color-pav-blue-hover: #28374B;
+  --color-pav-blue-press: #132235;
+  --color-pav-terra: #C07A3B;
+  --color-pav-terra-hover: #A86930;
+  --color-pav-terra-press: #935B28;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Noto Serif', Georgia, serif;
+  --font-display: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-logo: 'ABeeZee', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F9F6F1;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}

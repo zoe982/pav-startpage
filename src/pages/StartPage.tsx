@@ -21,13 +21,13 @@ export function StartPage(): JSX.Element {
     <AppShell>
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quick Links</h1>
+          <h1 className="text-2xl font-bold text-pav-blue">Quick Links</h1>
           {linksLoading ? (
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 4 }, (_, i) => (
                 <div
                   key={i}
-                  className="h-24 animate-pulse rounded-xl bg-gray-200"
+                  className="h-24 animate-pulse rounded-xl bg-pav-tan/30"
                 />
               ))}
             </div>
@@ -40,7 +40,7 @@ export function StartPage(): JSX.Element {
 
         {pinnedPages.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-pav-blue">
               Pinned Wiki Pages
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -48,10 +48,10 @@ export function StartPage(): JSX.Element {
                 <Link
                   key={page.id}
                   to={`/wiki/${page.slug}`}
-                  className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                  className="rounded-xl border border-pav-tan/30 bg-white p-5 shadow-sm transition hover:border-pav-gold hover:shadow-md"
                 >
-                  <h3 className="font-semibold text-gray-900">{page.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">View page</p>
+                  <h3 className="font-semibold text-pav-blue">{page.title}</h3>
+                  <p className="mt-1 text-sm text-pav-grey/60">View page</p>
                 </Link>
               ))}
             </div>

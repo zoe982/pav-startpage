@@ -39,7 +39,7 @@ export function LinkForm({
       <div>
         <label
           htmlFor="title"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-pav-grey"
         >
           Title
         </label>
@@ -51,13 +51,13 @@ export function LinkForm({
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, title: e.target.value }));
           }}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
         />
       </div>
       <div>
         <label
           htmlFor="url"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-pav-grey"
         >
           URL
         </label>
@@ -69,13 +69,13 @@ export function LinkForm({
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, url: e.target.value }));
           }}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
         />
       </div>
       <div>
         <label
           htmlFor="description"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-pav-grey"
         >
           Description
         </label>
@@ -86,13 +86,13 @@ export function LinkForm({
             setFormData((prev) => ({ ...prev, description: e.target.value }));
           }}
           rows={2}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
         />
       </div>
       <div>
         <label
           htmlFor="iconUrl"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-pav-grey"
         >
           Icon URL
         </label>
@@ -103,14 +103,14 @@ export function LinkForm({
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, iconUrl: e.target.value }));
           }}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label
             htmlFor="sortOrder"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-pav-grey"
           >
             Sort Order
           </label>
@@ -124,7 +124,7 @@ export function LinkForm({
                 sortOrder: parseInt(e.target.value, 10) || 0,
               }));
             }}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus:border-pav-gold focus:ring-1 focus:ring-pav-gold focus:outline-none"
           />
         </div>
         <div className="flex items-end gap-2 pb-2">
@@ -135,9 +135,9 @@ export function LinkForm({
             onChange={(e) => {
               setFormData((prev) => ({ ...prev, isVisible: e.target.checked }));
             }}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600"
+            className="h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
           />
-          <label htmlFor="isVisible" className="text-sm text-gray-700">
+          <label htmlFor="isVisible" className="text-sm text-pav-grey">
             Visible
           </label>
         </div>
@@ -146,14 +146,14 @@ export function LinkForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+          className="rounded-md border border-pav-grey/30 px-4 py-2 text-sm text-pav-grey transition hover:bg-pav-cream/50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover disabled:opacity-50"
         >
           {isSubmitting ? 'Saving...' : 'Save'}
         </button>

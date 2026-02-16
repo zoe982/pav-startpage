@@ -23,18 +23,18 @@ export class ErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-white">
+          <h1 className="text-2xl font-bold text-pav-blue">
             Something went wrong
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-pav-grey/60">
             Please try refreshing the page.
           </p>
           <button
             onClick={() => {
               this.setState({ hasError: false });
             }}
-            className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+            className="mt-4 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-white transition hover:bg-pav-terra-hover"
           >
             Try again
           </button>
