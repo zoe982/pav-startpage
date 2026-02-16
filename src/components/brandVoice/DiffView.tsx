@@ -10,18 +10,18 @@ export function DiffView({ original, rewritten }: DiffViewProps): JSX.Element {
   const changes = diffWords(original, rewritten);
 
   return (
-    <div className="whitespace-pre-wrap text-sm leading-relaxed">
+    <div className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
       {changes.map((part, i) => {
         if (part.added) {
           return (
-            <span key={i} className="bg-green-100 text-green-800">
+            <span key={i} className="bg-green-100 text-green-800 rounded-sm px-0.5">
               {part.value}
             </span>
           );
         }
         if (part.removed) {
           return (
-            <span key={i} className="bg-red-100 text-red-800 line-through">
+            <span key={i} className="bg-red-100 text-red-800 line-through rounded-sm px-0.5">
               {part.value}
             </span>
           );

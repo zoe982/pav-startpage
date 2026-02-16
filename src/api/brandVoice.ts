@@ -19,9 +19,11 @@ export async function rewriteText(
   text: string,
   style: OutputStyle,
   mode: BrandMode,
+  signal?: AbortSignal,
 ): Promise<RewriteResult> {
   return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
     method: 'POST',
     body: JSON.stringify({ text, style, mode }),
+    signal,
   });
 }

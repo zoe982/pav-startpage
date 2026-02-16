@@ -107,7 +107,7 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
       Authorization: `Bearer ${env.CF_AI_GATEWAY_TOKEN}`,
     },
     body: JSON.stringify({
-      model: 'openai/gpt-5',
+      model: 'openai/gpt-5.2',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: body.text },

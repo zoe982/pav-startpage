@@ -52,6 +52,7 @@ describe('rewriteText', () => {
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
       body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
+      signal: undefined,
     });
     expect(result).toEqual({ original: 'Hi', rewritten: 'Hello' });
   });
@@ -62,6 +63,18 @@ describe('rewriteText', () => {
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
       body: JSON.stringify({ text: 'Write a bio', style: 'whatsapp', mode: 'draft' }),
+      signal: undefined,
+    });
+  });
+
+  it('passes AbortSignal when provided', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
+    const controller = new AbortController();
+    await rewriteText('Hi', 'email', 'rewrite', controller.signal);
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
+      signal: controller.signal,
     });
   });
 });

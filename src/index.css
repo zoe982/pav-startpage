@@ -12,6 +12,19 @@
   --color-pav-terra-hover: #A86930;
   --color-pav-terra-press: #935B28;
 
+  --color-surface: #FDFAF6;
+  --color-surface-container: #F6EDDF;
+  --color-surface-container-high: #EDE3D3;
+  --color-surface-container-highest: #E4D9C8;
+  --color-on-surface: #1C1B1F;
+  --color-on-surface-variant: #49454F;
+  --color-outline: #79747E;
+  --color-outline-variant: #CAC4D0;
+  --color-primary-container: #D4E3FF;
+  --color-on-primary-container: #15263B;
+  --color-secondary-container: #F6EDDF;
+  --color-on-secondary-container: #2F343B;
+
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-serif: 'Noto Serif', Georgia, serif;
   --font-display: 'Hanken Grotesk', system-ui, sans-serif;

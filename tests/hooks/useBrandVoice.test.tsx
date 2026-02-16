@@ -79,4 +79,38 @@ describe('useRewrite', () => {
     expect(result.current.result).toBeNull();
     expect(result.current.error).toBeNull();
   });
+
+  it('cancel aborts in-flight request and clears loading', async () => {
+    let rejectFn: (err: Error) => void;
+    vi.mocked(rewriteText).mockImplementation(
+      () => new Promise((_resolve, reject) => { rejectFn = reject; }),
+    );
+
+    const { result } = renderHook(() => useRewrite());
+
+    // Start a rewrite (don't await — it will hang until resolved/rejected)
+    act(() => {
+      void result.current.rewrite('Hi', 'email', 'rewrite');
+    });
+
+    expect(result.current.isLoading).toBe(true);
+
+    // Cancel mid-flight
+    act(() => {
+      result.current.cancel();
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeNull();
+
+    // Verify signal was passed to rewriteText
+    expect(vi.mocked(rewriteText)).toHaveBeenCalledWith(
+      'Hi', 'email', 'rewrite', expect.any(AbortSignal),
+    );
+  });
+
+  it('exposes cancel function', () => {
+    const { result } = renderHook(() => useRewrite());
+    expect(typeof result.current.cancel).toBe('function');
+  });
 });
