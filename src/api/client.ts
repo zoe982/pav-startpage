@@ -12,11 +12,15 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const headers = new Headers({ 'Content-Type': 'application/json' });
+  const headers = new Headers();
   if (options.headers) {
     new Headers(options.headers).forEach((value, key) => {
       headers.set(key, value);
     });
+  }
+  const isFormData = options.body instanceof FormData;
+  if (!headers.has('Content-Type') && !isFormData) {
+    headers.set('Content-Type', 'application/json');
   }
 
   const response = await fetch(path, {
@@ -36,5 +40,6 @@ export async function apiFetch<T>(
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const data: unknown = await response.json();
+  return data as T;
 }

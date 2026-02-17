@@ -15,13 +15,6 @@ interface TemplateRow {
   updated_at: string;
 }
 
-interface TemplateBody {
-  title: string;
-  type: 'email' | 'whatsapp';
-  subject?: string;
-  content: string;
-}
-
 export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
   const { env, request, data } = context;
   const denied = assertAppAccess(data.user, 'templates');
@@ -73,12 +66,24 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
   const denied = assertAppAccess(data.user, 'templates');
   if (denied) return denied;
 
-  const body: TemplateBody = await request.json();
+  const body: unknown = await request.json();
+  if (body === null || typeof body !== 'object') {
+    return Response.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+  const bodyRecord = body as Record<string, unknown>;
+  const titleRaw = bodyRecord['title'];
+  const typeRaw = bodyRecord['type'];
+  const subjectRaw = bodyRecord['subject'];
+  const contentRaw = bodyRecord['content'];
+  const title = typeof titleRaw === 'string' ? titleRaw.trim() : '';
+  const type = typeof typeRaw === 'string' ? typeRaw : '';
+  const subject = typeof subjectRaw === 'string' ? subjectRaw.trim() : null;
+  const content = typeof contentRaw === 'string' ? contentRaw : '';
 
-  if (!body.title?.trim()) {
+  if (!title) {
     return Response.json({ error: 'Title is required' }, { status: 400 });
   }
-  if (body.type !== 'email' && body.type !== 'whatsapp') {
+  if (type !== 'email' && type !== 'whatsapp') {
     return Response.json({ error: 'Type must be email or whatsapp' }, { status: 400 });
   }
 
@@ -90,20 +95,20 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     env.DB.prepare(
       `INSERT INTO templates (id, title, type, subject, content, created_by, updated_by)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).bind(id, body.title.trim(), body.type, body.subject?.trim() ?? null, body.content ?? '', userId, userId),
+    ).bind(id, title, type, subject, content, userId, userId),
     env.DB.prepare(
       `INSERT INTO template_versions (id, template_id, version_number, title, type, subject, content, changed_by)
        VALUES (?, ?, 1, ?, ?, ?, ?, ?)`,
-    ).bind(versionId, id, body.title.trim(), body.type, body.subject?.trim() ?? null, body.content ?? '', userId),
+    ).bind(versionId, id, title, type, subject, content, userId),
   ]);
 
   return Response.json(
     {
       id,
-      title: body.title.trim(),
-      type: body.type,
-      subject: body.subject?.trim() ?? null,
-      content: body.content ?? '',
+      title,
+      type,
+      subject,
+      content,
       createdBy: userId,
       createdByName: data.user.name,
       updatedBy: userId,

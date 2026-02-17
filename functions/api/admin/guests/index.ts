@@ -35,11 +35,6 @@ export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async
   return Response.json(grants);
 };
 
-interface AddGuestBody {
-  email: string;
-  appKeys: string[];
-}
-
 const VALID_APP_KEYS = new Set(['brand-voice', 'templates', 'wiki']);
 
 export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
@@ -48,28 +43,39 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const body: AddGuestBody = await request.json();
-
-  if (!body.email?.trim() || !body.email.includes('@')) {
+  const body: unknown = await request.json();
+  if (body === null || typeof body !== 'object') {
+    return Response.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+  const bodyRecord = body as Record<string, unknown>;
+  const emailRaw = bodyRecord['email'];
+  const emailValue = typeof emailRaw === 'string' ? emailRaw.trim() : '';
+  if (!emailValue.includes('@')) {
     return Response.json({ error: 'Valid email is required' }, { status: 400 });
   }
 
-  const email = body.email.trim().toLowerCase();
+  const email = emailValue.toLowerCase();
 
   if (isInternalUser(email)) {
     return Response.json({ error: 'Cannot add grants for internal domain users' }, { status: 400 });
   }
 
-  if (!Array.isArray(body.appKeys) || body.appKeys.length === 0) {
+  const appKeysValue = bodyRecord['appKeys'];
+  if (!Array.isArray(appKeysValue) || appKeysValue.length === 0) {
     return Response.json({ error: 'At least one app key is required' }, { status: 400 });
   }
 
-  const invalidKeys = body.appKeys.filter((k) => !VALID_APP_KEYS.has(k));
+  const appKeys = appKeysValue.filter((k): k is string => typeof k === 'string');
+  if (appKeys.length !== appKeysValue.length) {
+    return Response.json({ error: 'App keys must be strings' }, { status: 400 });
+  }
+
+  const invalidKeys = appKeys.filter((k) => !VALID_APP_KEYS.has(k));
   if (invalidKeys.length > 0) {
     return Response.json({ error: `Invalid app keys: ${invalidKeys.join(', ')}` }, { status: 400 });
   }
 
-  const statements = body.appKeys.map((appKey) =>
+  const statements = appKeys.map((appKey) =>
     env.DB.prepare(
       `INSERT OR IGNORE INTO guest_grants (id, email, app_key, granted_by)
        VALUES (?, ?, ?, ?)`,

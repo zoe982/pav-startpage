@@ -34,13 +34,3 @@ export async function updateWikiPage(slug: string, data: WikiFormData): Promise<
 export async function deleteWikiPage(slug: string): Promise<void> {
   await apiFetch<undefined>(`/api/admin/wiki/${slug}`, { method: 'DELETE' });
 }
-
-export async function uploadImage(file: File): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append('file', file);
-  return await apiFetch<{ url: string }>('/api/admin/upload', {
-    method: 'POST',
-    headers: {},
-    body: formData,
-  });
-}

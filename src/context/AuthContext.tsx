@@ -20,7 +20,6 @@ export interface AuthContextValue {
   readonly refreshUser: () => Promise<void>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { readonly children: ReactNode }): JSX.Element {
@@ -35,9 +34,9 @@ export function AuthProvider({ children }: { readonly children: ReactNode }): JS
       const currentUser = await fetchCurrentUser();
       setUser(currentUser);
     } catch (error) {
-      setUser(null);
       if (error instanceof ApiError && error.status === 401) {
         // Expected when not logged in
+        setUser(null);
       } else if (error instanceof ApiError) {
         setAuthError(`Auth check failed: ${error.message} (HTTP ${error.status})`);
       } else {

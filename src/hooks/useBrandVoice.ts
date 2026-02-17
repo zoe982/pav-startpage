@@ -57,14 +57,15 @@ export function useRewrite(): UseRewriteReturn {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await refineText({
+      const refinePayload = {
         original: originalTextRef.current,
         currentRewritten: result.rewritten,
         feedback,
         style,
         mode,
-        customStyleDescription,
-      }, controller.signal);
+        ...(customStyleDescription ? { customStyleDescription } : {}),
+      };
+      const data = await refineText(refinePayload, controller.signal);
       setResult(data);
       setFeedbackHistory(prev => [...prev, feedback]);
     } catch (err) {

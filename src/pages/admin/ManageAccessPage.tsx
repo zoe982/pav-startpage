@@ -199,39 +199,45 @@ export function ManageAccessPage(): JSX.Element {
                 <p className="text-sm text-on-surface-variant">No guest access grants yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {Object.entries(guestsByEmail).map(([email, emailGrants]) => (
-                    <div
-                      key={email}
-                      className="rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-medium text-pav-blue">{email}</h3>
-                        <span className="text-xs text-on-surface-variant">
-                          Added {new Date(emailGrants[0]!.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {emailGrants.map((grant) => (
-                          <span
-                            key={grant.id}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-pav-gold/20 px-3 py-1 text-xs font-medium text-pav-blue"
-                          >
-                            {APP_OPTIONS.find((o) => o.key === grant.appKey)?.label ?? grant.appKey}
-                            <button
-                              type="button"
-                              onClick={() => { void handleRemoveGrant(grant.id); }}
-                              className="rounded-full p-0.5 text-pav-grey motion-standard hover:bg-error-container hover:text-error"
-                              aria-label={`Remove ${grant.appKey} access`}
-                            >
-                              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
-                                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                              </svg>
-                            </button>
+                  {Object.entries(guestsByEmail).map(([email, emailGrants]) => {
+                    const firstGrant = emailGrants.at(0);
+                    const createdAt = firstGrant
+                      ? new Date(firstGrant.createdAt).toLocaleDateString()
+                      : 'Unknown';
+                    return (
+                      <div
+                        key={email}
+                        className="rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-pav-blue">{email}</h3>
+                          <span className="text-xs text-on-surface-variant">
+                            Added {createdAt}
                           </span>
-                        ))}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {emailGrants.map((grant) => (
+                            <span
+                              key={grant.id}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-pav-gold/20 px-3 py-1 text-xs font-medium text-pav-blue"
+                            >
+                              {APP_OPTIONS.find((o) => o.key === grant.appKey)?.label ?? grant.appKey}
+                              <button
+                                type="button"
+                                onClick={() => { void handleRemoveGrant(grant.id); }}
+                                className="rounded-full p-0.5 text-pav-grey motion-standard hover:bg-error-container hover:text-error"
+                                aria-label={`Remove ${grant.appKey} access`}
+                              >
+                                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                                </svg>
+                              </button>
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

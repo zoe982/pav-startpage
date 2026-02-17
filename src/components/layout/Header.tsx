@@ -14,7 +14,9 @@ function UserAvatar({ name, pictureUrl }: { readonly name: string; readonly pict
         className="h-8 w-8 rounded-full"
         referrerPolicy="no-referrer"
         crossOrigin="anonymous"
-        onError={() => setFailed(true)}
+        onError={() => {
+          setFailed(true);
+        }}
       />
     );
   }

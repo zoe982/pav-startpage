@@ -104,11 +104,13 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     );
   }
 
-  const isRefinement = typeof body.currentRewritten === 'string'
-    && typeof body.feedback === 'string'
-    && body.feedback.trim().length > 0;
+  const currentRewritten = typeof body.currentRewritten === 'string' ? body.currentRewritten : null;
+  const feedback = typeof body.feedback === 'string' ? body.feedback : null;
+  const isRefinement = currentRewritten !== null
+    && feedback !== null
+    && feedback.trim().length > 0;
 
-  if (isRefinement && body.feedback!.length > 2000) {
+  if (isRefinement && feedback.length > 2000) {
     return Response.json(
       { error: 'Feedback must be under 2,000 characters' },
       { status: 400 },
@@ -129,9 +131,33 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     );
   }
 
-  const styleInstruction = style === 'other' && body.customStyleDescription?.trim()
-    ? `Format the output according to these instructions: ${body.customStyleDescription}`
-    : STYLE_INSTRUCTIONS[style];
+  const customStyle = body.customStyleDescription?.trim();
+  let styleInstruction: string;
+  if (style === 'other' && customStyle) {
+    styleInstruction = `Format the output according to these instructions: ${customStyle}`;
+  } else {
+    switch (style) {
+      case 'email':
+        styleInstruction = STYLE_INSTRUCTIONS.email;
+        break;
+      case 'whatsapp':
+        styleInstruction = STYLE_INSTRUCTIONS.whatsapp;
+        break;
+      case 'document':
+        styleInstruction = STYLE_INSTRUCTIONS.document;
+        break;
+      case 'instagram':
+        styleInstruction = STYLE_INSTRUCTIONS.instagram;
+        break;
+      case 'facebook':
+        styleInstruction = STYLE_INSTRUCTIONS.facebook;
+        break;
+      case 'other':
+      default:
+        styleInstruction = STYLE_INSTRUCTIONS.other;
+        break;
+    }
+  }
 
   const systemPrompt = buildSystemPrompt(mode, styleInstruction, rules, services);
 
@@ -142,8 +168,8 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
 
   if (isRefinement) {
     messages.push(
-      { role: 'assistant', content: body.currentRewritten! },
-      { role: 'user', content: `Please refine based on: ${body.feedback!}` },
+      { role: 'assistant', content: currentRewritten },
+      { role: 'user', content: `Please refine based on: ${feedback}` },
     );
   }
 

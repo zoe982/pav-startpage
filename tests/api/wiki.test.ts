@@ -7,7 +7,6 @@ import {
   createWikiPage,
   updateWikiPage,
   deleteWikiPage,
-  uploadImage,
 } from '../../src/api/wiki.ts';
 
 vi.mock('../../src/api/client.ts', () => ({
@@ -97,21 +96,5 @@ describe('deleteWikiPage', () => {
     vi.mocked(apiFetch).mockResolvedValue(undefined);
     await deleteWikiPage('test');
     expect(apiFetch).toHaveBeenCalledWith('/api/admin/wiki/test', { method: 'DELETE' });
-  });
-});
-
-describe('uploadImage', () => {
-  it('calls apiFetch with FormData and empty headers', async () => {
-    const file = new File(['data'], 'test.png', { type: 'image/png' });
-    vi.mocked(apiFetch).mockResolvedValue({ url: '/assets/uploads/test.png' });
-
-    const result = await uploadImage(file);
-    expect(result).toEqual({ url: '/assets/uploads/test.png' });
-
-    const call = vi.mocked(apiFetch).mock.calls[0]!;
-    expect(call[0]).toBe('/api/admin/upload');
-    expect(call[1]!.method).toBe('POST');
-    expect(call[1]!.headers).toEqual({});
-    expect(call[1]!.body).toBeInstanceOf(FormData);
   });
 });

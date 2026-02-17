@@ -27,7 +27,7 @@ const MODE_CONFIG: Record<BrandMode, { label: string; placeholder: string; butto
   },
 };
 
-function useAutoResize() {
+function useAutoResize(): { readonly ref: React.RefObject<HTMLTextAreaElement | null>; readonly resize: () => void } {
   const ref = useRef<HTMLTextAreaElement>(null);
 
   const resize = useCallback(() => {
@@ -37,9 +37,19 @@ function useAutoResize() {
     el.style.height = `${el.scrollHeight}px`;
   }, []);
 
-  useEffect(() => { resize(); });
+  useEffect(() => { resize(); }, [resize]);
 
   return { ref, resize };
+}
+
+function getModeConfig(mode: BrandMode): { label: string; placeholder: string; buttonLabel: string } {
+  switch (mode) {
+    case 'rewrite':
+      return MODE_CONFIG.rewrite;
+    case 'draft':
+    default:
+      return MODE_CONFIG.draft;
+  }
 }
 
 export function BrandVoicePage(): JSX.Element {
@@ -52,7 +62,7 @@ export function BrandVoicePage(): JSX.Element {
   const [copied, setCopied] = useState(false);
   const { ref: textareaRef, resize } = useAutoResize();
 
-  const config = MODE_CONFIG[mode];
+  const config = getModeConfig(mode);
 
   const handleSubmit = async (e: SyntheticEvent): Promise<void> => {
     e.preventDefault();

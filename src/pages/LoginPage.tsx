@@ -3,19 +3,20 @@ import { Navigate, useSearchParams } from 'react-router';
 import { GoogleLoginButton } from '../components/auth/GoogleLoginButton.tsx';
 import { useAuth } from '../hooks/useAuth.ts';
 
-const ERROR_MESSAGES: Record<string, string> = {
-  no_code: 'Google did not return an authorization code.',
-  token_exchange: 'Failed to exchange token with Google.',
-  invalid_token: 'Received an invalid token from Google.',
-  unauthorized_domain: 'Your email domain is not authorized. Contact an admin.',
-  unverified_email: 'Your Google email is not verified.',
-  db_error: 'Database error during login. Try again or contact an admin.',
-};
+const ERROR_MESSAGES = new Map<string, string>([
+  ['no_code', 'Google did not return an authorization code.'],
+  ['token_exchange', 'Failed to exchange token with Google.'],
+  ['invalid_token', 'Received an invalid token from Google.'],
+  ['unauthorized_domain', 'Your email domain is not authorized. Contact an admin.'],
+  ['unverified_email', 'Your Google email is not verified.'],
+  ['db_error', 'Database error during login. Try again or contact an admin.'],
+]);
 
 export function LoginPage(): JSX.Element {
   const { isAuthenticated, isLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const errorCode = searchParams.get('error');
+  const errorMessage = errorCode ? ERROR_MESSAGES.get(errorCode) : null;
 
   if (isLoading) {
     return (
@@ -45,7 +46,7 @@ export function LoginPage(): JSX.Element {
         {errorCode && (
           <div className="rounded-lg bg-error-container p-3 text-center">
             <p className="text-sm text-on-error-container">
-              {ERROR_MESSAGES[errorCode] ?? `Login failed (${errorCode})`}
+              {errorMessage ?? `Login failed (${errorCode})`}
             </p>
           </div>
         )}

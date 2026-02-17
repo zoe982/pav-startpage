@@ -1,4 +1,6 @@
 import type { Env } from '../../types.ts';
+import { isInternalUser } from '../../types.ts';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 interface GoogleTokenResponse {
   id_token: string;
@@ -6,21 +8,37 @@ interface GoogleTokenResponse {
 }
 
 interface GoogleIdTokenPayload {
-  sub: string;
-  email: string;
-  email_verified: boolean;
-  name: string;
+  sub?: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
   picture?: string;
   hd?: string;
+  nonce?: string;
 }
 
-function decodeJwtPayload(token: string): GoogleIdTokenPayload {
-  const parts = token.split('.');
-  const payload = parts[1];
-  if (!payload) throw new Error('Invalid token');
+const JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
+const GOOGLE_ISSUERS = ['https://accounts.google.com', 'accounts.google.com'];
 
-  const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-  return JSON.parse(decoded) as GoogleIdTokenPayload;
+function getCookie(request: Request, name: string): string | null {
+  const cookie = request.headers.get('Cookie');
+  if (!cookie) return null;
+  const parts = cookie.split(';');
+  for (const part of parts) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) {
+      return rest.join('=');
+    }
+  }
+  return null;
+}
+
+function redirectWithClearedAuthCookies(url: string, isSecure: boolean): Response {
+  const clearFlags = `HttpOnly; Path=/; SameSite=Lax; Max-Age=0${isSecure ? '; Secure' : ''}`;
+  const headers = new Headers({ Location: url });
+  headers.append('Set-Cookie', `__oauth_state=; ${clearFlags}`);
+  headers.append('Set-Cookie', `__oauth_nonce=; ${clearFlags}`);
+  return new Response(null, { status: 302, headers });
 }
 
 function generateSessionId(): string {
@@ -35,9 +53,18 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
+  const stateParam = url.searchParams.get('state');
+  const isSecure = url.protocol === 'https:';
+
+  const stateCookie = getCookie(request, '__oauth_state');
+  const nonceCookie = getCookie(request, '__oauth_nonce');
+
+  if (!stateParam || !stateCookie || !nonceCookie || stateParam !== stateCookie) {
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=invalid_state`, isSecure);
+  }
 
   if (!code) {
-    return Response.redirect(`${url.origin}/login?error=no_code`, 302);
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=no_code`, isSecure);
   }
 
   // Exchange code for tokens
@@ -56,27 +83,38 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     });
 
     if (!tokenResponse.ok) {
-      return Response.redirect(`${url.origin}/login?error=token_exchange`, 302);
+      return redirectWithClearedAuthCookies(`${url.origin}/login?error=token_exchange`, isSecure);
     }
 
     tokens = await tokenResponse.json();
   } catch {
-    return Response.redirect(`${url.origin}/login?error=token_exchange`, 302);
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=token_exchange`, isSecure);
   }
 
-  // Decode the ID token (we trust Google's response here)
+  // Verify the ID token against Google's JWKS and validate claims
   let payload: GoogleIdTokenPayload;
   try {
-    payload = decodeJwtPayload(tokens.id_token);
+    const verified = await jwtVerify(tokens.id_token, JWKS, {
+      issuer: GOOGLE_ISSUERS,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+    payload = verified.payload as GoogleIdTokenPayload;
   } catch {
-    return Response.redirect(`${url.origin}/login?error=invalid_token`, 302);
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=invalid_token`, isSecure);
+  }
+
+  if (!payload.sub || !payload.email || typeof payload.email_verified !== 'boolean') {
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=invalid_token`, isSecure);
+  }
+
+  if (payload.nonce !== nonceCookie) {
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=invalid_nonce`, isSecure);
   }
 
   // Verify email: must be internal domain, in ALLOWED_EMAILS, or have guest grants
   const allowedEmails = env.ALLOWED_EMAILS.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
   const emailLower = payload.email.toLowerCase();
-  const allowedDomains = ['petairvalet.com', 'marsico.org'];
-  const isDomainAllowed = allowedDomains.some((d) => emailLower.endsWith(`@${d}`));
+  const isDomainAllowed = isInternalUser(emailLower);
   const isExplicitlyAllowed = allowedEmails.includes(emailLower);
 
   let hasGuestGrants = false;
@@ -88,11 +126,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   if (!isDomainAllowed && !isExplicitlyAllowed && !hasGuestGrants) {
-    return Response.redirect(`${url.origin}/login?error=unauthorized_domain`, 302);
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=unauthorized_domain`, isSecure);
   }
 
   if (!payload.email_verified) {
-    return Response.redirect(`${url.origin}/login?error=unverified_email`, 302);
+    return redirectWithClearedAuthCookies(`${url.origin}/login?error=unverified_email`, isSecure);
   }
 
   // Check if user is admin (env var always grants; panel-granted admin persists)
@@ -110,7 +148,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
        is_admin = MAX(excluded.is_admin, users.is_admin),
        updated_at = datetime('now')`,
   )
-    .bind(userId, payload.email, payload.name, payload.picture ?? null, isAdminFromEnv)
+    .bind(userId, payload.email, payload.name ?? payload.email, payload.picture ?? null, isAdminFromEnv)
     .run();
 
   // Get the actual user ID (may differ if user already existed)
@@ -132,14 +170,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .run();
 
   // Set cookie and redirect to home
-  const isSecure = url.protocol === 'https:';
   const cookieFlags = `HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${isSecure ? '; Secure' : ''}`;
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: '/',
-      'Set-Cookie': `__session=${sessionId}; ${cookieFlags}`,
-    },
-  });
+  const headers = new Headers({ Location: '/' });
+  headers.append('Set-Cookie', `__session=${sessionId}; ${cookieFlags}`);
+  headers.append('Set-Cookie', `__oauth_state=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${isSecure ? '; Secure' : ''}`);
+  headers.append('Set-Cookie', `__oauth_nonce=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${isSecure ? '; Secure' : ''}`);
+
+  return new Response(null, { status: 302, headers });
 };

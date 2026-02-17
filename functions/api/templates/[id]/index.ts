@@ -15,14 +15,21 @@ interface TemplateRow {
   updated_at: string;
 }
 
-interface TemplateBody {
+interface TemplateResponse {
+  id: string;
   title: string;
-  type: 'email' | 'whatsapp';
-  subject?: string;
+  type: string;
+  subject: string | null;
   content: string;
+  createdBy: string;
+  createdByName: string;
+  updatedBy: string;
+  updatedByName: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-function toTemplate(row: TemplateRow) {
+function toTemplate(row: TemplateRow): TemplateResponse {
   return {
     id: row.id,
     title: row.title,
@@ -71,12 +78,24 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
   if (denied) return denied;
 
   const id = params.id;
-  const body: TemplateBody = await request.json();
+  const body: unknown = await request.json();
+  if (body === null || typeof body !== 'object') {
+    return Response.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+  const bodyRecord = body as Record<string, unknown>;
+  const titleRaw = bodyRecord['title'];
+  const typeRaw = bodyRecord['type'];
+  const subjectRaw = bodyRecord['subject'];
+  const contentRaw = bodyRecord['content'];
+  const title = typeof titleRaw === 'string' ? titleRaw.trim() : '';
+  const type = typeof typeRaw === 'string' ? typeRaw : '';
+  const subject = typeof subjectRaw === 'string' ? subjectRaw.trim() : null;
+  const content = typeof contentRaw === 'string' ? contentRaw : '';
 
-  if (!body.title?.trim()) {
+  if (!title) {
     return Response.json({ error: 'Title is required' }, { status: 400 });
   }
-  if (body.type !== 'email' && body.type !== 'whatsapp') {
+  if (type !== 'email' && type !== 'whatsapp') {
     return Response.json({ error: 'Type must be email or whatsapp' }, { status: 400 });
   }
 
@@ -104,11 +123,11 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
       `UPDATE templates
        SET title = ?, type = ?, subject = ?, content = ?, updated_by = ?, updated_at = datetime('now')
        WHERE id = ?`,
-    ).bind(body.title.trim(), body.type, body.subject?.trim() ?? null, body.content ?? '', userId, id),
+    ).bind(title, type, subject, content, userId, id),
     env.DB.prepare(
       `INSERT INTO template_versions (id, template_id, version_number, title, type, subject, content, changed_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).bind(versionId, id, nextVersion, body.title.trim(), body.type, body.subject?.trim() ?? null, body.content ?? '', userId),
+    ).bind(versionId, id, nextVersion, title, type, subject, content, userId),
   ]);
 
   // Return updated template
@@ -125,7 +144,11 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
     .bind(id)
     .first<TemplateRow>();
 
-  return Response.json(toTemplate(row!));
+  if (!row) {
+    return Response.json({ error: 'Template not found' }, { status: 404 });
+  }
+
+  return Response.json(toTemplate(row));
 };
 
 export const onRequestDelete: PagesFunction<Env, 'id', AuthenticatedData> = async (context) => {

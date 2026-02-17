@@ -22,10 +22,24 @@ export async function rewriteText(
   signal?: AbortSignal,
   customStyleDescription?: string,
 ): Promise<RewriteResult> {
-  return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
+  const payload: { text: string; style: OutputStyle; mode: BrandMode; customStyleDescription?: string } = {
+    text,
+    style,
+    mode,
+  };
+  if (customStyleDescription) {
+    payload.customStyleDescription = customStyleDescription;
+  }
+
+  const options: RequestInit = {
     method: 'POST',
-    body: JSON.stringify({ text, style, mode, customStyleDescription }),
-    signal,
+    body: JSON.stringify(payload),
+  };
+  if (signal) {
+    options.signal = signal;
+  }
+  return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
+    ...options,
   });
 }
 
@@ -33,16 +47,32 @@ export async function refineText(
   request: RefineRequest,
   signal?: AbortSignal,
 ): Promise<RewriteResult> {
-  return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
+  const payload: {
+    text: string;
+    style: OutputStyle;
+    mode: BrandMode;
+    customStyleDescription?: string;
+    currentRewritten: string;
+    feedback: string;
+  } = {
+    text: request.original,
+    style: request.style,
+    mode: request.mode,
+    currentRewritten: request.currentRewritten,
+    feedback: request.feedback,
+  };
+  if (request.customStyleDescription) {
+    payload.customStyleDescription = request.customStyleDescription;
+  }
+
+  const options: RequestInit = {
     method: 'POST',
-    body: JSON.stringify({
-      text: request.original,
-      style: request.style,
-      mode: request.mode,
-      customStyleDescription: request.customStyleDescription,
-      currentRewritten: request.currentRewritten,
-      feedback: request.feedback,
-    }),
-    signal,
+    body: JSON.stringify(payload),
+  };
+  if (signal) {
+    options.signal = signal;
+  }
+  return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
+    ...options,
   });
 }

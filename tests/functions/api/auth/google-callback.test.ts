@@ -1,4 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('jose', () => ({
+  createRemoteJWKSet: () => ({}),
+  jwtVerify: vi.fn(),
+}));
+
+import { jwtVerify } from 'jose';
 import { onRequestGet } from '../../../../functions/api/auth/google-callback.ts';
 import { createMockContext, createMockD1 } from '../../../cf-helpers.ts';
 
@@ -9,9 +16,25 @@ function makeIdToken(payload: Record<string, unknown>): string {
   return `${header}.${body}.signature`;
 }
 
+const STATE = 'test-state';
+const NONCE = 'test-nonce';
+
+function createRequestWithState(url: string): Request {
+  const parsed = new URL(url);
+  if (!parsed.searchParams.get('state')) {
+    parsed.searchParams.set('state', STATE);
+  }
+  return new Request(parsed.toString(), {
+    headers: {
+      Cookie: `__oauth_state=${STATE}; __oauth_nonce=${NONCE}`,
+    },
+  });
+}
+
 describe('GET /api/auth/google-callback', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.mocked(jwtVerify).mockReset();
     vi.spyOn(crypto, 'randomUUID').mockReturnValue('test-uuid' as ReturnType<typeof crypto.randomUUID>);
     vi.spyOn(crypto, 'getRandomValues').mockImplementation((arr) => {
       if (arr instanceof Uint8Array) {
@@ -23,7 +46,7 @@ describe('GET /api/auth/google-callback', () => {
 
   it('redirects with error when no code param', async () => {
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback'),
     });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(302);
@@ -36,7 +59,7 @@ describe('GET /api/auth/google-callback', () => {
     );
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
     });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(302);
@@ -47,7 +70,7 @@ describe('GET /api/auth/google-callback', () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network error'));
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
     });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(302);
@@ -58,9 +81,10 @@ describe('GET /api/auth/google-callback', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: 'not.valid', access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockRejectedValue(new Error('invalid token'));
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
     });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(302);
@@ -72,9 +96,10 @@ describe('GET /api/auth/google-callback', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: 'nodotstoken', access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockRejectedValue(new Error('invalid token'));
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
     });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(302);
@@ -82,15 +107,22 @@ describe('GET /api/auth/google-callback', () => {
   });
 
   it('redirects with error for unauthorized domain', async () => {
-    const token = makeIdToken({
-      sub: '123', email: 'user@evil.com', email_verified: true, name: 'Evil User',
-    });
+    const token = makeIdToken({ test: true });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'user@evil.com',
+        email_verified: true,
+        name: 'Evil User',
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
       env: { ALLOWED_EMAILS: '' },
     });
     const response = await onRequestGet(ctx);
@@ -99,15 +131,22 @@ describe('GET /api/auth/google-callback', () => {
   });
 
   it('redirects with error for unverified email', async () => {
-    const token = makeIdToken({
-      sub: '123', email: 'user@petairvalet.com', email_verified: false, name: 'Test',
-    });
+    const token = makeIdToken({ test: true });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'user@petairvalet.com',
+        email_verified: false,
+        name: 'Test',
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
     });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(302);
@@ -115,19 +154,27 @@ describe('GET /api/auth/google-callback', () => {
   });
 
   it('succeeds for allowed domain user (http - no Secure flag)', async () => {
-    const token = makeIdToken({
-      sub: '123', email: 'user@petairvalet.com', email_verified: true, name: 'Test User', picture: 'https://pic.com/img.jpg',
-    });
+    const token = makeIdToken({ test: true });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'user@petairvalet.com',
+        email_verified: true,
+        name: 'Test User',
+        picture: 'https://pic.com/img.jpg',
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
 
     const db = createMockD1(new Map([
       ['SELECT id FROM users WHERE email = ?', { id: 'existing-user-id' }],
     ]));
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
       env: { DB: db, ADMIN_EMAILS: 'admin@petairvalet.com', ALLOWED_EMAILS: '' },
     });
     const response = await onRequestGet(ctx);
@@ -141,19 +188,26 @@ describe('GET /api/auth/google-callback', () => {
   });
 
   it('sets Secure flag for https requests', async () => {
-    const token = makeIdToken({
-      sub: '123', email: 'user@petairvalet.com', email_verified: true, name: 'Test',
-    });
+    const token = makeIdToken({ test: true });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'user@petairvalet.com',
+        email_verified: true,
+        name: 'Test',
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
 
     const db = createMockD1(new Map([
       ['SELECT id FROM users WHERE email = ?', { id: 'user-id' }],
     ]));
 
     const ctx = createMockContext({
-      request: new Request('https://example.com/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('https://example.com/api/auth/google-callback?code=abc'),
       env: { DB: db, ADMIN_EMAILS: '', ALLOWED_EMAILS: '' },
     });
     const response = await onRequestGet(ctx);
@@ -164,19 +218,26 @@ describe('GET /api/auth/google-callback', () => {
   });
 
   it('sets admin flag for admin email', async () => {
-    const token = makeIdToken({
-      sub: '123', email: 'admin@petairvalet.com', email_verified: true, name: 'Admin',
-    });
+    const token = makeIdToken({ test: true });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'admin@petairvalet.com',
+        email_verified: true,
+        name: 'Admin',
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
 
     const db = createMockD1(new Map([
       ['SELECT id FROM users WHERE email = ?', { id: 'admin-id' }],
     ]));
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
       env: { DB: db, ADMIN_EMAILS: 'admin@petairvalet.com', ALLOWED_EMAILS: '' },
     });
     await onRequestGet(ctx);
@@ -188,17 +249,24 @@ describe('GET /api/auth/google-callback', () => {
   });
 
   it('redirects with db_error when user lookup fails', async () => {
-    const token = makeIdToken({
-      sub: '123', email: 'user@petairvalet.com', email_verified: true, name: 'Test',
-    });
+    const token = makeIdToken({ test: true });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'user@petairvalet.com',
+        email_verified: true,
+        name: 'Test',
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
 
     // DB returns null for the SELECT after upsert
     const db = createMockD1();
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
       env: { DB: db, ADMIN_EMAILS: '', ALLOWED_EMAILS: '' },
     });
     const response = await onRequestGet(ctx);
@@ -207,19 +275,26 @@ describe('GET /api/auth/google-callback', () => {
   });
 
   it('allows explicitly allowed email from different domain', async () => {
-    const token = makeIdToken({
-      sub: '123', email: 'external@example.com', email_verified: true, name: 'External',
-    });
+    const token = makeIdToken({ test: true });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
     );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'external@example.com',
+        email_verified: true,
+        name: 'External',
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
 
     const db = createMockD1(new Map([
       ['SELECT id FROM users WHERE email = ?', { id: 'ext-id' }],
     ]));
 
     const ctx = createMockContext({
-      request: new Request('http://localhost:8788/api/auth/google-callback?code=abc'),
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
       env: { DB: db, ADMIN_EMAILS: '', ALLOWED_EMAILS: 'external@example.com' },
     });
     const response = await onRequestGet(ctx);

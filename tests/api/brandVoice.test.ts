@@ -52,8 +52,7 @@ describe('rewriteText', () => {
     const result = await rewriteText('Hi', 'email', 'rewrite');
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite', customStyleDescription: undefined }),
-      signal: undefined,
+      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
     });
     expect(result).toEqual({ original: 'Hi', rewritten: 'Hello' });
   });
@@ -63,8 +62,7 @@ describe('rewriteText', () => {
     await rewriteText('Write a bio', 'whatsapp', 'draft');
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Write a bio', style: 'whatsapp', mode: 'draft', customStyleDescription: undefined }),
-      signal: undefined,
+      body: JSON.stringify({ text: 'Write a bio', style: 'whatsapp', mode: 'draft' }),
     });
   });
 
@@ -74,7 +72,7 @@ describe('rewriteText', () => {
     await rewriteText('Hi', 'email', 'rewrite', controller.signal);
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite', customStyleDescription: undefined }),
+      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
       signal: controller.signal,
     });
   });
@@ -85,7 +83,6 @@ describe('rewriteText', () => {
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
       body: JSON.stringify({ text: 'Hi', style: 'other', mode: 'rewrite', customStyleDescription: 'Instagram caption' }),
-      signal: undefined,
     });
   });
 });
@@ -106,11 +103,9 @@ describe('refineText', () => {
         text: 'Hi',
         style: 'email',
         mode: 'rewrite',
-        customStyleDescription: undefined,
         currentRewritten: 'Hello',
         feedback: 'Make it shorter',
       }),
-      signal: undefined,
     });
     expect(result).toEqual({ original: 'Hi', rewritten: 'Hello, revised' });
   });
@@ -131,11 +126,10 @@ describe('refineText', () => {
         text: 'Hi',
         style: 'other',
         mode: 'rewrite',
-        customStyleDescription: 'Slack message',
         currentRewritten: 'Hello',
         feedback: 'More casual',
+        customStyleDescription: 'Slack message',
       }),
-      signal: undefined,
     });
   });
 

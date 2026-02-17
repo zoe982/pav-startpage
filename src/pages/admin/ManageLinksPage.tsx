@@ -77,6 +77,17 @@ export function ManageLinksPage(): JSX.Element {
     }
   };
 
+  const initialData = editingLink
+    ? {
+        title: editingLink.title,
+        url: editingLink.url,
+        description: editingLink.description ?? '',
+        iconUrl: editingLink.iconUrl ?? '',
+        sortOrder: editingLink.sortOrder,
+        isVisible: editingLink.isVisible,
+      }
+    : null;
+
   return (
     <AppShell>
       <div className="flex gap-8">
@@ -100,18 +111,7 @@ export function ManageLinksPage(): JSX.Element {
                 {editingLink ? 'Edit Link' : 'New Link'}
               </h2>
               <LinkForm
-                initialData={
-                  editingLink
-                    ? {
-                        title: editingLink.title,
-                        url: editingLink.url,
-                        description: editingLink.description ?? '',
-                        iconUrl: editingLink.iconUrl ?? '',
-                        sortOrder: editingLink.sortOrder,
-                        isVisible: editingLink.isVisible,
-                      }
-                    : undefined
-                }
+                {...(initialData ? { initialData } : {})}
                 onSubmit={editingLink ? handleUpdate : handleCreate}
                 onCancel={() => {
                   setShowForm(false);

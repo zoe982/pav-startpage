@@ -19,7 +19,6 @@ export interface ToastContextValue {
   readonly removeToast: (id: string) => void;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { readonly children: ReactNode }): JSX.Element {

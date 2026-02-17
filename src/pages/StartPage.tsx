@@ -55,7 +55,7 @@ export function StartPage(): JSX.Element {
 
   // Cmd/Ctrl+K to focus search
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
+    function handleKeyDown(e: KeyboardEvent): void {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         inputRef.current?.focus();
@@ -66,7 +66,9 @@ export function StartPage(): JSX.Element {
       }
     }
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const filteredLinks = useMemo(() => {
@@ -90,7 +92,7 @@ export function StartPage(): JSX.Element {
     );
   }, [search, accessibleApps]);
 
-  const hasNoResults = search && filteredLinks.length === 0 && filteredInternalApps.length === 0;
+  const hasNoResults = search.trim().length > 0 && filteredLinks.length === 0 && filteredInternalApps.length === 0;
 
   return (
     <AppShell>
@@ -113,7 +115,9 @@ export function StartPage(): JSX.Element {
                 ref={inputRef}
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                }}
                 placeholder="Search apps..."
                 className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-3.5 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)] placeholder:text-outline motion-standard focus-visible:border-pav-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-gold/30"
               />
