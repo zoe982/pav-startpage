@@ -5,6 +5,7 @@ import type {
   BrandVoiceThreadSummary,
   OutputStyle,
 } from '../types/brandVoice.ts';
+import { ApiError } from '../api/client.ts';
 import {
   listThreads,
   getThread,
@@ -38,8 +39,42 @@ interface UseBrandVoiceReturn {
   readonly clearActiveThread: () => void;
 }
 
+function normalizeErrorMessage(message: string): string | null {
+  const trimmed = message.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function isGenericApiMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return normalized === 'unknown error'
+    || /^http \d{3}$/.test(normalized)
+    || /^request failed \(http \d{3}( [^)]+)?\)$/.test(normalized);
+}
+
 function toErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message) return error.message;
+  if (error instanceof ApiError) {
+    const normalized = normalizeErrorMessage(error.message);
+    if (normalized && !isGenericApiMessage(normalized)) {
+      return normalized;
+    }
+    return `${fallback}. The service returned an unexpected error (HTTP ${error.status}). Please try again.`;
+  }
+
+  if (error instanceof TypeError) {
+    const normalized = normalizeErrorMessage(error.message);
+    if (normalized && /fetch|network/i.test(normalized)) {
+      return `${fallback}. Check your connection and try again.`;
+    }
+    if (normalized) return normalized;
+  }
+
+  if (error instanceof Error) {
+    const normalized = normalizeErrorMessage(error.message);
+    if (normalized && normalized.toLowerCase() !== 'unknown error') {
+      return normalized;
+    }
+  }
+
   return fallback;
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders, mockUser } from '../helpers.tsx';
 import { BrandVoicePage } from '../../src/pages/BrandVoicePage.tsx';
@@ -63,6 +63,9 @@ describe('BrandVoicePage', () => {
     });
 
     expect(loadThreads).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Brand Voice Studio' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Conversation' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Compose request' })).toBeInTheDocument();
     expect(screen.getByText('Welcome Email Draft (Zoey)')).toBeInTheDocument();
     expect(screen.getByText('Latest draft text')).toBeInTheDocument();
     expect(screen.getByText('I drafted a welcome email.')).toBeInTheDocument();
@@ -107,6 +110,27 @@ describe('BrandVoicePage', () => {
     expect(sendMessage).toHaveBeenCalledWith('Make it shorter', 'email', 'draft', undefined);
   });
 
+  it('does not send when message is empty or whitespace', async () => {
+    const user = userEvent.setup();
+    const sendMessage = vi.fn().mockResolvedValue(undefined);
+    const startThread = vi.fn().mockResolvedValue(undefined);
+    mockHook({ sendMessage, startThread });
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    await user.type(screen.getByLabelText('Message'), '   ');
+    const form = screen.getByLabelText('Message').closest('form');
+    if (!form) {
+      throw new Error('Expected message form to exist');
+    }
+    fireEvent.submit(form);
+
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(startThread).not.toHaveBeenCalled();
+  });
+
   it('passes custom style description when style is other', async () => {
     const user = userEvent.setup();
     const sendMessage = vi.fn().mockResolvedValue(undefined);
@@ -146,6 +170,36 @@ describe('BrandVoicePage', () => {
     expect(renameActiveThread).toHaveBeenCalledWith('Final Welcome Thread');
   });
 
+  it('does not rename active thread when title is unchanged', async () => {
+    const user = userEvent.setup();
+    const renameActiveThread = vi.fn().mockResolvedValue(undefined);
+    mockHook({ renameActiveThread });
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Save title' }));
+
+    expect(renameActiveThread).not.toHaveBeenCalled();
+  });
+
+  it('does not rename active thread when title is empty', async () => {
+    const user = userEvent.setup();
+    const renameActiveThread = vi.fn().mockResolvedValue(undefined);
+    mockHook({ renameActiveThread });
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    const titleInput = screen.getByLabelText('Thread title');
+    await user.clear(titleInput);
+    await user.click(screen.getByRole('button', { name: 'Save title' }));
+
+    expect(renameActiveThread).not.toHaveBeenCalled();
+  });
+
   it('pins the latest draft via Use this draft button', async () => {
     const user = userEvent.setup();
     const pinActiveDraft = vi.fn().mockResolvedValue(undefined);
@@ -172,5 +226,116 @@ describe('BrandVoicePage', () => {
     await user.click(screen.getByRole('button', { name: 'New thread' }));
 
     expect(clearActiveThread).toHaveBeenCalled();
+  });
+
+  it('selects a thread when clicked in thread list', async () => {
+    const user = userEvent.setup();
+    const selectThread = vi.fn().mockResolvedValue(undefined);
+    mockHook({
+      selectThread,
+      activeThread: null,
+      threads: [{ id: 'thread-1', title: 'Welcome Email Draft (Zoey)' }],
+    });
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Welcome Email Draft (Zoey)' }));
+
+    expect(selectThread).toHaveBeenCalledWith('thread-1');
+  });
+
+  it('renders actionable error banner and retries loading threads', async () => {
+    const user = userEvent.setup();
+    const loadThreads = vi.fn();
+    mockHook({
+      loadThreads,
+      error: 'Failed to load threads. The service returned an unexpected error (HTTP 502). Please try again.',
+    });
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Failed to load threads.');
+    await user.click(screen.getByRole('button', { name: 'Retry loading threads' }));
+
+    expect(loadThreads).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows empty and pinned states in the conversation and draft panels', () => {
+    mockHook({
+      activeThread: buildThread({
+        messages: [],
+        pinnedDraft: 'Latest draft text',
+      }),
+    });
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    expect(screen.getByText('No messages yet.')).toBeInTheDocument();
+    expect(screen.getByText('Draft pinned and ready to use.')).toBeInTheDocument();
+  });
+
+  it('uses accessible pressed state for mode toggles', async () => {
+    const user = userEvent.setup();
+    mockHook();
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    const draftButton = screen.getByRole('button', { name: 'Draft' });
+    const rewriteButton = screen.getByRole('button', { name: 'Rewrite' });
+
+    expect(draftButton).toHaveAttribute('aria-pressed', 'true');
+    expect(rewriteButton).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(rewriteButton);
+
+    expect(draftButton).toHaveAttribute('aria-pressed', 'false');
+    expect(rewriteButton).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(draftButton);
+
+    expect(draftButton).toHaveAttribute('aria-pressed', 'true');
+    expect(rewriteButton).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('copies latest draft text and resets copy label after timeout', async () => {
+    vi.useFakeTimers();
+    try {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(globalThis.navigator, 'clipboard', {
+        value: { writeText },
+        configurable: true,
+      });
+
+      mockHook();
+
+      renderWithProviders(<BrandVoicePage />, {
+        auth: { user: mockUser(), isAuthenticated: true },
+      });
+
+      const copyButton = screen.getByRole('button', { name: 'Copy' });
+      await act(async () => {
+        copyButton.click();
+        await Promise.resolve();
+      });
+
+      expect(writeText).toHaveBeenCalledWith('Latest draft text');
+      expect(copyButton).toHaveTextContent('Copied');
+
+      act(() => {
+        vi.advanceTimersByTime(1200);
+      });
+
+      expect(copyButton).toHaveTextContent('Copy');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

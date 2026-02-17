@@ -53,11 +53,9 @@ export function BrandVoicePage(): JSX.Element {
     setMessage('');
   };
 
-  const handleRename = async (): Promise<void> => {
-    if (!activeThread) return;
-
-    const nextTitle = titleInputRef.current?.value.trim() ?? '';
-    if (!nextTitle || nextTitle === activeThread.title) return;
+  const handleRename = async (currentTitle: string): Promise<void> => {
+    const nextTitle = titleInputRef.current!.value.trim();
+    if (!nextTitle || nextTitle === currentTitle) return;
 
     await renameActiveThread(nextTitle);
   };
@@ -71,84 +69,118 @@ export function BrandVoicePage(): JSX.Element {
     setCopied(false);
   };
 
+  const latestDraft = activeThread?.latestDraft ?? '';
+
   const handleCopy = async (): Promise<void> => {
-    if (!activeThread?.latestDraft) return;
-    await navigator.clipboard.writeText(activeThread.latestDraft);
+    await navigator.clipboard.writeText(latestDraft);
     setCopied(true);
     setTimeout(() => { setCopied(false); }, 1200);
   };
 
+  const hasMessages = (activeThread?.messages.length ?? 0) > 0;
+
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-on-surface">Brand Voice Chat</h1>
-            <p className="text-sm text-on-surface-variant">
-              Iterate with the assistant until the draft is ready.
-            </p>
+      <div className="animate-fade-up space-y-5">
+        <header className="rounded-3xl border border-outline-variant/50 bg-surface-container p-5 shadow-[var(--shadow-elevation-1)]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
+                Brand Voice
+              </p>
+              <h1 className="font-display text-3xl font-semibold text-on-surface">Brand Voice Studio</h1>
+              <p className="max-w-2xl text-sm text-on-surface-variant">
+                Draft, refine, and pin final copy with one focused workspace.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleNewThread}
+              className="state-layer touch-target rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-1)] motion-standard hover:shadow-[var(--shadow-elevation-2)]"
+            >
+              New thread
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={handleNewThread}
-            className="rounded-full bg-pav-blue px-4 py-2 text-sm font-semibold text-on-primary"
-          >
-            New thread
-          </button>
-        </div>
+        </header>
 
         {error && (
-          <div className="mb-4 rounded-xl bg-error-container p-3 text-sm text-on-error-container">
-            {error}
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-error/25 bg-error-container px-4 py-3 text-sm text-on-error-container"
+          >
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={() => { void loadThreads(); }}
+              disabled={isLoading}
+              aria-label="Retry loading threads"
+              className="state-layer touch-target rounded-full border border-on-error-container/25 px-4 py-1.5 text-xs font-semibold text-on-error-container motion-standard disabled:opacity-50"
+            >
+              Retry loading threads
+            </button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr_1fr]">
-          <aside className="rounded-2xl bg-surface p-4 ring-1 ring-outline-variant/40">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Threads</h2>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1.2fr)_minmax(0,1fr)]">
+          <aside className="rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-on-surface-variant">Threads</h2>
+              <span className="rounded-full bg-surface-container-high px-2 py-1 text-xs text-on-surface-variant">
+                {threads.length}
+              </span>
+            </div>
             <div className="space-y-2">
               {threads.map((thread) => (
                 <button
                   key={thread.id}
                   type="button"
                   onClick={() => { void selectThread(thread.id); }}
-                  className={`block w-full rounded-xl px-3 py-2 text-left text-sm motion-standard ${
+                  className={`state-layer block w-full rounded-xl border px-3 py-2 text-left text-sm motion-standard ${
                     activeThread?.id === thread.id
-                      ? 'bg-secondary-container text-on-secondary-container'
-                      : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                      ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
+                      : 'border-outline-variant/60 bg-surface-container-lowest text-on-surface-variant hover:border-outline'
                   }`}
                 >
                   {thread.title}
                 </button>
               ))}
               {threads.length === 0 && (
-                <p className="text-sm text-outline">No threads yet.</p>
+                <p className="rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest px-3 py-4 text-sm text-outline">
+                  No threads yet. Start with your first prompt.
+                </p>
               )}
             </div>
           </aside>
 
-          <section className="flex min-h-[520px] flex-col rounded-2xl bg-surface p-4 ring-1 ring-outline-variant/40">
+          <section className="flex min-h-[560px] flex-col gap-4 rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-on-surface">Conversation</h2>
+              <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-on-surface-variant">
+                {mode}
+              </span>
+            </div>
+
             {activeThread && (
-              <div className="mb-3 flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <input
                   aria-label="Thread title"
                   key={activeThread.id}
                   ref={titleInputRef}
                   type="text"
                   defaultValue={activeThread.title}
-                  className="flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm"
+                  className="min-w-[220px] flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface shadow-[var(--shadow-elevation-1)]"
                 />
                 <button
                   type="button"
-                  onClick={() => { void handleRename(); }}
-                  className="rounded-full border border-outline px-4 py-2 text-sm text-on-surface-variant"
+                  onClick={() => { void handleRename(activeThread.title); }}
+                  className="state-layer touch-target rounded-full border border-outline bg-surface-container px-4 py-2 text-sm text-on-surface-variant motion-standard hover:border-outline/80"
                 >
                   Save title
                 </button>
               </div>
             )}
 
-            <div className="mb-4 flex-1 overflow-auto rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
+            <div className="flex-1 overflow-auto rounded-2xl border border-outline-variant/80 bg-surface-container-lowest p-3">
               {!activeThread && (
                 <p className="text-sm text-outline">Start a new conversation to generate your first draft.</p>
               )}
@@ -157,15 +189,15 @@ export function BrandVoicePage(): JSX.Element {
                 <p className="text-sm text-outline">No messages yet.</p>
               )}
 
-              {(activeThread?.messages.length ?? 0) > 0 && (
+              {hasMessages && (
                 <div className="space-y-2">
                   {activeThread?.messages.map((item) => (
                     <div
                       key={item.id}
-                      className={`rounded-xl px-3 py-2 text-sm ${
+                      className={`max-w-[92%] rounded-2xl px-3 py-2 text-sm ${
                         item.role === 'assistant'
                           ? 'bg-primary-container text-on-primary-container'
-                          : 'bg-surface-container-high text-on-surface'
+                          : 'ml-auto bg-surface-container-high text-on-surface'
                       }`}
                     >
                       {item.content}
@@ -175,47 +207,58 @@ export function BrandVoicePage(): JSX.Element {
               )}
             </div>
 
-            <form onSubmit={handleSend} className="space-y-3">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setMode('rewrite'); }}
-                  className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                    mode === 'rewrite'
-                      ? 'bg-secondary-container text-on-secondary-container'
-                      : 'bg-surface-container-low text-on-surface-variant'
-                  }`}
-                >
-                  Rewrite
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setMode('draft'); }}
-                  className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                    mode === 'draft'
-                      ? 'bg-secondary-container text-on-secondary-container'
-                      : 'bg-surface-container-low text-on-surface-variant'
-                  }`}
-                >
-                  Draft
-                </button>
-              </div>
+            <form onSubmit={handleSend} className="space-y-3 rounded-2xl border border-outline-variant/70 bg-surface p-3 shadow-[var(--shadow-elevation-1)]">
+              <h3 className="text-sm font-semibold text-on-surface">Compose request</h3>
 
-              <div className="flex flex-wrap gap-2">
-                {OUTPUT_STYLES.map((option) => (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-on-surface-variant">Mode</p>
+                <div className="flex gap-2">
                   <button
-                    key={option.value}
                     type="button"
-                    onClick={() => { setStyle(option.value); }}
-                    className={`rounded-full border px-3 py-1.5 text-xs ${
-                      style === option.value
-                        ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
-                        : 'border-outline-variant text-on-surface-variant'
+                    aria-pressed={mode === 'rewrite'}
+                    onClick={() => { setMode('rewrite'); }}
+                    className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
+                      mode === 'rewrite'
+                        ? 'bg-secondary-container text-on-secondary-container'
+                        : 'bg-surface-container-low text-on-surface-variant'
                     }`}
                   >
-                    {option.label}
+                    Rewrite
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    aria-pressed={mode === 'draft'}
+                    onClick={() => { setMode('draft'); }}
+                    className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
+                      mode === 'draft'
+                        ? 'bg-secondary-container text-on-secondary-container'
+                        : 'bg-surface-container-low text-on-surface-variant'
+                    }`}
+                  >
+                    Draft
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-on-surface-variant">Output style</p>
+                <div className="flex flex-wrap gap-2">
+                  {OUTPUT_STYLES.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={style === option.value}
+                      onClick={() => { setStyle(option.value); }}
+                      className={`state-layer touch-target rounded-full border px-3 py-1.5 text-xs motion-standard ${
+                        style === option.value
+                          ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
+                          : 'border-outline-variant text-on-surface-variant hover:border-outline'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {style === 'other' && (
@@ -225,7 +268,7 @@ export function BrandVoicePage(): JSX.Element {
                   value={customStyleDescription}
                   onChange={(event) => { setCustomStyleDescription(event.target.value); }}
                   placeholder="Describe custom format"
-                  className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface"
                 />
               )}
 
@@ -235,14 +278,14 @@ export function BrandVoicePage(): JSX.Element {
                 onChange={(event) => { setMessage(event.target.value); }}
                 rows={4}
                 placeholder={activeThread ? 'Share feedback for the next revision...' : 'Describe what you want drafted...'}
-                className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-sm"
+                className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface"
               />
 
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={isLoading || !message.trim()}
-                  className="rounded-full bg-pav-blue px-5 py-2 text-sm font-semibold text-on-primary disabled:opacity-40"
+                  className="state-layer touch-target rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-1)] motion-standard disabled:opacity-40"
                 >
                   Send
                 </button>
@@ -250,34 +293,36 @@ export function BrandVoicePage(): JSX.Element {
             </form>
           </section>
 
-          <section className="flex min-h-[520px] flex-col rounded-2xl bg-surface p-4 ring-1 ring-outline-variant/40">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-on-surface">Latest Draft</h2>
+          <section className="flex min-h-[560px] flex-col rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-on-surface">Latest Draft</h2>
               <button
                 type="button"
                 onClick={() => { void handleCopy(); }}
-                disabled={!activeThread?.latestDraft}
-                className="rounded-full border border-outline px-3 py-1 text-xs text-on-surface-variant disabled:opacity-40"
+                disabled={!latestDraft}
+                className="state-layer touch-target rounded-full border border-outline px-3 py-1 text-xs font-semibold text-on-surface-variant motion-standard disabled:opacity-40"
               >
                 {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
 
-            <div className="mb-3 flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-sm whitespace-pre-wrap text-on-surface">
-              {activeThread?.latestDraft ?? 'The latest draft will appear here.'}
+            <div className="mb-3 flex-1 whitespace-pre-wrap rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface">
+              {latestDraft || 'The latest draft will appear here.'}
             </div>
 
             <button
               type="button"
               onClick={() => { void pinActiveDraft(); }}
-              disabled={!activeThread?.latestDraft || isLoading}
-              className="rounded-full bg-secondary-container px-4 py-2 text-sm font-semibold text-on-secondary-container disabled:opacity-40"
+              disabled={!latestDraft || isLoading}
+              className="state-layer touch-target rounded-full bg-secondary-container px-4 py-2 text-sm font-semibold text-on-secondary-container motion-standard disabled:opacity-40"
             >
               Use this draft
             </button>
 
             {activeThread?.pinnedDraft && (
-              <p className="mt-2 text-xs text-success">Draft pinned and ready to use.</p>
+              <p className="mt-2 rounded-lg bg-success-container px-2 py-1 text-xs text-on-success-container">
+                Draft pinned and ready to use.
+              </p>
             )}
           </section>
         </div>

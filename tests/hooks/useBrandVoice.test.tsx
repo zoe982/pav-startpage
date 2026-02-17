@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useBrandVoice } from '../../src/hooks/useBrandVoice.ts';
+import { ApiError } from '../../src/api/client.ts';
 import type { BrandVoiceThread } from '../../src/types/brandVoice.ts';
 
 vi.mock('../../src/api/brandVoice.ts', () => ({
@@ -91,6 +92,20 @@ describe('useBrandVoice', () => {
     expect(result.current.activeThread?.latestDraft).toBe('Body v1');
   });
 
+  it('stores load-thread errors when selectThread fails', async () => {
+    vi.mocked(getThread).mockRejectedValue(new ApiError(500, 'HTTP 500'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.selectThread('thread-1');
+    });
+
+    expect(result.current.error).toBe(
+      'Failed to load thread. The service returned an unexpected error (HTTP 500). Please try again.',
+    );
+  });
+
   it('startThread creates and sets active thread while adding summary to list', async () => {
     vi.mocked(startThread).mockResolvedValue({
       thread: buildThread({ id: 'thread-3', title: 'New Thread (Zoey)' }),
@@ -113,6 +128,23 @@ describe('useBrandVoice', () => {
 
     expect(result.current.activeThread?.id).toBe('thread-3');
     expect(result.current.threads[0]).toEqual({ id: 'thread-3', title: 'New Thread (Zoey)' });
+  });
+
+  it('startThread includes custom style description when provided', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Create a new draft', 'other', 'draft', 'Use this exact style');
+    });
+
+    expect(vi.mocked(startThread)).toHaveBeenCalledWith({
+      text: 'Create a new draft',
+      style: 'other',
+      mode: 'draft',
+      customStyleDescription: 'Use this exact style',
+    });
   });
 
   it('sendMessage replies on current thread and updates active draft', async () => {
@@ -192,6 +224,29 @@ describe('useBrandVoice', () => {
     expect(Object.hasOwn(payload, 'customStyleDescription')).toBe(false);
   });
 
+  it('sendMessage includes custom style description when provided', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(replyInThread).mockResolvedValue({ thread: buildThread({ latestDraft: 'Body v4' }) });
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Create a new draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('Update format', 'other', 'rewrite', 'Use newsletter formatting');
+    });
+
+    expect(vi.mocked(replyInThread)).toHaveBeenCalledWith({
+      threadId: 'thread-1',
+      message: 'Update format',
+      style: 'other',
+      mode: 'rewrite',
+      customStyleDescription: 'Use newsletter formatting',
+    });
+  });
+
   it('renameActiveThread updates active thread and summary title', async () => {
     vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
     vi.mocked(renameThread).mockResolvedValue({
@@ -243,6 +298,26 @@ describe('useBrandVoice', () => {
     expect(result.current.activeThread).toBeNull();
   });
 
+  it('renameActiveThread is a no-op without an active thread', async () => {
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.renameActiveThread('Ignored rename');
+    });
+
+    expect(vi.mocked(renameThread)).not.toHaveBeenCalled();
+  });
+
+  it('pinActiveDraft is a no-op without an active thread', async () => {
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.pinActiveDraft();
+    });
+
+    expect(vi.mocked(pinThreadDraft)).not.toHaveBeenCalled();
+  });
+
   it('stores error when API call fails', async () => {
     vi.mocked(listThreads).mockRejectedValue(new Error('Network down'));
 
@@ -254,5 +329,158 @@ describe('useBrandVoice', () => {
 
     expect(result.current.error).toBe('Network down');
     expect(result.current.isLoading).toBe(false);
+  });
+
+  it('maps generic API errors to an actionable message', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new ApiError(502, 'Request failed (HTTP 502)'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe(
+      'Failed to load threads. The service returned an unexpected error (HTTP 502). Please try again.',
+    );
+  });
+
+  it('keeps specific API error messages', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new ApiError(404, 'Thread not found'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Thread not found');
+  });
+
+  it('maps network TypeError messages to connection guidance', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Failed to load threads. Check your connection and try again.');
+  });
+
+  it('keeps non-network TypeError messages', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new TypeError('Request aborted by user'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Request aborted by user');
+  });
+
+  it('falls back when unknown error text is returned', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new Error('Unknown error'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Failed to load threads');
+  });
+
+  it('falls back for empty TypeError messages', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new TypeError(''));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Failed to load threads');
+  });
+
+  it('falls back when a non-Error value is thrown', async () => {
+    vi.mocked(listThreads).mockRejectedValue('unexpected value');
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Failed to load threads');
+  });
+
+  it('stores start-thread specific failure message', async () => {
+    vi.mocked(startThread).mockRejectedValue(new ApiError(500, 'HTTP 500'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Need copy', 'email', 'draft');
+    });
+
+    expect(result.current.error).toBe(
+      'Failed to start thread. The service returned an unexpected error (HTTP 500). Please try again.',
+    );
+  });
+
+  it('stores send-message specific failure message', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(replyInThread).mockRejectedValue(new ApiError(502, 'Request failed (HTTP 502 Bad Gateway)'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Initial draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('Revise this');
+    });
+
+    expect(result.current.error).toBe(
+      'Failed to send message. The service returned an unexpected error (HTTP 502). Please try again.',
+    );
+  });
+
+  it('stores rename-specific failure message', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(renameThread).mockRejectedValue(new Error('Rename denied'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Initial draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.renameActiveThread('Renamed');
+    });
+
+    expect(result.current.error).toBe('Rename denied');
+  });
+
+  it('stores pin-specific failure message', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(pinThreadDraft).mockRejectedValue(new Error('Pin failed'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Initial draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.pinActiveDraft();
+    });
+
+    expect(result.current.error).toBe('Pin failed');
   });
 });
