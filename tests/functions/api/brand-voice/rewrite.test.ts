@@ -250,6 +250,22 @@ function noAccessUser() {
 describe('Brand Voice chat API', () => {
   const originalFetch = globalThis.fetch;
 
+  function aiEnv(db: D1Database) {
+    return {
+      DB: db,
+      AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
+      CF_AI_GATEWAY_TOKEN: 'test-token',
+    };
+  }
+
+  function requestBodyString(init: RequestInit | undefined): string {
+    const body = init?.body;
+    if (typeof body === 'string') return body;
+    if (body === undefined) return '';
+    const serialized = JSON.stringify(body);
+    return typeof serialized === 'string' ? serialized : '';
+  }
+
   beforeEach(() => {
     globalThis.fetch = vi.fn();
     vi.spyOn(crypto, 'randomUUID')
@@ -646,4 +662,543 @@ describe('Brand Voice chat API', () => {
     const response = await onRequestPost(ctx);
     expect(response.status).toBe(502);
   });
+
+  it('GET thread payload returns 404 when thread is missing', async () => {
+    const { db } = createStatefulDb();
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite?threadId=missing'),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(404);
+  });
+
+  it('POST returns 403 for users without brand-voice access', async () => {
+    const { db } = createStatefulDb();
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: 'Hello' }),
+      }),
+      env: { DB: db },
+      data: { user: noAccessUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(403);
+  });
+
+  it('POST start validates required text and text length', async () => {
+    const { db } = createStatefulDb();
+
+    const missingText = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: '' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const tooLong = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: 'a'.repeat(10001) }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingResponse = await onRequestPost(missingText);
+    const tooLongResponse = await onRequestPost(tooLong);
+    expect(missingResponse.status).toBe(400);
+    expect(tooLongResponse.status).toBe(400);
+  });
+
+  it('POST start validates custom style length', async () => {
+    const { db } = createStatefulDb();
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          text: 'Valid text',
+          customStyleDescription: 'x'.repeat(501),
+        }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(400);
+  });
+
+  it('POST start returns 502 when AI gateway fails', async () => {
+    const { db } = createStatefulDb();
+    vi.mocked(globalThis.fetch).mockResolvedValue(new Response('upstream failure', { status: 500 }));
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: 'Write this' }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(502);
+  });
+
+  it('POST start supports plain text AI output and title fallback values', async () => {
+    const { db } = createStatefulDb({ servicesMarkdown: '' });
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: 'Plain text draft from AI',
+            },
+          },
+        ],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          text: 'Write copy',
+          mode: 'invalid-mode',
+          style: 'invalid-style',
+          customStyleDescription: '   ',
+        }),
+      }),
+      env: aiEnv(db),
+      data: { user: { ...internalUser(), name: '   ' } },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+    const body = await response.json() as { thread: { title: string; latestDraft: string } };
+    expect(body.thread.title).toBe('Brand Voice Thread (User)');
+    expect(body.thread.latestDraft).toBe('Plain text draft from AI');
+  });
+
+  it('POST start parses fenced JSON output and defaults missing assistant/draft fields', async () => {
+    const { db } = createStatefulDb();
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: '```json\n{"threadTitle":"Ops Workstream"}\n```',
+            },
+          },
+        ],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: 'Draft copy' }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+    const body = await response.json() as { thread: { title: string; messages: { role: string; content: string }[] } };
+    expect(body.thread.title).toContain('Ops Workstream');
+    expect(body.thread.messages.find((m) => m.role === 'assistant')?.content)
+      .toBe('I updated the draft based on your latest request.');
+  });
+
+  it('POST start falls back when fenced JSON is invalid', async () => {
+    const { db } = createStatefulDb();
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: '```json\\n{not valid json}\\n```',
+            },
+          },
+        ],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: 'Draft copy' }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+  });
+
+  it('POST start falls back when fenced JSON parses to a non-object', async () => {
+    const { db } = createStatefulDb();
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: '```json\n123\n```',
+            },
+          },
+        ],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: 'Draft copy' }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+  });
+
+  it.each([
+    ['whatsapp', 'WhatsApp message'],
+    ['document', 'formal document'],
+    ['instagram', 'IMAGE TEXT'],
+    ['facebook', 'Facebook post'],
+    ['other', 'general-purpose text'],
+  ] as const)('POST start applies %s style instructions', async (style, expectedPromptSnippet) => {
+    const { db } = createStatefulDb();
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({ assistantMessage: 'ok', draft: 'draft', threadTitle: 'Title' }) } }],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          text: 'Draft this',
+          style,
+          customStyleDescription: style === 'other' ? null : undefined,
+        }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls.at(-1);
+    expect(fetchCall).toBeDefined();
+    if (!fetchCall) return;
+    const body = requestBodyString(fetchCall[1] as RequestInit | undefined);
+    expect(body).toContain(expectedPromptSnippet);
+  });
+
+  it('POST start uses custom style instruction for style=other when provided', async () => {
+    const { db } = createStatefulDb();
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({ assistantMessage: 'ok', draft: 'draft', threadTitle: 'Title' }) } }],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          text: 'Draft this',
+          style: 'other',
+          customStyleDescription: 'Bullet points only',
+        }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls.at(-1);
+    expect(fetchCall).toBeDefined();
+    if (!fetchCall) return;
+    const body = requestBodyString(fetchCall[1] as RequestInit | undefined);
+    expect(body).toContain('Bullet points only');
+  });
+
+  it('POST reply validates threadId/message and handles missing thread/rules', async () => {
+    const { db } = createStatefulDb({ rulesMarkdown: '' });
+
+    const missingThreadIdCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reply', threadId: 123, message: 'Hi' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingMessageCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reply', threadId: 'thread-1', message: '' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingThreadCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reply', threadId: 'missing', message: 'Hi' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingThreadIdResponse = await onRequestPost(missingThreadIdCtx);
+    const missingMessageResponse = await onRequestPost(missingMessageCtx);
+    const missingThreadResponse = await onRequestPost(missingThreadCtx);
+
+    expect(missingThreadIdResponse.status).toBe(400);
+    expect(missingMessageResponse.status).toBe(400);
+    expect(missingThreadResponse.status).toBe(404);
+  });
+
+  it('POST reply returns 422 when rules are missing for an existing thread', async () => {
+    const { db } = createStatefulDb({
+      rulesMarkdown: '',
+      threads: [
+        {
+          id: 'thread-1',
+          title: 'Thread',
+          mode: 'rewrite',
+          style: 'email',
+          custom_style_description: null,
+          latest_draft: 'Draft',
+          pinned_draft: null,
+          created_by: 'user-1',
+          created_by_name: 'Test User',
+          created_at: '2026-02-17T12:00:00.000Z',
+          updated_at: '2026-02-17T12:00:00.000Z',
+          last_message_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+    });
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reply', threadId: 'thread-1', message: 'Hi' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(422);
+  });
+
+  it('POST reply handles assistant history without draftText and empty AI choice content', async () => {
+    const { db } = createStatefulDb({
+      threads: [
+        {
+          id: 'thread-1',
+          title: 'Thread',
+          mode: 'draft',
+          style: 'other',
+          custom_style_description: null,
+          latest_draft: 'Draft',
+          pinned_draft: null,
+          created_by: 'user-1',
+          created_by_name: 'Test User',
+          created_at: '2026-02-17T12:00:00.000Z',
+          updated_at: '2026-02-17T12:00:00.000Z',
+          last_message_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+      messages: [
+        {
+          id: 'msg-assistant-1',
+          thread_id: 'thread-1',
+          role: 'assistant',
+          content: 'Assistant prior message',
+          draft_text: null,
+          created_by: null,
+          created_by_name: 'Brand Voice Colleague',
+          created_at: '2026-02-17T12:00:01.000Z',
+        },
+      ],
+    });
+
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({ choices: [{ message: {} }] }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reply', threadId: 'thread-1', message: 'Next pass' }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(200);
+  });
+
+  it('POST rename validates required fields and missing thread', async () => {
+    const { db } = createStatefulDb();
+
+    const missingThreadIdCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'rename', threadId: 123, title: 'Valid' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingTitleCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'rename', threadId: 'thread-1', title: '   ' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const nonStringTitleCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'rename', threadId: 'thread-1', title: 42 }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingThreadCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'rename', threadId: 'thread-1', title: 'New title' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingThreadIdResponse = await onRequestPost(missingThreadIdCtx);
+    const missingTitleResponse = await onRequestPost(missingTitleCtx);
+    const nonStringTitleResponse = await onRequestPost(nonStringTitleCtx);
+    const missingThreadResponse = await onRequestPost(missingThreadCtx);
+
+    expect(missingThreadIdResponse.status).toBe(400);
+    expect(missingTitleResponse.status).toBe(400);
+    expect(nonStringTitleResponse.status).toBe(400);
+    expect(missingThreadResponse.status).toBe(404);
+  });
+
+  it('POST pin validates required threadId and missing thread', async () => {
+    const { db } = createStatefulDb();
+
+    const missingThreadIdCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pin', threadId: 123 }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingThreadCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pin', threadId: 'missing' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingThreadIdResponse = await onRequestPost(missingThreadIdCtx);
+    const missingThreadResponse = await onRequestPost(missingThreadCtx);
+
+    expect(missingThreadIdResponse.status).toBe(400);
+    expect(missingThreadResponse.status).toBe(404);
+  });
+
+  it('POST start handles non-string action values as unsupported', async () => {
+    const { db } = createStatefulDb();
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 123 }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(400);
+  });
+
+  it('uses empty brand settings when settings row is absent', async () => {
+    const db = {
+      prepare: vi.fn((query: string) => {
+        const stmt = {
+          bind: vi.fn(() => stmt),
+          first: vi.fn(async () => (query.includes('FROM brand_settings') ? null : null)),
+          all: vi.fn(async () => ({ results: [] })),
+          run: vi.fn(async () => ({ success: true, results: [], meta: {} })),
+        };
+        return stmt;
+      }),
+    } as unknown as D1Database;
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', text: 'Write this' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(422);
+  });
+
 });

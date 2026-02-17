@@ -115,6 +115,21 @@ describe('POST /api/admin/guests', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Valid email is required' });
   });
 
+  it('returns 400 when email is not a string', async () => {
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/admin/guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 123, appKeys: ['wiki'] }),
+      }),
+      data: { user: { isAdmin: true, id: 'admin-1' } },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Valid email is required' });
+  });
+
   it('returns 400 when trying to add internal-domain users', async () => {
     const ctx = createMockContext({
       request: new Request('http://localhost:8788/api/admin/guests', {

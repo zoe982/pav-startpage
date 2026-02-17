@@ -69,7 +69,13 @@ describe('CopyButton', () => {
     render(<CopyButton text="hello world" disabled />);
     const button = screen.getByRole('button', { name: 'Copy' });
 
-    button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const reactPropsKey = Object.keys(button).find((key) => key.startsWith('__reactProps$'));
+    if (!reactPropsKey) {
+      throw new Error('Unable to access React props for click handler');
+    }
+
+    const reactProps = (button as unknown as Record<string, { onClick?: () => void }>)[reactPropsKey];
+    reactProps.onClick?.();
     expect(writeText).not.toHaveBeenCalled();
   });
 });

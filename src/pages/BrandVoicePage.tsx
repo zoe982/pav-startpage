@@ -1,5 +1,5 @@
 import type { JSX, SyntheticEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppShell } from '../components/layout/AppShell.tsx';
 import { useBrandVoice } from '../hooks/useBrandVoice.ts';
 import type { BrandMode, OutputStyle } from '../types/brandVoice.ts';
@@ -12,6 +12,12 @@ const OUTPUT_STYLES: { readonly value: OutputStyle; readonly label: string }[] =
   { value: 'facebook', label: 'Facebook' },
   { value: 'other', label: 'Other' },
 ];
+
+type RenameThreadForm = HTMLFormElement & {
+  readonly elements: HTMLFormControlsCollection & {
+    readonly threadTitle: HTMLInputElement;
+  };
+};
 
 export function BrandVoicePage(): JSX.Element {
   const {
@@ -33,7 +39,6 @@ export function BrandVoicePage(): JSX.Element {
   const [customStyleDescription, setCustomStyleDescription] = useState('');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
-  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void loadThreads();
@@ -53,11 +58,10 @@ export function BrandVoicePage(): JSX.Element {
     setMessage('');
   };
 
-  const handleRename = async (currentTitle: string): Promise<void> => {
-    const titleInput = titleInputRef.current;
-    if (!titleInput) return;
-
-    const nextTitle = titleInput.value.trim();
+  const handleRename = async (event: SyntheticEvent<HTMLFormElement>, currentTitle: string): Promise<void> => {
+    event.preventDefault();
+    const form = event.currentTarget as RenameThreadForm;
+    const nextTitle = form.elements.threadTitle.value.trim();
     if (!nextTitle || nextTitle === currentTitle) return;
 
     await renameActiveThread(nextTitle);
@@ -164,23 +168,25 @@ export function BrandVoicePage(): JSX.Element {
             </div>
 
             {activeThread && (
-              <div className="flex flex-wrap gap-2">
+              <form
+                className="flex flex-wrap gap-2"
+                onSubmit={(event) => { void handleRename(event, activeThread.title); }}
+              >
                 <input
                   aria-label="Thread title"
                   key={activeThread.id}
-                  ref={titleInputRef}
+                  name="threadTitle"
                   type="text"
                   defaultValue={activeThread.title}
                   className="min-w-[220px] flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface shadow-[var(--shadow-elevation-1)]"
                 />
                 <button
-                  type="button"
-                  onClick={() => { void handleRename(activeThread.title); }}
+                  type="submit"
                   className="state-layer touch-target rounded-full border border-outline bg-surface-container px-4 py-2 text-sm text-on-surface-variant motion-standard hover:border-outline/80"
                 >
                   Save title
                 </button>
-              </div>
+              </form>
             )}
 
             <div className="flex-1 overflow-auto rounded-2xl border border-outline-variant/80 bg-surface-container-lowest p-3">

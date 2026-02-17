@@ -19,6 +19,7 @@ function TestConsumer() {
       <span data-testid="loading">{String(ctx.isLoading)}</span>
       <span data-testid="authenticated">{String(ctx.isAuthenticated)}</span>
       <span data-testid="user">{ctx.user?.name ?? 'none'}</span>
+      <span data-testid="auth-error">{ctx.authError ?? 'none'}</span>
       <button onClick={ctx.logout}>logout</button>
       <button onClick={ctx.refreshUser}>refresh</button>
     </div>
@@ -116,5 +117,33 @@ describe('AuthProvider', () => {
       expect(screen.getByTestId('user')).toHaveTextContent('none');
     });
     expect(apiLogout).toHaveBeenCalled();
+  });
+
+  it('sets authError for non-401 ApiError responses', async () => {
+    vi.mocked(fetchCurrentUser).mockRejectedValue(new ApiError(500, 'Server exploded'));
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-error')).toHaveTextContent('Auth check failed: Server exploded (HTTP 500)');
+    });
+  });
+
+  it('sets generic network authError for non-Error throwables', async () => {
+    vi.mocked(fetchCurrentUser).mockRejectedValue('boom');
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-error')).toHaveTextContent('Auth check failed: Network error');
+    });
   });
 });

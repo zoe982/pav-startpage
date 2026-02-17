@@ -105,4 +105,26 @@ describe('VersionHistoryModal', () => {
     await user.click(closeButton);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('handles malformed non-empty version payload without selecting an item', async () => {
+    const malformed = {
+      0: undefined,
+      length: 1,
+      map: () => [],
+    } as unknown as Awaited<ReturnType<typeof fetchTemplateVersions>>;
+    vi.mocked(fetchTemplateVersions).mockResolvedValue(malformed);
+
+    render(
+      <VersionHistoryModal
+        templateId="template-1"
+        onClose={vi.fn()}
+        onRestore={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector('.animate-spin')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: 'Restore this version' })).not.toBeInTheDocument();
+  });
 });

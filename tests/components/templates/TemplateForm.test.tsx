@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TemplateForm } from '../../../src/components/templates/TemplateForm.tsx';
 import type { TemplateFormData } from '../../../src/types/template.ts';
@@ -79,5 +79,48 @@ describe('TemplateForm', () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('emits onChange updates for title, type, subject, and content', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(
+      <TemplateForm
+        formData={buildFormData()}
+        onChange={onChange}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        isSubmitting={false}
+        submitLabel="Save"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Welcome updated' } });
+    await user.click(screen.getByRole('button', { name: 'WhatsApp' }));
+    fireEvent.change(screen.getByLabelText('Subject Line'), { target: { value: 'Welcome {{client_name}}!' } });
+    fireEvent.change(screen.getByTestId('template-content'), {
+      target: { value: 'Hi {{client_name}}, {{dog_name}} is ready. more' },
+    });
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ title: 'Welcome updated' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'whatsapp' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ subject: 'Welcome {{client_name}}!' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ content: 'Hi {{client_name}}, {{dog_name}} is ready. more' }));
+  });
+
+  it('shows saving label and keeps submit disabled while submitting', () => {
+    render(
+      <TemplateForm
+        formData={buildFormData({ title: 'Valid title' })}
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        isSubmitting
+        submitLabel="Save"
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled();
   });
 });

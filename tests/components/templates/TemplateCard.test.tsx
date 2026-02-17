@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../helpers.tsx';
 import { TemplateCard } from '../../../src/components/templates/TemplateCard.tsx';
 import type { Template } from '../../../src/types/template.ts';
@@ -42,5 +43,55 @@ describe('TemplateCard', () => {
 
     expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Use template' })).not.toBeInTheDocument();
+  });
+
+  it('copies content-only text when subject is empty and shows whatsapp badge styling', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    renderWithProviders(
+      <TemplateCard
+        template={buildTemplate({
+          type: 'whatsapp',
+          subject: null,
+          content: 'WhatsApp body only',
+        })}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(writeText).toHaveBeenCalledWith('WhatsApp body only');
+    expect(screen.getByText('whatsapp').className).toContain('bg-success-container');
+  });
+
+  it('shows singular variable count when exactly one variable exists', () => {
+    renderWithProviders(
+      <TemplateCard
+        template={buildTemplate({
+          subject: 'Welcome',
+          content: 'Hi {{client_name}}',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('1 variable to fill before copy')).toBeInTheDocument();
+  });
+
+  it('truncates long content preview with ellipsis', () => {
+    const longContent = 'A'.repeat(130);
+    renderWithProviders(
+      <TemplateCard
+        template={buildTemplate({
+          subject: 'Welcome',
+          content: longContent,
+        })}
+      />,
+    );
+
+    expect(screen.getByText(`${'A'.repeat(120)}...`)).toBeInTheDocument();
   });
 });

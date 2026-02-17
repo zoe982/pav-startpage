@@ -51,11 +51,10 @@ export function ManageLinksPage(): JSX.Element {
     }
   };
 
-  const handleUpdate = async (data: LinkFormData): Promise<void> => {
-    if (!editingLink) return;
+  const handleUpdate = async (id: string, data: LinkFormData): Promise<void> => {
     setIsSubmitting(true);
     try {
-      await updateLink(editingLink.id, data);
+      await updateLink(id, data);
       addToast('Link updated', 'success');
       setEditingLink(null);
       await loadLinks();
@@ -112,7 +111,7 @@ export function ManageLinksPage(): JSX.Element {
               </h2>
               <LinkForm
                 {...(initialData ? { initialData } : {})}
-                onSubmit={editingLink ? handleUpdate : handleCreate}
+                onSubmit={editingLink ? async (data) => handleUpdate(editingLink.id, data) : handleCreate}
                 onCancel={() => {
                   setShowForm(false);
                   setEditingLink(null);

@@ -106,8 +106,7 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
   const fencedMatch = fencedPattern.exec(trimmed);
   if (!fencedMatch) return null;
 
-  const rawFencedJson = fencedMatch.at(1);
-  if (rawFencedJson === undefined) return null;
+  const rawFencedJson = String(fencedMatch.at(1));
 
   try {
     const parsed = JSON.parse(rawFencedJson) as unknown;
@@ -411,8 +410,8 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     try {
       text = validateText(body.text, 'text is required');
       customStyleDescription = validateCustomStyle(body.customStyleDescription);
-    } catch (error) {
-      return Response.json({ error: error instanceof Error ? error.message : 'Invalid request' }, { status: 400 });
+    } catch {
+      return Response.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     const mode = parseMode(body.mode, 'rewrite');
@@ -512,8 +511,8 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     try {
       latestUserMessage = validateText(body.message, 'message is required');
       customStyleDescription = validateCustomStyle(body.customStyleDescription);
-    } catch (error) {
-      return Response.json({ error: error instanceof Error ? error.message : 'Invalid request' }, { status: 400 });
+    } catch {
+      return Response.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     const thread = await fetchThreadById(env, threadId);

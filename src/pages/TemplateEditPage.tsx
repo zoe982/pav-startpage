@@ -58,6 +58,12 @@ export function TemplateEditPage(): JSX.Element {
     }) : null,
     [template, variableValues],
   );
+  const resolvedTemplateForView = resolvedTemplate as {
+    subject: string | null;
+    content: string;
+    unresolved: string[];
+    copyText: string;
+  };
 
   useEffect(() => {
     setVariableValues(new Map());
@@ -70,7 +76,7 @@ export function TemplateEditPage(): JSX.Element {
         const created = await createTemplate(formData);
         addToast('Template created', 'success');
         void navigate(`/templates/${created.id}`, { replace: true });
-      } else if (id) {
+      } else {
         await updateTemplate(id, formData);
         addToast('Template updated', 'success');
         setIsEditing(false);
@@ -84,18 +90,6 @@ export function TemplateEditPage(): JSX.Element {
     }
   };
 
-  const handleDelete = async (): Promise<void> => {
-    if (!id) return;
-    if (!window.confirm('Delete this template? This cannot be undone.')) return;
-    try {
-      await deleteTemplate(id);
-      addToast('Template deleted', 'success');
-      void navigate('/templates');
-    } catch {
-      addToast('Failed to delete template', 'error');
-    }
-  };
-
   const handleRestore = (version: TemplateVersion): void => {
     setFormData({
       title: version.title,
@@ -106,20 +100,6 @@ export function TemplateEditPage(): JSX.Element {
     setShowVersions(false);
     setIsEditing(true);
     addToast(`Restored version ${version.versionNumber} — save to apply`, 'success');
-  };
-
-  const handleCancel = (): void => {
-    if (isNew) {
-      void navigate('/templates');
-    } else if (template) {
-      setFormData({
-        title: template.title,
-        type: template.type,
-        subject: template.subject ?? '',
-        content: template.content,
-      });
-      setIsEditing(false);
-    }
   };
 
   if (!isNew && isLoading) {
@@ -148,6 +128,39 @@ export function TemplateEditPage(): JSX.Element {
       </AppShell>
     );
   }
+
+  const handleDelete = async (templateId: string): Promise<void> => {
+    if (!window.confirm('Delete this template? This cannot be undone.')) return;
+    try {
+      await deleteTemplate(templateId);
+      addToast('Template deleted', 'success');
+      void navigate('/templates');
+    } catch {
+      addToast('Failed to delete template', 'error');
+    }
+  };
+
+  const handleCancel = (): void => {
+    const currentTemplate = template ?? {
+      title: formData.title,
+      type: formData.type,
+      subject: formData.subject,
+      content: formData.content,
+    };
+
+    if (isNew) {
+      void navigate('/templates');
+      return;
+    }
+
+    setFormData({
+      title: currentTemplate.title,
+      type: currentTemplate.type,
+      subject: currentTemplate.subject ?? '',
+      content: currentTemplate.content,
+    });
+    setIsEditing(false);
+  };
 
   return (
     <AppShell>
@@ -203,8 +216,8 @@ export function TemplateEditPage(): JSX.Element {
               </div>
               <div className="flex shrink-0 gap-2">
                 <CopyButton
-                  text={resolvedTemplate?.copyText ?? template.content}
-                  disabled={variableNames.length > 0 && (resolvedTemplate?.unresolved.length ?? 0) > 0}
+                  text={resolvedTemplateForView.copyText}
+                  disabled={variableNames.length > 0 && resolvedTemplateForView.unresolved.length > 0}
                 />
                 <button
                   type="button"
@@ -222,7 +235,7 @@ export function TemplateEditPage(): JSX.Element {
                 </button>
                 <button
                   type="button"
-                  onClick={handleDelete}
+                  onClick={() => { void handleDelete(template.id); }}
                   className="state-layer touch-target rounded-md px-3 py-2 text-xs font-medium text-error motion-standard hover:bg-error-container"
                 >
                   Delete
@@ -267,14 +280,14 @@ export function TemplateEditPage(): JSX.Element {
 
             {/* Content */}
             <div className="mt-6 rounded-lg border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)]">
-              {resolvedTemplate?.subject && resolvedTemplate.subject.trim().length > 0 && (
+              {resolvedTemplateForView.subject && resolvedTemplateForView.subject.trim().length > 0 && (
                 <div className="mb-4 border-b border-pav-tan/20 pb-4">
                   <span className="text-xs font-medium text-outline">SUBJECT</span>
-                  <p className="mt-1 text-sm font-medium text-on-surface">{resolvedTemplate.subject}</p>
+                  <p className="mt-1 text-sm font-medium text-on-surface">{resolvedTemplateForView.subject}</p>
                 </div>
               )}
               <div className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
-                {resolvedTemplate?.content ?? template.content}
+                {resolvedTemplateForView.content}
               </div>
             </div>
           </>

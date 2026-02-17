@@ -194,6 +194,20 @@ describe('POST /api/templates', () => {
     expect(response.status).toBe(400);
   });
 
+  it('returns 400 when type is not a string', async () => {
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Test', type: 123, content: 'Hi' }),
+      }),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(400);
+  });
+
   it('creates template and first version', async () => {
     randomUuidSpy
       .mockReturnValueOnce('template-1' as ReturnType<typeof crypto.randomUUID>)

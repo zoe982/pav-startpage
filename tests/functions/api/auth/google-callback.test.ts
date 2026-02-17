@@ -63,6 +63,21 @@ describe('GET /api/auth/google-callback', () => {
     expect(response.headers.get('Location')).toContain('/login?error=invalid_state');
   });
 
+  it('redirects with invalid_state when nonce cookie is missing and clears cookies with Secure on https', async () => {
+    const ctx = createMockContext({
+      request: new Request('https://example.com/api/auth/google-callback?code=abc&state=test-state', {
+        headers: {
+          Cookie: '__oauth_state=test-state',
+        },
+      }),
+    });
+
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(302);
+    expect(response.headers.get('Location')).toContain('/login?error=invalid_state');
+    expect(response.headers.get('Set-Cookie')).toContain('Secure');
+  });
+
   it('redirects with error on token exchange failure (non-ok response)', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('error', { status: 400 }),
@@ -241,6 +256,34 @@ describe('GET /api/auth/google-callback', () => {
     expect(cookie).toContain('__session=');
     expect(cookie).toContain('HttpOnly');
     expect(cookie).not.toContain('Secure');
+  });
+
+  it('falls back to email when token name claim is missing', async () => {
+    const token = makeIdToken({ test: true });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id_token: token, access_token: 'abc' }), { status: 200 }),
+    );
+    vi.mocked(jwtVerify).mockResolvedValue({
+      payload: {
+        sub: '123',
+        email: 'user@petairvalet.com',
+        email_verified: true,
+        nonce: NONCE,
+      },
+    } as Awaited<ReturnType<typeof jwtVerify>>);
+
+    const db = createMockD1(new Map([
+      ['SELECT id FROM users WHERE email = ?', { id: 'existing-user-id' }],
+    ]));
+
+    const ctx = createMockContext({
+      request: createRequestWithState('http://localhost:8788/api/auth/google-callback?code=abc'),
+      env: { DB: db, ADMIN_EMAILS: '', ALLOWED_EMAILS: '' },
+    });
+    const response = await onRequestGet(ctx);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('Location')).toBe('/');
   });
 
   it('sets Secure flag for https requests', async () => {

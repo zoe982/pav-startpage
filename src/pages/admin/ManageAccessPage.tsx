@@ -9,6 +9,7 @@ import type { GuestGrant } from '../../api/guests.ts';
 import type { AdminUser } from '../../api/users.ts';
 
 type Tab = 'guests' | 'admins';
+type GuestGrantGroup = [GuestGrant, ...GuestGrant[]];
 
 const APP_OPTIONS = [
   { key: 'brand-voice', label: 'Brand Voice' },
@@ -100,12 +101,15 @@ export function ManageAccessPage(): JSX.Element {
   };
 
   // Group grants by email
-  const guestsByEmail = grants.reduce<Record<string, GuestGrant[]>>((acc, grant) => {
-    const list = acc[grant.email] ?? [];
-    list.push(grant);
-    acc[grant.email] = list;
+  const guestsByEmail = grants.reduce<Map<string, GuestGrantGroup>>((acc, grant) => {
+    const list = acc.get(grant.email);
+    if (list === undefined) {
+      acc.set(grant.email, [grant]);
+    } else {
+      list.push(grant);
+    }
     return acc;
-  }, {});
+  }, new Map());
 
   return (
     <AppShell>
@@ -195,15 +199,12 @@ export function ManageAccessPage(): JSX.Element {
               </div>
 
               {/* Guest list */}
-              {Object.keys(guestsByEmail).length === 0 ? (
+              {guestsByEmail.size === 0 ? (
                 <p className="text-sm text-on-surface-variant">No guest access grants yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {Object.entries(guestsByEmail).map(([email, emailGrants]) => {
-                    const firstGrant = emailGrants.at(0);
-                    const createdAt = firstGrant
-                      ? new Date(firstGrant.createdAt).toLocaleDateString()
-                      : 'Unknown';
+                  {[...guestsByEmail.entries()].map(([email, emailGrants]) => {
+                    const createdAt = new Date(emailGrants[0].createdAt).toLocaleDateString();
                     return (
                       <div
                         key={email}

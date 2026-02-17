@@ -33,11 +33,11 @@ const components: Components = {
   blockquote: ({ children, ...props }: ComponentPropsWithoutRef<'blockquote'>) => (
     <blockquote className="my-4 border-l-4 border-pav-gold pl-4 italic text-on-surface-variant" {...props}>{children}</blockquote>
   ),
-  code: ({ children, className, ...props }: ComponentPropsWithoutRef<'code'>) => {
-    const isBlock = className?.includes('language-');
+  code: ({ children, className = '', ...props }: ComponentPropsWithoutRef<'code'>) => {
+    const isBlock = className.includes('language-');
     if (isBlock) {
       return (
-        <code className={`${className ?? ''} block overflow-x-auto rounded-lg bg-pav-blue p-4 text-sm text-pav-cream`} {...props}>
+        <code className={`${className} block overflow-x-auto rounded-lg bg-pav-blue p-4 text-sm text-pav-cream`} {...props}>
           {children}
         </code>
       );

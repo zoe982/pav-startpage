@@ -183,6 +183,21 @@ describe('PUT /api/templates/:id', () => {
     expect(response.status).toBe(400);
   });
 
+  it('returns 400 when type is not a string', async () => {
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/templates/template-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Welcome', type: 123, content: 'Hi' }),
+      }),
+      params: { id: 'template-1' },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPut(ctx);
+    expect(response.status).toBe(400);
+  });
+
   it('returns 404 when template does not exist', async () => {
     const prepare = createPrepareMock((query: string) => {
       if (query === 'SELECT id FROM templates WHERE id = ?') {

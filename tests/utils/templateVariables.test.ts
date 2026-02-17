@@ -83,4 +83,23 @@ describe('templateVariables', () => {
       copyText: 'Subject: Hello Ava\n\nHi Ava and {{unknown_name}}.',
     });
   });
+
+  it('extracts variables when subject is null', () => {
+    expect(extractTemplateVariables(null, 'Hi {{client_name}}')).toEqual(['client_name']);
+  });
+
+  it('handles null subject and unresolved variables with record values', () => {
+    expect(
+      applyTemplateVariables({
+        subject: null,
+        content: 'Hello {{missing_name}}',
+        values: { client_name: 'Ava' },
+      }),
+    ).toEqual({
+      subject: null,
+      content: 'Hello {{missing_name}}',
+      unresolved: ['missing_name'],
+      copyText: 'Hello {{missing_name}}',
+    });
+  });
 });

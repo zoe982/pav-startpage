@@ -26,4 +26,22 @@ describe('LoginPage', () => {
     expect(screen.getByText(/Sign in with your PetAirValet/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /sign in with google/i })).toBeInTheDocument();
   });
+
+  it('shows mapped error message for known oauth error codes', () => {
+    renderWithProviders(<LoginPage />, {
+      auth: { isAuthenticated: false, isLoading: false },
+      route: '/login?error=no_code',
+    });
+
+    expect(screen.getByText('Google did not return an authorization code.')).toBeInTheDocument();
+  });
+
+  it('shows fallback error message for unknown oauth error codes', () => {
+    renderWithProviders(<LoginPage />, {
+      auth: { isAuthenticated: false, isLoading: false },
+      route: '/login?error=unexpected',
+    });
+
+    expect(screen.getByText('Login failed (unexpected)')).toBeInTheDocument();
+  });
 });

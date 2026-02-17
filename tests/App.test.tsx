@@ -21,6 +21,21 @@ vi.mock('../src/pages/admin/ManageWikiPage.tsx', () => ({
 vi.mock('../src/pages/admin/EditWikiPage.tsx', () => ({
   EditWikiPage: () => <div>EditWikiPage</div>,
 }));
+vi.mock('../src/pages/BrandVoicePage.tsx', () => ({
+  BrandVoicePage: () => <div>BrandVoicePage</div>,
+}));
+vi.mock('../src/pages/TemplatesPage.tsx', () => ({
+  TemplatesPage: () => <div>TemplatesPage</div>,
+}));
+vi.mock('../src/pages/TemplateEditPage.tsx', () => ({
+  TemplateEditPage: () => <div>TemplateEditPage</div>,
+}));
+vi.mock('../src/pages/admin/ManageBrandRulesPage.tsx', () => ({
+  ManageBrandRulesPage: () => <div>ManageBrandRulesPage</div>,
+}));
+vi.mock('../src/pages/admin/ManageAccessPage.tsx', () => ({
+  ManageAccessPage: () => <div>ManageAccessPage</div>,
+}));
 
 // Mock heavy components
 vi.mock('../src/hooks/useLinks.ts', () => ({
@@ -174,6 +189,78 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(screen.getByText('EditWikiPage')).toBeInTheDocument();
+    });
+  });
+
+  it('renders brand voice page at /brand-voice for internal users', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: '1', email: 'staff@petairvalet.com', name: 'Staff', pictureUrl: null, isAdmin: false, isInternal: true, appGrants: [],
+    });
+    window.history.pushState({}, '', '/brand-voice');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('BrandVoicePage')).toBeInTheDocument();
+    });
+  });
+
+  it('renders templates page at /templates', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: '1', email: 'staff@petairvalet.com', name: 'Staff', pictureUrl: null, isAdmin: false, isInternal: true, appGrants: [],
+    });
+    window.history.pushState({}, '', '/templates');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('TemplatesPage')).toBeInTheDocument();
+    });
+  });
+
+  it('renders template edit page at /templates/new', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: '1', email: 'staff@petairvalet.com', name: 'Staff', pictureUrl: null, isAdmin: false, isInternal: true, appGrants: [],
+    });
+
+    window.history.pushState({}, '', '/templates/new');
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText('TemplateEditPage')).toBeInTheDocument();
+    });
+  });
+
+  it('renders template edit page at /templates/:id', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: '1', email: 'staff@petairvalet.com', name: 'Staff', pictureUrl: null, isAdmin: false, isInternal: true, appGrants: [],
+    });
+    window.history.pushState({}, '', '/templates/template-1');
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText('TemplateEditPage')).toBeInTheDocument();
+    });
+  });
+
+  it('renders brand rules admin page', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: true, appGrants: [],
+    });
+
+    window.history.pushState({}, '', '/admin/brand-rules');
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText('ManageBrandRulesPage')).toBeInTheDocument();
+    });
+  });
+
+  it('renders access admin page', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: true, appGrants: [],
+    });
+    window.history.pushState({}, '', '/admin/access');
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText('ManageAccessPage')).toBeInTheDocument();
     });
   });
 });
