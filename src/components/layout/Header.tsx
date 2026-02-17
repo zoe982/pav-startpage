@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../../hooks/useAuth.ts';
+import { useAppAccess } from '../../hooks/useAppAccess.ts';
 
 function UserAvatar({ name, pictureUrl }: { readonly name: string; readonly pictureUrl?: string | null }): JSX.Element {
   const [failed, setFailed] = useState(false);
@@ -26,6 +27,7 @@ function UserAvatar({ name, pictureUrl }: { readonly name: string; readonly pict
 
 export function Header(): JSX.Element {
   const { user, isAuthenticated, logout } = useAuth();
+  const { hasAccess } = useAppAccess();
 
   return (
     <header className="border-b border-pav-tan/30 bg-pav-cream">
@@ -46,12 +48,14 @@ export function Header(): JSX.Element {
               >
                 Home
               </Link>
-              <Link
-                to="/wiki"
-                className="text-sm font-medium text-on-surface motion-standard hover:text-pav-blue"
-              >
-                Wiki
-              </Link>
+              {hasAccess('wiki') && (
+                <Link
+                  to="/wiki"
+                  className="text-sm font-medium text-on-surface motion-standard hover:text-pav-blue"
+                >
+                  Wiki
+                </Link>
+              )}
               {user?.isAdmin && (
                 <Link
                   to="/admin"

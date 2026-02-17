@@ -5,7 +5,7 @@ import { createMockContext } from '../../../cf-helpers.ts';
 describe('admin middleware', () => {
   it('allows admin users', async () => {
     const ctx = createMockContext({
-      data: { user: { id: '1', email: 'admin@test.com', name: 'Admin', pictureUrl: null, isAdmin: true } },
+      data: { user: { id: '1', email: 'admin@test.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: false, appGrants: [] } },
     });
     await onRequest(ctx);
     expect(ctx.next).toHaveBeenCalled();
@@ -13,7 +13,7 @@ describe('admin middleware', () => {
 
   it('returns 403 for non-admin users', async () => {
     const ctx = createMockContext({
-      data: { user: { id: '1', email: 'user@test.com', name: 'User', pictureUrl: null, isAdmin: false } },
+      data: { user: { id: '1', email: 'user@test.com', name: 'User', pictureUrl: null, isAdmin: false, isInternal: false, appGrants: [] } },
     });
     const response = await onRequest(ctx);
     expect(response.status).toBe(403);

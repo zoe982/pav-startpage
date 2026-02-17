@@ -20,7 +20,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       }),
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -34,7 +34,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: 'a'.repeat(10001) }),
       }),
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -48,7 +48,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: 'Hello', style: 'other', customStyleDescription: 'a'.repeat(501) }),
       }),
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -78,7 +78,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
         CF_AI_GATEWAY_TOKEN: 'test-key',
       },
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -104,7 +104,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
         CF_AI_GATEWAY_TOKEN: 'test-key',
       },
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -134,7 +134,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
         CF_AI_GATEWAY_TOKEN: 'test-key',
       },
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -174,7 +174,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
         CF_AI_GATEWAY_TOKEN: 'test-key',
       },
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -208,7 +208,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
         CF_AI_GATEWAY_TOKEN: 'test-key',
       },
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -251,7 +251,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
         CF_AI_GATEWAY_TOKEN: 'test-key',
       },
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     const response = await onRequestPost(ctx);
@@ -292,7 +292,7 @@ describe('POST /api/brand-voice/rewrite', () => {
         AI_GATEWAY_ENDPOINT: 'https://gateway.example.com',
         CF_AI_GATEWAY_TOKEN: 'test-key',
       },
-      data: { user: { id: 'user-1' } },
+      data: { user: { id: 'user-1', isInternal: true, appGrants: [] } },
     });
 
     await onRequestPost(ctx);

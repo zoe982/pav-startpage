@@ -1,15 +1,22 @@
 import type { Env, AuthenticatedData } from '../../types.ts';
+import { assertAppAccess } from '../../types.ts';
 
-type OutputStyle = 'email' | 'whatsapp' | 'document' | 'other';
+type OutputStyle = 'email' | 'whatsapp' | 'document' | 'instagram' | 'facebook' | 'other';
 type Mode = 'rewrite' | 'draft';
 
-const VALID_STYLES: ReadonlySet<string> = new Set(['email', 'whatsapp', 'document', 'other']);
+const VALID_STYLES: ReadonlySet<string> = new Set(['email', 'whatsapp', 'document', 'instagram', 'facebook', 'other']);
 const VALID_MODES: ReadonlySet<string> = new Set(['rewrite', 'draft']);
 
 const STYLE_INSTRUCTIONS: Record<OutputStyle, string> = {
   email: 'Format the output for a professional email. Use appropriate greeting and sign-off structure. Keep paragraphs short and scannable.',
   whatsapp: 'Format the output for a WhatsApp message. Keep it concise and conversational. Use short paragraphs. No formal greetings or sign-offs.',
   document: 'Format the output for a formal document. Use complete sentences, proper paragraph structure, and a professional tone throughout.',
+  instagram: `Format the output as an Instagram post with two clearly labeled sections:
+
+**IMAGE TEXT:** Short, bold text for the image itself (1-2 lines max, punchy and attention-grabbing, suitable for overlay on a photo). Use sentence case.
+
+**CAPTION:** An engaging Instagram caption. Lead with a strong hook in the first line (only ~125 characters show before "More"). Keep the full caption under 2,200 characters. Use line breaks for readability. Add 3-5 relevant hashtags at the end. Keep the tone warm, approachable, and on-brand. Include a clear call to action.`,
+  facebook: 'Format the output as a Facebook post. Lead with a compelling hook in the first 1-2 lines (only ~125 characters show before "See More"). Keep the total post concise \u2014 ideally 40-80 words for maximum engagement. Use short paragraphs with line breaks for scannability. Include a clear call to action. Use 1-3 relevant hashtags at most \u2014 do not over-tag. Keep the tone warm, professional, and conversational.',
   other: 'Format the output as general-purpose text. Keep it clear and well-structured.',
 };
 
@@ -62,7 +69,10 @@ ${rules}${serviceBlock}`;
 }
 
 export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
-  const { request, env } = context;
+  const { request, env, data } = context;
+  const denied = assertAppAccess(data.user, 'brand-voice');
+  if (denied) return denied;
+
   const body: RewriteBody = await request.json();
 
   if (!body.text || typeof body.text !== 'string') {

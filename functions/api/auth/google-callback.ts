@@ -72,14 +72,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return Response.redirect(`${url.origin}/login?error=invalid_token`, 302);
   }
 
-  // Verify email: must be @petairvalet.com domain OR in the ALLOWED_EMAILS list
+  // Verify email: must be internal domain, in ALLOWED_EMAILS, or have guest grants
   const allowedEmails = env.ALLOWED_EMAILS.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
   const emailLower = payload.email.toLowerCase();
   const allowedDomains = ['petairvalet.com', 'marsico.org'];
   const isDomainAllowed = allowedDomains.some((d) => emailLower.endsWith(`@${d}`));
   const isExplicitlyAllowed = allowedEmails.includes(emailLower);
 
+  let hasGuestGrants = false;
   if (!isDomainAllowed && !isExplicitlyAllowed) {
+    const grantRow = await env.DB.prepare(
+      'SELECT 1 FROM guest_grants WHERE email = ? LIMIT 1',
+    ).bind(emailLower).first();
+    hasGuestGrants = grantRow !== null;
+  }
+
+  if (!isDomainAllowed && !isExplicitlyAllowed && !hasGuestGrants) {
     return Response.redirect(`${url.origin}/login?error=unauthorized_domain`, 302);
   }
 
@@ -87,11 +95,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return Response.redirect(`${url.origin}/login?error=unverified_email`, 302);
   }
 
-  // Check if user is admin
+  // Check if user is admin (env var always grants; panel-granted admin persists)
   const adminEmails = env.ADMIN_EMAILS.split(',').map((e) => e.trim().toLowerCase());
-  const isAdmin = adminEmails.includes(payload.email.toLowerCase()) ? 1 : 0;
+  const isAdminFromEnv = adminEmails.includes(emailLower) ? 1 : 0;
 
-  // Upsert user
+  // Upsert user — MAX preserves panel-granted admin when env var doesn't grant it
   const userId = crypto.randomUUID();
   await env.DB.prepare(
     `INSERT INTO users (id, email, name, picture_url, is_admin, updated_at)
@@ -99,10 +107,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
      ON CONFLICT(email) DO UPDATE SET
        name = excluded.name,
        picture_url = excluded.picture_url,
-       is_admin = excluded.is_admin,
+       is_admin = MAX(excluded.is_admin, users.is_admin),
        updated_at = datetime('now')`,
   )
-    .bind(userId, payload.email, payload.name, payload.picture ?? null, isAdmin)
+    .bind(userId, payload.email, payload.name, payload.picture ?? null, isAdminFromEnv)
     .run();
 
   // Get the actual user ID (may differ if user already existed)

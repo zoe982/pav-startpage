@@ -21,7 +21,7 @@ describe('fetchCurrentUser', () => {
   });
 
   it('calls apiFetch with /api/auth/me', async () => {
-    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false };
+    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false, isInternal: false, appGrants: [] };
     vi.mocked(apiFetch).mockResolvedValue(user);
 
     const result = await fetchCurrentUser();

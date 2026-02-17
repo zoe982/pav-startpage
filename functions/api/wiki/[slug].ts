@@ -1,4 +1,5 @@
-import type { Env } from '../../types.ts';
+import type { Env, AuthenticatedData } from '../../types.ts';
+import { assertAppAccess } from '../../types.ts';
 
 interface WikiPageRow {
   id: string;
@@ -10,8 +11,11 @@ interface WikiPageRow {
   sort_order: number;
 }
 
-export const onRequestGet: PagesFunction<Env, 'slug'> = async (context) => {
-  const { env, params } = context;
+export const onRequestGet: PagesFunction<Env, 'slug', AuthenticatedData> = async (context) => {
+  const { env, params, data } = context;
+  const denied = assertAppAccess(data.user, 'wiki');
+  if (denied) return denied;
+
   const slug = params.slug;
 
   const row = await env.DB.prepare(

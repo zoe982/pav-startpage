@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import { AuthGuard } from './components/auth/AuthGuard.tsx';
 import { AdminGuard } from './components/auth/AdminGuard.tsx';
+import { AppAccessGuard } from './components/auth/AppAccessGuard.tsx';
 import { ErrorBoundary } from './components/layout/ErrorBoundary.tsx';
 import { ToastContainer } from './components/layout/ToastContainer.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
@@ -53,6 +54,11 @@ const TemplateEditPage = lazy(async () =>
     default: m.TemplateEditPage,
   })),
 );
+const ManageAccessPage = lazy(async () =>
+  import('./pages/admin/ManageAccessPage.tsx').then((m) => ({
+    default: m.ManageAccessPage,
+  })),
+);
 
 function AdminFallback(): JSX.Element {
   return (
@@ -81,57 +87,57 @@ export default function App(): JSX.Element {
               <Route
                 path="/wiki"
                 element={
-                  <AuthGuard>
+                  <AppAccessGuard appKey="wiki">
                     <WikiListPage />
-                  </AuthGuard>
+                  </AppAccessGuard>
                 }
               />
               <Route
                 path="/wiki/:slug"
                 element={
-                  <AuthGuard>
+                  <AppAccessGuard appKey="wiki">
                     <WikiViewPage />
-                  </AuthGuard>
+                  </AppAccessGuard>
                 }
               />
               <Route
                 path="/brand-voice"
                 element={
-                  <AuthGuard>
+                  <AppAccessGuard appKey="brand-voice">
                     <Suspense fallback={<AdminFallback />}>
                       <BrandVoicePage />
                     </Suspense>
-                  </AuthGuard>
+                  </AppAccessGuard>
                 }
               />
               <Route
                 path="/templates"
                 element={
-                  <AuthGuard>
+                  <AppAccessGuard appKey="templates">
                     <Suspense fallback={<AdminFallback />}>
                       <TemplatesPage />
                     </Suspense>
-                  </AuthGuard>
+                  </AppAccessGuard>
                 }
               />
               <Route
                 path="/templates/new"
                 element={
-                  <AuthGuard>
+                  <AppAccessGuard appKey="templates">
                     <Suspense fallback={<AdminFallback />}>
                       <TemplateEditPage />
                     </Suspense>
-                  </AuthGuard>
+                  </AppAccessGuard>
                 }
               />
               <Route
                 path="/templates/:id"
                 element={
-                  <AuthGuard>
+                  <AppAccessGuard appKey="templates">
                     <Suspense fallback={<AdminFallback />}>
                       <TemplateEditPage />
                     </Suspense>
-                  </AuthGuard>
+                  </AppAccessGuard>
                 }
               />
               <Route
@@ -190,6 +196,16 @@ export default function App(): JSX.Element {
                   <AdminGuard>
                     <Suspense fallback={<AdminFallback />}>
                       <ManageBrandRulesPage />
+                    </Suspense>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/admin/access"
+                element={
+                  <AdminGuard>
+                    <Suspense fallback={<AdminFallback />}>
+                      <ManageAccessPage />
                     </Suspense>
                   </AdminGuard>
                 }

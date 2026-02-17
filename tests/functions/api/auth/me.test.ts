@@ -4,7 +4,7 @@ import { createMockContext } from '../../../cf-helpers.ts';
 
 describe('GET /api/auth/me', () => {
   it('returns the authenticated user', async () => {
-    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false };
+    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false, isInternal: false, appGrants: [] as string[] };
     const ctx = createMockContext({ data: { user } });
     const response = await onRequestGet(ctx);
     const data = await response.json();

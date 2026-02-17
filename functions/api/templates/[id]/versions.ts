@@ -1,4 +1,5 @@
-import type { Env } from '../../../types.ts';
+import type { Env, AuthenticatedData } from '../../../types.ts';
+import { assertAppAccess } from '../../../types.ts';
 
 interface VersionRow {
   id: string;
@@ -11,8 +12,11 @@ interface VersionRow {
   created_at: string;
 }
 
-export const onRequestGet: PagesFunction<Env, 'id'> = async (context) => {
-  const { env, params } = context;
+export const onRequestGet: PagesFunction<Env, 'id', AuthenticatedData> = async (context) => {
+  const { env, params, data } = context;
+  const denied = assertAppAccess(data.user, 'templates');
+  if (denied) return denied;
+
   const id = params.id;
 
   // Verify template exists

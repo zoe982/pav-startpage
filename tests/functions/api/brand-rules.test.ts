@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { onRequestGet } from '../../../functions/api/brand-rules.ts';
+
+const internalUser = { isInternal: true, appGrants: [] as string[] };
 import { createMockContext, createMockD1 } from '../../cf-helpers.ts';
 
 describe('GET /api/brand-rules', () => {
@@ -9,7 +11,7 @@ describe('GET /api/brand-rules', () => {
       { rules_markdown: '# Brand Guide', services_markdown: '# Services', updated_at: '2025-01-01 00:00:00' },
     ]]));
 
-    const ctx = createMockContext({ env: { DB: db } });
+    const ctx = createMockContext({ env: { DB: db }, data: { user: internalUser } });
     const response = await onRequestGet(ctx);
     const data = await response.json();
     expect(data.rulesMarkdown).toBe('# Brand Guide');
@@ -19,7 +21,7 @@ describe('GET /api/brand-rules', () => {
 
   it('returns empty strings when no row exists', async () => {
     const db = createMockD1();
-    const ctx = createMockContext({ env: { DB: db } });
+    const ctx = createMockContext({ env: { DB: db }, data: { user: internalUser } });
     const response = await onRequestGet(ctx);
     const data = await response.json();
     expect(data.rulesMarkdown).toBe('');

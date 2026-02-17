@@ -9,6 +9,8 @@ const OUTPUT_STYLES: { readonly value: OutputStyle; readonly label: string }[] =
   { value: 'email', label: 'Email' },
   { value: 'whatsapp', label: 'WhatsApp' },
   { value: 'document', label: 'Document' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
   { value: 'other', label: 'Other' },
 ];
 

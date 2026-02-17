@@ -96,6 +96,8 @@ describe('root middleware', () => {
       name: 'Test User',
       pictureUrl: 'https://pic.com/img.jpg',
       isAdmin: true,
+      isInternal: true,
+      appGrants: [],
     });
     expect(ctx.next).toHaveBeenCalled();
   });

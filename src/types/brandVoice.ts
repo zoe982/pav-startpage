@@ -4,7 +4,7 @@ export interface BrandRules {
   readonly updatedAt: string | null;
 }
 
-export type OutputStyle = 'email' | 'whatsapp' | 'document' | 'other';
+export type OutputStyle = 'email' | 'whatsapp' | 'document' | 'instagram' | 'facebook' | 'other';
 
 export type BrandMode = 'rewrite' | 'draft';
 

@@ -1,4 +1,5 @@
-import type { Env } from '../../types.ts';
+import type { Env, AuthenticatedData } from '../../types.ts';
+import { isInternalUser } from '../../types.ts';
 
 interface LinkRow {
   id: string;
@@ -10,8 +11,13 @@ interface LinkRow {
   is_visible: number;
 }
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const { env } = context;
+export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
+  const { env, data } = context;
+
+  // Non-internal users see no links
+  if (!isInternalUser(data.user.email)) {
+    return Response.json([]);
+  }
 
   const { results } = await env.DB.prepare(
     'SELECT id, title, url, description, icon_url, sort_order, is_visible FROM links WHERE is_visible = 1 ORDER BY sort_order ASC, title ASC',

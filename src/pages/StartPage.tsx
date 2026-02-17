@@ -4,6 +4,8 @@ import { Link } from 'react-router';
 import { AppShell } from '../components/layout/AppShell.tsx';
 import { LinkGrid } from '../components/links/LinkGrid.tsx';
 import { useLinks } from '../hooks/useLinks.ts';
+import { useAppAccess } from '../hooks/useAppAccess.ts';
+import type { AppKey } from '../types/auth.ts';
 import type { WikiPageSummary } from '../types/wiki.ts';
 import { fetchWikiPages } from '../api/wiki.ts';
 
@@ -12,6 +14,7 @@ interface InternalApp {
   readonly description: string;
   readonly to: string;
   readonly icon: string;
+  readonly key: AppKey;
 }
 
 const INTERNAL_APPS: InternalApp[] = [
@@ -19,27 +22,36 @@ const INTERNAL_APPS: InternalApp[] = [
     title: 'Brand Voice',
     description: 'Rewrite or draft text in brand voice',
     to: '/brand-voice',
+    key: 'brand-voice',
     icon: 'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z',
   },
   {
     title: 'Shared Templates',
     description: 'Email and WhatsApp message templates',
     to: '/templates',
+    key: 'templates',
     icon: 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
   },
 ];
 
 export function StartPage(): JSX.Element {
   const { links, isLoading: linksLoading } = useLinks();
+  const { isInternal, hasAccess } = useAppAccess();
   const [pinnedPages, setPinnedPages] = useState<WikiPageSummary[]>([]);
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const accessibleApps = useMemo(
+    () => INTERNAL_APPS.filter((app) => hasAccess(app.key)),
+    [hasAccess],
+  );
+
   useEffect(() => {
+    if (!hasAccess('wiki')) return;
     void fetchWikiPages().then((pages) => {
       setPinnedPages(pages.filter((p) => p.showOnStart));
     });
-  }, []);
+  }, [hasAccess]);
 
   // Cmd/Ctrl+K to focus search
   useEffect(() => {
@@ -69,14 +81,14 @@ export function StartPage(): JSX.Element {
   }, [links, search]);
 
   const filteredInternalApps = useMemo(() => {
-    if (!search.trim()) return INTERNAL_APPS;
+    if (!search.trim()) return accessibleApps;
     const q = search.toLowerCase();
-    return INTERNAL_APPS.filter(
+    return accessibleApps.filter(
       (app) =>
         app.title.toLowerCase().includes(q) ||
         app.description.toLowerCase().includes(q),
     );
-  }, [search]);
+  }, [search, accessibleApps]);
 
   const hasNoResults = search && filteredLinks.length === 0 && filteredInternalApps.length === 0;
 
@@ -158,8 +170,8 @@ export function StartPage(): JSX.Element {
             </div>
           )}
 
-          {/* Quick Links */}
-          {(!search || filteredLinks.length > 0) && (
+          {/* Quick Links — internal users only */}
+          {isInternal && (!search || filteredLinks.length > 0) && (
             <>
               <h2 className="text-xl font-bold text-pav-blue">
                 {search && filteredInternalApps.length > 0 ? 'Quick Links' : search ? `Results for "${search}"` : 'Quick Links'}

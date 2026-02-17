@@ -1,4 +1,5 @@
-import type { Env, SessionUser } from './types.ts';
+import type { Env, SessionUser, AppKey } from './types.ts';
+import { isInternalUser } from './types.ts';
 
 interface UserRow {
   id: string;
@@ -68,12 +69,23 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const internal = isInternalUser(result.email);
+  let appGrants: AppKey[] = [];
+  if (!internal) {
+    const { results: grantRows } = await env.DB.prepare(
+      'SELECT app_key FROM guest_grants WHERE email = ?',
+    ).bind(result.email.toLowerCase()).all<{ app_key: string }>();
+    appGrants = grantRows.map((r) => r.app_key) as AppKey[];
+  }
+
   const user: SessionUser = {
     id: result.id,
     email: result.email,
     name: result.name,
     pictureUrl: result.picture_url,
     isAdmin: result.is_admin === 1,
+    isInternal: internal,
+    appGrants,
   };
 
   // Attach user to context.data

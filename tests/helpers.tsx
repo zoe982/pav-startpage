@@ -17,6 +17,8 @@ export function mockUser(overrides: Partial<User> = {}): User {
     name: 'Test User',
     pictureUrl: null,
     isAdmin: false,
+    isInternal: true,
+    appGrants: [],
     ...overrides,
   };
 }

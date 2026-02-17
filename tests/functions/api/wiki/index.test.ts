@@ -12,7 +12,7 @@ describe('GET /api/wiki', () => {
       rows,
     ]]));
 
-    const ctx = createMockContext({ env: { DB: db } });
+    const ctx = createMockContext({ env: { DB: db }, data: { user: { isInternal: true, appGrants: [] } } });
     const response = await onRequestGet(ctx);
     const data = await response.json();
 

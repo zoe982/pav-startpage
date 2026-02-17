@@ -1,4 +1,5 @@
 import type { Env, AuthenticatedData } from '../../types.ts';
+import { assertAppAccess } from '../../types.ts';
 
 interface TemplateRow {
   id: string;
@@ -21,8 +22,10 @@ interface TemplateBody {
   content: string;
 }
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const { env, request } = context;
+export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
+  const { env, request, data } = context;
+  const denied = assertAppAccess(data.user, 'templates');
+  if (denied) return denied;
   const url = new URL(request.url);
   const typeFilter = url.searchParams.get('type');
 
@@ -67,6 +70,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
   const { request, env, data } = context;
+  const denied = assertAppAccess(data.user, 'templates');
+  if (denied) return denied;
+
   const body: TemplateBody = await request.json();
 
   if (!body.title?.trim()) {

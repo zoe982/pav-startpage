@@ -32,7 +32,7 @@ describe('AuthProvider', () => {
   });
 
   it('calls fetchCurrentUser on mount and sets user', async () => {
-    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false };
+    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false, isInternal: false, appGrants: [] };
     vi.mocked(fetchCurrentUser).mockResolvedValue(user);
 
     render(
@@ -66,7 +66,7 @@ describe('AuthProvider', () => {
 
   it('does not clear user on non-401 error', async () => {
     // First call succeeds, then we'll trigger a refresh that fails with non-401
-    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false };
+    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false, isInternal: false, appGrants: [] };
     vi.mocked(fetchCurrentUser).mockResolvedValueOnce(user);
 
     render(
@@ -94,7 +94,7 @@ describe('AuthProvider', () => {
   });
 
   it('calls apiLogout and clears user on logout', async () => {
-    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false };
+    const user = { id: '1', email: 'test@test.com', name: 'Test', pictureUrl: null, isAdmin: false, isInternal: false, appGrants: [] };
     vi.mocked(fetchCurrentUser).mockResolvedValue(user);
     vi.mocked(apiLogout).mockResolvedValue(undefined);
 

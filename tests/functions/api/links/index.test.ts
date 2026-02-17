@@ -13,7 +13,7 @@ describe('GET /api/links', () => {
       rows,
     ]]));
 
-    const ctx = createMockContext({ env: { DB: db } });
+    const ctx = createMockContext({ env: { DB: db }, data: { user: { email: 'test@petairvalet.com' } } });
     const response = await onRequestGet(ctx);
     const data = await response.json();
 
@@ -33,7 +33,7 @@ describe('GET /api/links', () => {
 
   it('returns empty array when no links', async () => {
     const db = createMockD1();
-    const ctx = createMockContext({ env: { DB: db } });
+    const ctx = createMockContext({ env: { DB: db }, data: { user: { email: 'test@petairvalet.com' } } });
     const response = await onRequestGet(ctx);
     const data = await response.json();
     expect(data).toEqual([]);

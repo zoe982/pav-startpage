@@ -79,7 +79,7 @@ describe('App', () => {
 
   it('renders start page at / when authenticated', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: '1', email: 'test@petairvalet.com', name: 'Test', pictureUrl: null, isAdmin: false,
+      id: '1', email: 'test@petairvalet.com', name: 'Test', pictureUrl: null, isAdmin: false, isInternal: true, appGrants: [],
     });
     window.history.pushState({}, '', '/');
 
@@ -114,7 +114,7 @@ describe('App', () => {
 
   it('renders admin dashboard at /admin for admin users', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true,
+      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: true, appGrants: [],
     });
     window.history.pushState({}, '', '/admin');
 
@@ -127,7 +127,7 @@ describe('App', () => {
 
   it('renders manage links page at /admin/links', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true,
+      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: true, appGrants: [],
     });
     window.history.pushState({}, '', '/admin/links');
 
@@ -140,7 +140,7 @@ describe('App', () => {
 
   it('renders manage wiki page at /admin/wiki', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true,
+      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: true, appGrants: [],
     });
     window.history.pushState({}, '', '/admin/wiki');
 
@@ -153,7 +153,7 @@ describe('App', () => {
 
   it('renders new wiki page at /admin/wiki/new', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true,
+      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: true, appGrants: [],
     });
     window.history.pushState({}, '', '/admin/wiki/new');
 
@@ -166,7 +166,7 @@ describe('App', () => {
 
   it('renders edit wiki page at /admin/wiki/:slug/edit', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true,
+      id: '1', email: 'admin@petairvalet.com', name: 'Admin', pictureUrl: null, isAdmin: true, isInternal: true, appGrants: [],
     });
     window.history.pushState({}, '', '/admin/wiki/test/edit');
 

@@ -44,6 +44,17 @@ export function AdminDashboard(): JSX.Element {
                 Define brand guidelines used by the AI text rewriter.
               </p>
             </Link>
+            <Link
+              to="/admin/access"
+              className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+            >
+              <h2 className="text-lg font-semibold text-pav-blue">
+                User Access
+              </h2>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                Manage guest access and admin privileges.
+              </p>
+            </Link>
           </div>
         </div>
       </div>

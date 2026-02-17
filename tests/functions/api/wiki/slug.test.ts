@@ -13,7 +13,7 @@ describe('GET /api/wiki/:slug', () => {
       row,
     ]]));
 
-    const ctx = createMockContext({ env: { DB: db }, params: { slug: 'test' } });
+    const ctx = createMockContext({ env: { DB: db }, params: { slug: 'test' }, data: { user: { isInternal: true, appGrants: [] } } });
     const response = await onRequestGet(ctx);
     const data = await response.json();
 
@@ -30,7 +30,7 @@ describe('GET /api/wiki/:slug', () => {
 
   it('returns 404 when page not found', async () => {
     const db = createMockD1();
-    const ctx = createMockContext({ env: { DB: db }, params: { slug: 'nonexistent' } });
+    const ctx = createMockContext({ env: { DB: db }, params: { slug: 'nonexistent' }, data: { user: { isInternal: true, appGrants: [] } } });
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(404);
     const body = await response.json();

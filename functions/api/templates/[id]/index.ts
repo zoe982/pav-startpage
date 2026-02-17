@@ -1,4 +1,5 @@
 import type { Env, AuthenticatedData } from '../../../types.ts';
+import { assertAppAccess } from '../../../types.ts';
 
 interface TemplateRow {
   id: string;
@@ -37,8 +38,11 @@ function toTemplate(row: TemplateRow) {
   };
 }
 
-export const onRequestGet: PagesFunction<Env, 'id'> = async (context) => {
-  const { env, params } = context;
+export const onRequestGet: PagesFunction<Env, 'id', AuthenticatedData> = async (context) => {
+  const { env, params, data } = context;
+  const denied = assertAppAccess(data.user, 'templates');
+  if (denied) return denied;
+
   const id = params.id;
 
   const row = await env.DB.prepare(
@@ -63,6 +67,9 @@ export const onRequestGet: PagesFunction<Env, 'id'> = async (context) => {
 
 export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (context) => {
   const { request, env, params, data } = context;
+  const denied = assertAppAccess(data.user, 'templates');
+  if (denied) return denied;
+
   const id = params.id;
   const body: TemplateBody = await request.json();
 
@@ -121,8 +128,11 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
   return Response.json(toTemplate(row!));
 };
 
-export const onRequestDelete: PagesFunction<Env, 'id'> = async (context) => {
-  const { env, params } = context;
+export const onRequestDelete: PagesFunction<Env, 'id', AuthenticatedData> = async (context) => {
+  const { env, params, data } = context;
+  const denied = assertAppAccess(data.user, 'templates');
+  if (denied) return denied;
+
   const id = params.id;
 
   const existing = await env.DB.prepare('SELECT id FROM templates WHERE id = ?')
