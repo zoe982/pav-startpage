@@ -296,6 +296,60 @@ describe('PUT /api/templates/:id', () => {
       subject: 'Hello',
     }));
   });
+
+  it('normalizes non-string optional fields on update', async () => {
+    randomUuidSpy.mockReturnValue('version-3' as ReturnType<typeof crypto.randomUUID>);
+    const batch = vi.fn(async () => []);
+    const prepare = createPrepareMock((query: string) => {
+      if (query === 'SELECT id FROM templates WHERE id = ?') {
+        return { first: { id: 'template-1' } };
+      }
+      if (query === 'SELECT MAX(version_number) AS max_ver FROM template_versions WHERE template_id = ?') {
+        return { first: { max_ver: 2 } };
+      }
+      if (query.includes('WHERE t.id = ?')) {
+        return {
+          first: {
+            id: 'template-1',
+            title: 'Updated',
+            type: 'email',
+            subject: null,
+            content: '',
+            created_by: 'user-1',
+            created_by_name: 'Test User',
+            updated_by: 'user-1',
+            updated_by_name: 'Test User',
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-02T00:00:00.000Z',
+          },
+        };
+      }
+      return {};
+    });
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/templates/template-1', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Updated',
+          type: 'email',
+          subject: 123,
+          content: 456,
+        }),
+      }),
+      env: { DB: { prepare, batch } },
+      params: { id: 'template-1' },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPut(ctx);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.subject).toBeNull();
+    expect(data.content).toBe('');
+  });
 });
 
 describe('DELETE /api/templates/:id', () => {

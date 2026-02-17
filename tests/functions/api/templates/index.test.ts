@@ -241,4 +241,44 @@ describe('POST /api/templates', () => {
       updatedBy: 'user-1',
     }));
   });
+
+  it('treats non-string optional fields as null/empty when creating', async () => {
+    randomUuidSpy
+      .mockReturnValueOnce('template-3' as ReturnType<typeof crypto.randomUUID>)
+      .mockReturnValueOnce('version-3' as ReturnType<typeof crypto.randomUUID>);
+
+    const batch = vi.fn(async () => []);
+    const prepare = vi.fn((_query: string) => ({
+      bind: vi.fn(() => ({
+        all: async () => ({ results: [] }),
+        first: async () => null,
+        run: async () => ({ success: true, meta: {}, results: [] }),
+      })),
+      all: vi.fn(async () => ({ results: [] })),
+      first: vi.fn(async () => null),
+      run: vi.fn(async () => ({ success: true, meta: {}, results: [] })),
+    }));
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'No Subject',
+          type: 'email',
+          subject: 123,
+          content: 456,
+        }),
+      }),
+      env: { DB: { prepare, batch } },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.subject).toBeNull();
+    expect(data.content).toBe('');
+  });
 });

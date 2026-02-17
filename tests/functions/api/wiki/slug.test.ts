@@ -3,6 +3,17 @@ import { onRequestGet } from '../../../../functions/api/wiki/[slug].ts';
 import { createMockContext, createMockD1 } from '../../../cf-helpers.ts';
 
 describe('GET /api/wiki/:slug', () => {
+  it('returns forbidden for users without wiki access', async () => {
+    const ctx = createMockContext({
+      env: { DB: createMockD1() },
+      params: { slug: 'test' },
+      data: { user: { isInternal: false, appGrants: [] } },
+    });
+
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(403);
+  });
+
   it('returns page when found', async () => {
     const row = {
       id: '1', slug: 'test', title: 'Test', content: '# Hello',

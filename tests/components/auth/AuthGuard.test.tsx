@@ -22,6 +22,16 @@ describe('AuthGuard', () => {
     // Navigate component will change the URL
   });
 
+  it('shows auth error message when not authenticated and auth error exists', () => {
+    renderWithProviders(
+      <AuthGuard><div>content</div></AuthGuard>,
+      { auth: { isAuthenticated: false, isLoading: false, authError: 'Session expired' } },
+    );
+
+    expect(screen.getByText('Session expired')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Go to login' })).toHaveAttribute('href', '/login');
+  });
+
   it('renders children when authenticated', () => {
     renderWithProviders(
       <AuthGuard><div>content</div></AuthGuard>,

@@ -21,6 +21,16 @@ describe('AdminGuard', () => {
     expect(screen.queryByText('admin content')).not.toBeInTheDocument();
   });
 
+  it('shows auth error message when not authenticated and auth error exists', () => {
+    renderWithProviders(
+      <AdminGuard><div>admin content</div></AdminGuard>,
+      { auth: { isAuthenticated: false, isLoading: false, authError: 'Session expired' } },
+    );
+
+    expect(screen.getByText('Session expired')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Go to login' })).toHaveAttribute('href', '/login');
+  });
+
   it('redirects to / for non-admin users', () => {
     renderWithProviders(
       <AdminGuard><div>admin content</div></AdminGuard>,

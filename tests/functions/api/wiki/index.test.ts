@@ -3,6 +3,16 @@ import { onRequestGet } from '../../../../functions/api/wiki/index.ts';
 import { createMockContext, createMockD1 } from '../../../cf-helpers.ts';
 
 describe('GET /api/wiki', () => {
+  it('returns forbidden for users without wiki access', async () => {
+    const ctx = createMockContext({
+      env: { DB: createMockD1() },
+      data: { user: { isInternal: false, appGrants: [] } },
+    });
+
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(403);
+  });
+
   it('returns published wiki pages', async () => {
     const rows = [
       { id: '1', slug: 'page-a', title: 'Page A', is_published: 1, show_on_start: 1, sort_order: 0 },

@@ -345,6 +345,18 @@ describe('useBrandVoice', () => {
     );
   });
 
+  it('treats malformed short HTTP status messages as specific errors', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new ApiError(500, 'HTTP 50'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('HTTP 50');
+  });
+
   it('maps generic API errors even when the server omits a closing parenthesis', async () => {
     vi.mocked(listThreads).mockRejectedValue(new ApiError(502, 'Request failed (HTTP 502 Bad Gateway'));
 
@@ -357,6 +369,42 @@ describe('useBrandVoice', () => {
     expect(result.current.error).toBe(
       'Failed to load threads. The service returned an unexpected error (HTTP 502). Please try again.',
     );
+  });
+
+  it('treats request-failed messages with invalid status digits as specific errors', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new ApiError(500, 'Request failed (HTTP A12)'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Request failed (HTTP A12)');
+  });
+
+  it('treats request-failed messages without a space after status as specific errors', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new ApiError(500, 'Request failed (HTTP 502Bad Gateway)'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Request failed (HTTP 502Bad Gateway)');
+  });
+
+  it('treats request-failed messages with missing status digits as specific errors', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new ApiError(500, 'Request failed (HTTP )'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe('Request failed (HTTP )');
   });
 
   it('keeps specific API error messages', async () => {

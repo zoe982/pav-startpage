@@ -59,6 +59,18 @@ describe('useTemplates', () => {
     expect(result.current.templates).toEqual([]);
   });
 
+  it('keeps thrown Error message when fetching templates fails', async () => {
+    vi.mocked(fetchTemplates).mockRejectedValue(new Error('Templates request failed'));
+
+    const { result } = renderHook(() => useTemplates());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBe('Templates request failed');
+  });
+
   it('refresh reloads templates', async () => {
     vi.mocked(fetchTemplates)
       .mockResolvedValueOnce([])
@@ -150,6 +162,18 @@ describe('useTemplate', () => {
     });
 
     expect(result.current.error).toBe('Template failed');
+    expect(result.current.template).toBeNull();
+  });
+
+  it('uses fallback message when fetching template throws non-Error', async () => {
+    vi.mocked(fetchTemplate).mockRejectedValue('boom');
+    const { result } = renderHook(() => useTemplate('template-1'));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBe('Failed to load template');
     expect(result.current.template).toBeNull();
   });
 });
