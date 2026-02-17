@@ -1,4 +1,4 @@
-import type { JSX, SyntheticEvent } from 'react';
+import { useRef, useCallback, type JSX, type KeyboardEvent } from 'react';
 
 interface ComposerBarProps {
   readonly message: string;
@@ -13,31 +13,56 @@ export function ComposerBar({
   onMessageChange,
   onSubmit,
 }: ComposerBarProps): JSX.Element {
-  const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  const handleSubmit = useCallback(async (): Promise<void> => {
+    if (isLoading || message.trim().length === 0) return;
     await onSubmit();
-  };
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  }, [isLoading, message, onSubmit]);
+
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      void handleSubmit();
+    }
+  }, [handleSubmit]);
 
   return (
-    <form onSubmit={(event) => { void handleSubmit(event); }} className="space-y-3 rounded-2xl border border-outline-variant/70 bg-surface p-3 shadow-[var(--shadow-elevation-1)]">
-      <input
-        type="text"
+    <div className="flex items-end gap-2 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest px-4 py-3 shadow-[var(--shadow-elevation-1)]">
+      <textarea
+        ref={textareaRef}
+        rows={1}
         aria-label="Revision message"
         value={message}
+        placeholder="Ask for a revision..."
         onChange={(event) => {
           onMessageChange(event.target.value);
+          autoResize();
         }}
-        className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface"
+        onKeyDown={handleKeyDown}
+        className="max-h-40 min-h-[1.5rem] flex-1 resize-none bg-transparent text-sm text-on-surface outline-none"
       />
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isLoading || message.trim().length === 0}
-          className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Send revision
-        </button>
-      </div>
-    </form>
+      <button
+        type="button"
+        aria-label="Send"
+        disabled={isLoading || message.trim().length === 0}
+        onClick={() => { void handleSubmit(); }}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary disabled:opacity-40"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 13V9.5L7 8L3 6.5V3L14 8L3 13Z" fill="currentColor" />
+        </svg>
+      </button>
+    </div>
   );
 }

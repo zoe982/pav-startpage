@@ -95,15 +95,15 @@ describe('BrandVoicePage', () => {
     });
 
     expect(loadThreads).toHaveBeenCalled();
-    expect(screen.getByText('First turn setup')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('What do you want to write?')).toBeInTheDocument();
 
-    const submitButton = screen.getByRole('button', { name: 'Generate aligned draft' });
+    const submitButton = screen.getByRole('button', { name: 'Generate draft' });
     expect(submitButton).toBeDisabled();
 
     await user.type(screen.getByLabelText('Goal'), 'Create a welcome message for new clients');
     expect(submitButton).toBeDisabled();
 
-    await user.click(screen.getByRole('checkbox', { name: 'No draft available' }));
+    await user.click(screen.getByRole('checkbox', { name: 'No draft' }));
 
     expect(submitButton).toBeEnabled();
     await user.click(submitButton);
@@ -129,13 +129,14 @@ describe('BrandVoicePage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    await user.click(screen.getByRole('button', { name: 'Rewrite mode' }));
-    await user.click(screen.getByRole('button', { name: 'Other style' }));
+    await user.click(screen.getByRole('button', { name: 'Rewrite' }));
+    await user.click(screen.getByRole('button', { name: 'Other' }));
     await user.type(screen.getByLabelText('Custom output style'), 'Newsletter-friendly style');
     await user.type(screen.getByLabelText('Goal'), 'Turn this into a short newsletter update');
+    await user.click(screen.getByText('Attach a rough draft'));
     await user.type(screen.getByLabelText('Rough draft'), 'Hello everyone, here is a quick update...');
 
-    await user.click(screen.getByRole('button', { name: 'Generate aligned draft' }));
+    await user.click(screen.getByRole('button', { name: 'Generate draft' }));
 
     expect(startThread).toHaveBeenCalledWith({
       goal: 'Turn this into a short newsletter update',
@@ -156,11 +157,11 @@ describe('BrandVoicePage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    expect(screen.queryByText('First turn setup')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('What do you want to write?')).not.toBeInTheDocument();
     expect(screen.getByText('Context: draft · email')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Revision message'), 'Make this more concise and warmer');
-    await user.click(screen.getByRole('button', { name: 'Send revision' }));
+    await user.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(sendMessage).toHaveBeenCalledWith('Make this more concise and warmer');
   });
@@ -212,7 +213,7 @@ describe('BrandVoicePage', () => {
 
     expect(canvas).toHaveValue('Draft version 2');
 
-    await user.click(screen.getByRole('button', { name: 'Undo edit' }));
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(canvas).toHaveValue('Latest draft text');
   });
 
@@ -236,10 +237,10 @@ describe('BrandVoicePage', () => {
       fireEvent.change(canvas, { target: { value: 'Draft version 2' } });
     });
 
-    await user.click(screen.getByRole('button', { name: 'Undo edit' }));
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(canvas).toHaveValue('Latest draft text');
 
-    await user.click(screen.getByRole('button', { name: 'Undo edit' }));
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(canvas).toHaveValue('Latest draft text');
   });
 
@@ -287,13 +288,13 @@ describe('BrandVoicePage', () => {
 
     expect(screen.getByLabelText('Canvas draft')).toHaveValue('Manual local edits');
 
-    const applyButton = screen.getByRole('button', { name: 'Apply assistant update' });
+    const applyButton = screen.getByRole('button', { name: 'Apply update' });
     expect(applyButton).toBeInTheDocument();
 
     await user.click(applyButton);
 
     expect(screen.getByLabelText('Canvas draft')).toHaveValue('Assistant draft v2');
-    expect(screen.queryByRole('button', { name: 'Apply assistant update' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apply update' })).not.toBeInTheDocument();
   });
 
   it('applies assistant draft updates immediately when there are no unsaved local edits', () => {
@@ -325,7 +326,7 @@ describe('BrandVoicePage', () => {
     view.rerender(<BrandVoicePage />);
 
     expect(screen.getByLabelText('Canvas draft')).toHaveValue('Assistant draft v2');
-    expect(screen.queryByRole('button', { name: 'Apply assistant update' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apply update' })).not.toBeInTheDocument();
   });
 
   it('opens draft version history and restores selected version', async () => {
@@ -337,7 +338,7 @@ describe('BrandVoicePage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    await user.click(screen.getByRole('button', { name: 'Version history' }));
+    await user.click(screen.getByRole('button', { name: 'History' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Draft version history' });
     expect(dialog).toBeInTheDocument();
@@ -359,7 +360,7 @@ describe('BrandVoicePage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    await user.click(screen.getByRole('button', { name: 'Version history' }));
+    await user.click(screen.getByRole('button', { name: 'History' }));
     const dialog = screen.getByRole('dialog', { name: 'Draft version history' });
     expect(dialog).toBeInTheDocument();
 
@@ -385,11 +386,10 @@ describe('BrandVoicePage', () => {
 
     const renameInput = screen.getByLabelText('Thread title');
     await user.clear(renameInput);
-    await user.type(renameInput, 'Final Welcome Thread');
-    await user.click(screen.getByRole('button', { name: 'Save title' }));
+    await user.type(renameInput, 'Final Welcome Thread{Enter}');
 
-    await user.click(screen.getByRole('button', { name: 'Copy draft' }));
-    await user.click(screen.getByRole('button', { name: 'Use this draft' }));
+    await user.click(screen.getByRole('button', { name: 'Copy' }));
+    await user.click(screen.getByRole('button', { name: 'Pin draft' }));
 
     expect(renameActiveThread).toHaveBeenCalledWith('Final Welcome Thread');
     expect(writeText).toHaveBeenCalledWith('Latest draft text');
@@ -419,7 +419,7 @@ describe('BrandVoicePage', () => {
     expect(screen.getByRole('tab', { name: 'Chat' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Canvas' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Open threads' }));
+    await user.click(screen.getByRole('button', { name: 'Threads' }));
     const threadDialog = screen.getByRole('dialog', { name: 'Thread list' });
     expect(threadDialog).toBeInTheDocument();
 
@@ -427,7 +427,7 @@ describe('BrandVoicePage', () => {
     expect(selectThread).toHaveBeenCalledWith('thread-1');
     expect(screen.queryByRole('dialog', { name: 'Thread list' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Open threads' }));
+    await user.click(screen.getByRole('button', { name: 'Threads' }));
     const reopenedDialog = screen.getByRole('dialog', { name: 'Thread list' });
     await user.click(within(reopenedDialog).getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog', { name: 'Thread list' })).not.toBeInTheDocument();
@@ -477,7 +477,7 @@ describe('BrandVoicePage', () => {
     expect(clearActiveThread).toHaveBeenCalledTimes(1);
 
     view.rerender(<BrandVoicePage />);
-    expect(screen.getByText('First turn setup')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('What do you want to write?')).toBeInTheDocument();
   });
 
   it('shows error alert and retries loading threads', async () => {
@@ -510,8 +510,8 @@ describe('BrandVoicePage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    expect(screen.queryByRole('button', { name: 'Open threads' })).not.toBeInTheDocument();
-    expect(screen.getByText('Threads')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Threads' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Threads/)).toBeInTheDocument();
 
     Object.defineProperty(globalThis, 'innerWidth', {
       value: originalInnerWidth,

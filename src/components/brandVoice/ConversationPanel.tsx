@@ -1,4 +1,4 @@
-import type { JSX, ReactNode, SyntheticEvent } from 'react';
+import { useCallback, type JSX, type KeyboardEvent, type ReactNode } from 'react';
 import type { BrandVoiceThread } from '../../types/brandVoice.ts';
 
 interface ConversationPanelProps {
@@ -16,82 +16,81 @@ export function ConversationPanel({
   onRenameThread,
   children,
 }: ConversationPanelProps): JSX.Element {
-  const handleRename = async (
-    event: SyntheticEvent<HTMLFormElement>,
-    currentTitle: string,
-  ): Promise<void> => {
-    event.preventDefault();
-
-    const titleControl = event.currentTarget.elements.namedItem('thread-title');
-    if (!(titleControl instanceof HTMLInputElement)) return;
-
-    const nextTitle = titleControl.value.trim();
+  const handleTitleCommit = useCallback((input: HTMLInputElement, currentTitle: string): void => {
+    const nextTitle = input.value.trim();
     if (!nextTitle || nextTitle === currentTitle) return;
-    await onRenameThread(nextTitle);
-  };
+    void onRenameThread(nextTitle);
+  }, [onRenameThread]);
+
+  const handleTitleKeyDown = useCallback((event: KeyboardEvent<HTMLInputElement>, currentTitle: string): void => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleTitleCommit(event.currentTarget, currentTitle);
+    }
+  }, [handleTitleCommit]);
 
   return (
-    <section className="flex min-h-[560px] flex-col gap-4 rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-on-surface">Conversation</h2>
-        {contextLabel && (
-          <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-on-surface-variant">
-            {contextLabel}
-          </span>
-        )}
-      </div>
-
+    <section className="flex flex-col bg-surface">
       {activeThread && (
-        <form
-          key={activeThread.id}
-          className="flex flex-wrap gap-2"
-          onSubmit={(event) => { void handleRename(event, activeThread.title); }}
-        >
+        <div className="flex items-center gap-3 px-6 py-3">
           <input
             aria-label="Thread title"
             type="text"
             name="thread-title"
             defaultValue={activeThread.title}
-            className="min-w-[220px] flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface"
-          />
-          <button
-            type="submit"
+            key={activeThread.id}
             disabled={isLoading}
-            className="rounded-full border border-outline px-4 py-2 text-sm text-on-surface disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Save title
-          </button>
-        </form>
+            onKeyDown={(event) => { handleTitleKeyDown(event, activeThread.title); }}
+            onBlur={(event) => { handleTitleCommit(event.currentTarget, activeThread.title); }}
+            className="min-w-0 flex-1 bg-transparent text-sm font-medium text-on-surface outline-none"
+          />
+          {contextLabel && (
+            <span className="shrink-0 text-xs text-on-surface-variant/70">
+              {contextLabel}
+            </span>
+          )}
+        </div>
       )}
 
-      <div className="flex-1 overflow-auto rounded-2xl border border-outline-variant/80 bg-surface-container-lowest p-3">
-        {!activeThread && (
-          <p className="text-sm text-outline">Start a new conversation to generate your first draft.</p>
-        )}
+      <div className="flex-1 overflow-auto px-6 py-4">
+        <div className="mx-auto max-w-2xl">
+          {!activeThread && (
+            <p className="py-16 text-center text-sm text-outline">What would you like to write?</p>
+          )}
 
-        {activeThread?.messages.length === 0 && (
-          <p className="text-sm text-outline">No messages yet.</p>
-        )}
+          {activeThread?.messages.length === 0 && (
+            <p className="py-16 text-center text-sm text-outline">What would you like to write?</p>
+          )}
 
-        {activeThread && activeThread.messages.length > 0 ? (
-          <div className="space-y-2">
-            {activeThread.messages.map((item) => (
-              <div
-                key={item.id}
-                className={`max-w-[92%] rounded-2xl px-3 py-2 text-sm ${
-                  item.role === 'assistant'
-                    ? 'bg-primary-container text-on-primary-container'
-                    : 'ml-auto bg-surface-container-high text-on-surface'
-                }`}
-              >
-                {item.content}
-              </div>
-            ))}
-          </div>
-        ) : null}
+          {activeThread && activeThread.messages.length > 0 ? (
+            <div className="space-y-1">
+              {activeThread.messages.map((item) => (
+                item.role === 'assistant' ? (
+                  <div
+                    key={item.id}
+                    className="py-4 text-sm leading-relaxed text-on-surface"
+                  >
+                    {item.content}
+                  </div>
+                ) : (
+                  <div
+                    key={item.id}
+                    className="ml-auto max-w-[85%] rounded-2xl bg-surface-container-high px-4 py-3 text-sm text-on-surface"
+                  >
+                    {item.content}
+                  </div>
+                )
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {children}
+      <div className="shrink-0 border-t border-outline-variant/30 px-6 pb-4 pt-3">
+        <div className="mx-auto max-w-2xl">
+          {children}
+        </div>
+      </div>
     </section>
   );
 }

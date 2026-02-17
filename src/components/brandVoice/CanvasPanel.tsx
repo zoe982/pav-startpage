@@ -16,6 +16,20 @@ interface CanvasPanelProps {
   readonly onPin: () => Promise<void>;
 }
 
+function saveStatusColor(status: CanvasPanelProps['saveStatus']): string {
+  switch (status) {
+    case 'Unsaved':
+      return 'text-error';
+    case 'Saving':
+      return 'text-on-surface-variant';
+    case 'Saved':
+      return 'text-primary';
+    case 'Idle':
+    default:
+      return 'text-on-surface-variant/50';
+  }
+}
+
 function saveStatusLabel(status: CanvasPanelProps['saveStatus']): string {
   switch (status) {
     case 'Unsaved':
@@ -46,41 +60,42 @@ export function CanvasPanel({
   onPin,
 }: CanvasPanelProps): JSX.Element {
   return (
-    <section className="flex min-h-[560px] flex-col rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-on-surface">Canvas</h2>
-        <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold text-on-surface-variant">
-          {saveStatusLabel(saveStatus)}
-        </span>
-      </div>
-
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button type="button" className="rounded-full px-3 py-2 text-sm text-primary" onClick={onOpenVersionHistory}>Version history</button>
-        <button
-          type="button"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="rounded-full border border-outline px-3 py-2 text-sm text-on-surface disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Undo edit
-        </button>
-        <button
-          type="button"
-          onClick={() => { void onCopy(); }}
-          disabled={canvasText.length === 0 || isCopying}
-          className="rounded-full border border-outline px-3 py-2 text-sm text-on-surface disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Copy draft
-        </button>
-        {pendingAssistantDraft && (
+    <section className="flex flex-col border-l border-outline-variant/30 bg-surface-container-lowest">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xs font-semibold text-on-surface-variant">Canvas</h2>
+          <span className={`text-xs ${saveStatusColor(saveStatus)}`}>
+            {saveStatusLabel(saveStatus)}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          <button type="button" className="rounded-lg px-2 py-1 text-xs text-primary hover:bg-surface-container-high/60" onClick={onOpenVersionHistory}>History</button>
           <button
             type="button"
-            onClick={onApplyAssistantUpdate}
-            className="rounded-full bg-primary px-3 py-2 text-sm font-medium text-on-primary"
+            onClick={onUndo}
+            disabled={!canUndo}
+            className="rounded-lg px-2 py-1 text-xs text-on-surface hover:bg-surface-container-high/60 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Apply assistant update
+            Undo
           </button>
-        )}
+          <button
+            type="button"
+            onClick={() => { void onCopy(); }}
+            disabled={canvasText.length === 0 || isCopying}
+            className="rounded-lg px-2 py-1 text-xs text-on-surface hover:bg-surface-container-high/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Copy
+          </button>
+          {pendingAssistantDraft && (
+            <button
+              type="button"
+              onClick={onApplyAssistantUpdate}
+              className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-on-primary"
+            >
+              Apply update
+            </button>
+          )}
+        </div>
       </div>
 
       <textarea
@@ -88,23 +103,24 @@ export function CanvasPanel({
         rows={18}
         value={canvasText}
         onChange={(event) => { onCanvasChange(event.target.value); }}
-        className="mb-3 w-full flex-1 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface"
+        className="flex-1 resize-none bg-transparent px-4 py-2 text-sm leading-relaxed text-on-surface outline-none"
       />
 
-      <button
-        type="button"
-        disabled={canvasText.length === 0 || isLoading}
-        onClick={() => { void onPin(); }}
-        className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-on-primary disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        Use this draft
-      </button>
-
-      {pinnedDraft && (
-        <p className="mt-2 rounded-lg bg-success-container px-2 py-1 text-xs text-on-success-container">
-          Draft pinned and ready to use.
-        </p>
-      )}
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
+        <button
+          type="button"
+          disabled={canvasText.length === 0 || isLoading}
+          onClick={() => { void onPin(); }}
+          className="rounded-lg bg-surface-container-high px-3 py-1.5 text-xs font-medium text-on-surface hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Pin draft
+        </button>
+        {pinnedDraft && (
+          <p className="text-xs text-primary">
+            Draft pinned and ready to use.
+          </p>
+        )}
+      </div>
     </section>
   );
 }

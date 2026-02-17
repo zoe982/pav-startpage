@@ -351,43 +351,33 @@ export function BrandVoicePage(): JSX.Element {
 
   return (
     <AppShell>
-      <div className="brand-voice-page animate-fade-up space-y-5">
-        <header className="rounded-3xl border border-outline-variant/50 bg-surface-container p-5 shadow-[var(--shadow-elevation-1)]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
-                Brand Voice
-              </p>
-              <h1 className="font-display text-3xl font-semibold text-on-surface">Brand Voice Studio</h1>
-              <p className="max-w-2xl text-sm text-on-surface-variant">
-                Chat, generate, and edit in one workspace with durable draft history.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {!isExpanded && (
-                <button
-                  type="button"
-                  onClick={() => { setIsThreadSheetOpen(true); }}
-                  className="state-layer touch-target rounded-full border border-outline px-4 py-2 text-sm text-on-surface-variant"
-                >
-                  Open threads
-                </button>
-              )}
+      <div className="brand-voice-page flex h-[calc(100vh-4rem)] flex-col">
+        <header className="flex items-center justify-between gap-4 px-4 py-2">
+          <h1 className="text-sm font-semibold text-on-surface-variant">Brand Voice</h1>
+          <div className="flex items-center gap-2">
+            {!isExpanded && (
               <button
                 type="button"
-                onClick={handleNewThread}
-                className="state-layer touch-target rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-1)]"
+                onClick={() => { setIsThreadSheetOpen(true); }}
+                className="state-layer touch-target rounded-lg px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container-high/60"
               >
-                New thread
+                Threads
               </button>
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={handleNewThread}
+              className="state-layer touch-target rounded-lg bg-surface-container-high px-4 py-1.5 text-sm font-semibold text-on-surface"
+            >
+              New thread
+            </button>
           </div>
         </header>
 
         {error && (
           <div
             role="alert"
-            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-error/25 bg-error-container px-4 py-3 text-sm text-on-error-container"
+            className="mx-4 mb-2 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-error-container/50 px-4 py-2 text-sm text-on-error-container"
           >
             <p>{error}</p>
             <button
@@ -395,7 +385,7 @@ export function BrandVoicePage(): JSX.Element {
               onClick={() => { void loadThreads(); }}
               disabled={isLoading}
               aria-label="Retry loading threads"
-              className="state-layer touch-target rounded-full border border-on-error-container/25 px-4 py-1.5 text-xs font-semibold text-on-error-container disabled:opacity-50"
+              className="state-layer touch-target rounded-lg px-3 py-1 text-xs font-semibold text-on-error-container disabled:opacity-50"
             >
               Retry loading threads
             </button>
@@ -404,8 +394,8 @@ export function BrandVoicePage(): JSX.Element {
 
         {isThreadSheetOpen && !isExpanded && (
           <div role="dialog" aria-label="Thread list" className="fixed inset-0 z-30 grid place-items-center bg-scrim/35 px-3">
-            <div className="w-full max-w-sm rounded-3xl border border-outline-variant bg-surface p-4 shadow-[var(--shadow-elevation-3)]">
-              <h3 className="mb-3 text-lg font-semibold text-on-surface">Thread list</h3>
+            <div className="w-full max-w-sm rounded-2xl border border-outline-variant/30 bg-surface p-4 shadow-[var(--shadow-elevation-3)]">
+              <h3 className="mb-3 text-sm font-semibold text-on-surface">Thread list</h3>
               <ThreadRail
                 threads={threads}
                 activeThreadId={activeThread?.id ?? null}
@@ -415,7 +405,7 @@ export function BrandVoicePage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => { setIsThreadSheetOpen(false); }}
-                  className="state-layer touch-target rounded-full border border-outline px-3 py-1 text-xs font-semibold text-on-surface-variant"
+                  className="state-layer touch-target rounded-lg px-3 py-1 text-xs font-semibold text-on-surface-variant"
                 >
                   Close
                 </button>
@@ -425,7 +415,7 @@ export function BrandVoicePage(): JSX.Element {
         )}
 
         {isExpanded && (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1.2fr)_minmax(0,1fr)]">
+          <div className="grid min-h-0 flex-1 grid-cols-[260px_minmax(0,1.2fr)_minmax(0,1fr)] gap-0">
             <ThreadRail
               threads={threads}
               activeThreadId={activeThread?.id ?? null}
@@ -437,21 +427,21 @@ export function BrandVoicePage(): JSX.Element {
         )}
 
         {!isExpanded && !isCompact && (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid min-h-0 flex-1 grid-cols-2 gap-0">
             {chatPane}
             {canvasPane}
           </div>
         )}
 
         {isCompact && (
-          <div className="space-y-3">
-            <div role="tablist" aria-label="Chat and canvas tabs" className="flex gap-2 rounded-full bg-surface-container-low p-1">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div role="tablist" aria-label="Chat and canvas tabs" className="flex gap-1 px-4 py-1">
               <button
                 role="tab"
                 type="button"
                 aria-selected={compactPanel === 'chat'}
                 onClick={() => { setCompactPanel('chat'); }}
-                className={`rounded-full px-4 py-2 text-sm ${compactPanel === 'chat' ? 'bg-primary text-on-primary' : 'text-on-surface'}`}
+                className={`rounded-lg px-3 py-1.5 text-sm ${compactPanel === 'chat' ? 'font-medium text-on-surface' : 'text-on-surface-variant'}`}
               >
                 Chat
               </button>
@@ -460,12 +450,14 @@ export function BrandVoicePage(): JSX.Element {
                 type="button"
                 aria-selected={compactPanel === 'canvas'}
                 onClick={() => { setCompactPanel('canvas'); }}
-                className={`rounded-full px-4 py-2 text-sm ${compactPanel === 'canvas' ? 'bg-primary text-on-primary' : 'text-on-surface'}`}
+                className={`rounded-lg px-3 py-1.5 text-sm ${compactPanel === 'canvas' ? 'font-medium text-on-surface' : 'text-on-surface-variant'}`}
               >
                 Canvas
               </button>
             </div>
-            {compactPanel === 'chat' ? chatPane : canvasPane}
+            <div className="min-h-0 flex-1">
+              {compactPanel === 'chat' ? chatPane : canvasPane}
+            </div>
           </div>
         )}
       </div>
