@@ -166,7 +166,7 @@ export function TemplateEditPage(): JSX.Element {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
                     template.type === 'email'
                       ? 'bg-primary-container text-on-primary-container'
                       : 'bg-success-container text-on-success-container'

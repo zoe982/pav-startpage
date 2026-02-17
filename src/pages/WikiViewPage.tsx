@@ -20,7 +20,7 @@ export function WikiViewPage(): JSX.Element {
           <div className="mb-4">
             <Link
               to="/wiki"
-              className="state-layer touch-target rounded-md px-2 py-2 text-sm text-pav-blue hover:text-pav-gold"
+              className="state-layer touch-target inline-flex items-center rounded-md px-2 py-2 text-sm text-pav-blue hover:text-pav-gold"
             >
               &larr; All pages
             </Link>

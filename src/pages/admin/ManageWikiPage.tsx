@@ -83,12 +83,12 @@ export function ManageWikiPage(): JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       {!page.isPublished && (
-                        <span className="rounded bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container">
+                        <span className="rounded bg-tertiary-container px-2 py-1 text-xs text-on-tertiary-container">
                           Draft
                         </span>
                       )}
                       {page.showOnStart && (
-                        <span className="rounded bg-success-container px-2 py-0.5 text-xs text-on-success-container">
+                        <span className="rounded bg-success-container px-2 py-1 text-xs text-on-success-container">
                           Pinned
                         </span>
                       )}

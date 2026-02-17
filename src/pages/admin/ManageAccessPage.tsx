@@ -115,7 +115,7 @@ export function ManageAccessPage(): JSX.Element {
           <h1 className="text-2xl font-bold text-pav-blue">User Access</h1>
 
           {/* Tab selector */}
-          <div className="mt-4 flex gap-0.5 rounded-full bg-surface-container-high p-1 ring-1 ring-outline-variant w-fit">
+          <div className="mt-4 flex gap-1 rounded-full bg-surface-container-high p-1 ring-1 ring-outline-variant w-fit">
             <button
               type="button"
               onClick={() => { setTab('guests'); }}

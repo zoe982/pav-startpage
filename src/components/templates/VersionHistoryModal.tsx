@@ -81,7 +81,7 @@ export function VersionHistoryModal({
                     <p className="text-sm font-medium text-pav-blue">
                       v{v.versionNumber}
                     </p>
-                    <p className="mt-0.5 text-xs text-on-surface-variant">
+                    <p className="mt-1 text-xs text-on-surface-variant">
                       {v.changedByName}
                     </p>
                     <p className="text-xs text-outline">
@@ -98,7 +98,7 @@ export function VersionHistoryModal({
                     <div className="flex-1 overflow-y-auto p-6">
                       <h3 className="font-semibold text-pav-blue">{selected.title}</h3>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                        <span className={`rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
                           selected.type === 'email'
                             ? 'bg-primary-container text-on-primary-container'
                             : 'bg-success-container text-on-success-container'

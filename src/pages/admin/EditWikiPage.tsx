@@ -170,7 +170,7 @@ export function EditWikiPage(): JSX.Element {
                       isPublished: e.target.checked,
                     }));
                   }}
-                  className="h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
+                  className="touch-target-icon h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
                 />
                 <label htmlFor="isPublished" className="text-sm text-pav-grey">
                   Published
@@ -187,7 +187,7 @@ export function EditWikiPage(): JSX.Element {
                       showOnStart: e.target.checked,
                     }));
                   }}
-                  className="h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
+                  className="touch-target-icon h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
                 />
                 <label htmlFor="showOnStart" className="text-sm text-pav-grey">
                   Pin to start page

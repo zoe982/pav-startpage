@@ -70,7 +70,7 @@ export function ManageBrandRulesPage(): JSX.Element {
           </p>
 
           {/* Tabs */}
-          <div className="mt-6 flex gap-1 rounded-lg bg-pav-cream p-0.5 w-fit">
+          <div className="mt-6 flex gap-1 rounded-lg bg-pav-cream p-1 w-fit">
             <button
               type="button"
               onClick={() => { setActiveTab('voice'); }}
@@ -101,7 +101,7 @@ export function ManageBrandRulesPage(): JSX.Element {
                 <label className="block text-sm font-medium text-pav-grey">
                   Brand Voice Guidelines (Markdown)
                 </label>
-                <p className="mt-0.5 text-xs text-outline">
+                <p className="mt-1 text-xs text-outline">
                   Defines tone, word choice, and writing style for the AI rewriter and drafter.
                 </p>
                 <div className="mt-2">
@@ -118,7 +118,7 @@ export function ManageBrandRulesPage(): JSX.Element {
                 <label className="block text-sm font-medium text-pav-grey">
                   Services Description (Markdown)
                 </label>
-                <p className="mt-0.5 text-xs text-outline">
+                <p className="mt-1 text-xs text-outline">
                   Factual reference about your services. The AI uses this to ensure accuracy when drafting or rewriting content.
                 </p>
                 <div className="mt-2">

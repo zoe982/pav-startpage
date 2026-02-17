@@ -151,7 +151,7 @@ export function ManageLinksPage(): JSX.Element {
                     </div>
                     <div className="flex items-center gap-2">
                       {!link.isVisible && (
-                        <span className="rounded bg-pav-gold/20 px-2 py-0.5 text-xs text-pav-blue">
+                        <span className="rounded bg-pav-gold/20 px-2 py-1 text-xs text-pav-blue">
                           Hidden
                         </span>
                       )}

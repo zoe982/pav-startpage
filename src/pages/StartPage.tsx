@@ -114,6 +114,7 @@ export function StartPage(): JSX.Element {
               <input
                 ref={inputRef}
                 type="text"
+                autoFocus
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);

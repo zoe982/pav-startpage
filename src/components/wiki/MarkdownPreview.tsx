@@ -43,7 +43,7 @@ const components: Components = {
       );
     }
     return (
-      <code className="rounded bg-surface-container-high px-1.5 py-0.5 text-sm font-medium text-pav-blue" {...props}>
+      <code className="rounded bg-surface-container-high px-2 py-1 text-sm font-medium text-pav-blue" {...props}>
         {children}
       </code>
     );

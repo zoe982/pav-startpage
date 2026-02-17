@@ -135,7 +135,7 @@ export function LinkForm({
             onChange={(e) => {
               setFormData((prev) => ({ ...prev, isVisible: e.target.checked }));
             }}
-            className="h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
+            className="touch-target-icon h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
           />
           <label htmlFor="isVisible" className="text-sm text-pav-grey">
             Visible

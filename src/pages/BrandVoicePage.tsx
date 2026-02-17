@@ -113,7 +113,7 @@ export function BrandVoicePage(): JSX.Element {
             </p>
           </div>
           {/* Mode toggle — M3 segmented button */}
-          <div className="flex shrink-0 gap-0.5 rounded-full bg-surface-container-high p-1 ring-1 ring-outline-variant">
+          <div className="flex shrink-0 gap-1 rounded-full bg-surface-container-high p-1 ring-1 ring-outline-variant">
             <button
               type="button"
               onClick={() => { handleModeChange('rewrite'); }}

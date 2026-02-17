@@ -28,9 +28,9 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
       <div className="flex items-center justify-between gap-2">
         <Link
           to={`/templates/${template.id}`}
-          className="flex items-center gap-2 min-w-0"
+          className="state-layer touch-target inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-2"
         >
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+          <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
             template.type === 'email'
               ? 'bg-primary-container text-on-primary-container'
               : 'bg-success-container text-on-success-container'
@@ -48,7 +48,7 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
           <span className="font-medium">Subject:</span> {template.subject}
         </p>
       )}
-      <Link to={`/templates/${template.id}`} className="flex-1">
+      <Link to={`/templates/${template.id}`} className="state-layer touch-target flex-1 rounded-md px-2 py-2">
         <p className="text-sm text-on-surface-variant line-clamp-3">{preview}</p>
       </Link>
       <p className="text-xs text-outline">
