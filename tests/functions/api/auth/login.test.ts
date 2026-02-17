@@ -20,4 +20,20 @@ describe('GET /api/auth/login', () => {
     expect(location).toContain('response_type=code');
     expect(location).toContain('scope=openid+email+profile');
   });
+
+  it('adds Secure cookie flag for https requests', async () => {
+    const ctx = createMockContext({
+      request: new Request('https://example.com/api/auth/login'),
+      env: {
+        GOOGLE_CLIENT_ID: 'my-client-id',
+        GOOGLE_REDIRECT_URI: 'https://example.com/api/auth/google-callback',
+      },
+    });
+
+    const response = await onRequestGet(ctx);
+
+    expect(response.status).toBe(302);
+    const cookie = response.headers.get('Set-Cookie') ?? '';
+    expect(cookie).toContain('Secure');
+  });
 });

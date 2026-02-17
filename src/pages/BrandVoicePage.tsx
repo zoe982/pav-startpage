@@ -54,7 +54,10 @@ export function BrandVoicePage(): JSX.Element {
   };
 
   const handleRename = async (currentTitle: string): Promise<void> => {
-    const nextTitle = titleInputRef.current!.value.trim();
+    const titleInput = titleInputRef.current;
+    if (!titleInput) return;
+
+    const nextTitle = titleInput.value.trim();
     if (!nextTitle || nextTitle === currentTitle) return;
 
     await renameActiveThread(nextTitle);

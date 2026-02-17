@@ -59,4 +59,47 @@ describe('PUT /api/admin/brand-rules', () => {
     const response = await onRequestPut(ctx);
     expect(response.status).toBe(200);
   });
+
+  it('allows updating only servicesMarkdown', async () => {
+    const db = createMockD1(new Map([[
+      'SELECT rules_markdown, services_markdown, updated_at FROM brand_settings WHERE id = 1',
+      { rules_markdown: '# Existing', services_markdown: '# Updated services', updated_at: '2025-06-01 12:00:00' },
+    ]]));
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/admin/brand-rules', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servicesMarkdown: '# Updated services' }),
+      }),
+      env: { DB: db },
+      data: { user: { id: 'admin-1', isAdmin: true } },
+    });
+
+    const response = await onRequestPut(ctx);
+    expect(response.status).toBe(200);
+  });
+
+  it('returns empty fallbacks when readback row is missing', async () => {
+    const db = createMockD1();
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/admin/brand-rules', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rulesMarkdown: '# Updated' }),
+      }),
+      env: { DB: db },
+      data: { user: { id: 'admin-1', isAdmin: true } },
+    });
+
+    const response = await onRequestPut(ctx);
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      rulesMarkdown: '',
+      servicesMarkdown: '',
+      updatedAt: null,
+    });
+  });
 });

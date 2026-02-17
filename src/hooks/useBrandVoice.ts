@@ -44,11 +44,45 @@ function normalizeErrorMessage(message: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function isThreeDigitStatusCode(value: string): boolean {
+  if (value.length !== 3) return false;
+
+  return value.split('').every((char) => char >= '0' && char <= '9');
+}
+
+function isGenericHttpMessage(message: string): boolean {
+  const prefix = 'http ';
+  if (!message.startsWith(prefix)) return false;
+
+  return isThreeDigitStatusCode(message.slice(prefix.length));
+}
+
+function isGenericRequestFailedMessage(message: string): boolean {
+  const prefix = 'request failed (http ';
+  if (!message.startsWith(prefix)) return false;
+
+  const payload = message.slice(prefix.length);
+  if (payload.length < 3) return false;
+
+  const statusCode = payload.slice(0, 3);
+  if (!isThreeDigitStatusCode(statusCode)) return false;
+
+  const details = payload.slice(3);
+  if (details.length === 0 || details === ')') return true;
+  if (!details.startsWith(' ')) return false;
+
+  const detailText = details.endsWith(')')
+    ? details.slice(1, -1)
+    : details.slice(1);
+
+  return detailText.trim().length > 0;
+}
+
 function isGenericApiMessage(message: string): boolean {
   const normalized = message.toLowerCase();
   return normalized === 'unknown error'
-    || /^http \d{3}$/.test(normalized)
-    || /^request failed \(http \d{3}( [^)]+)?\)$/.test(normalized);
+    || isGenericHttpMessage(normalized)
+    || isGenericRequestFailedMessage(normalized);
 }
 
 function toErrorMessage(error: unknown, fallback: string): string {

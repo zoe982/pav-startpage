@@ -37,7 +37,7 @@ function formatHttpStatus(status: number, statusText: string): string {
 }
 
 async function parseErrorResponse(response: Response): Promise<ParsedErrorResult> {
-  const bodyAsJson = await response.clone().json().catch(() => null) as unknown;
+  const bodyAsJson = await response.clone().json().catch(() => null);
 
   if (bodyAsJson !== null && typeof bodyAsJson === 'object') {
     const body = bodyAsJson as Record<string, unknown>;

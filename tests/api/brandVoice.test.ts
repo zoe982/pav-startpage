@@ -182,6 +182,26 @@ describe('thread APIs', () => {
     expect(result).toEqual({ thread: { id: 'thread-1' } });
   });
 
+  it('starts a thread without optional custom style description', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-2' } });
+
+    await startThread({
+      text: 'Draft this without custom style',
+      style: 'document',
+      mode: 'rewrite',
+    });
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'start',
+        text: 'Draft this without custom style',
+        style: 'document',
+        mode: 'rewrite',
+      }),
+    });
+  });
+
   it('replies in a thread', async () => {
     vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1' } });
 
@@ -203,6 +223,26 @@ describe('thread APIs', () => {
       }),
     });
     expect(result).toEqual({ thread: { id: 'thread-1' } });
+  });
+
+  it('replies with only required fields plus custom style description', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1' } });
+
+    await replyInThread({
+      threadId: 'thread-1',
+      message: 'Use this custom output format',
+      customStyleDescription: 'Bullet points with short headings',
+    });
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'reply',
+        threadId: 'thread-1',
+        message: 'Use this custom output format',
+        customStyleDescription: 'Bullet points with short headings',
+      }),
+    });
   });
 
   it('renames a thread', async () => {

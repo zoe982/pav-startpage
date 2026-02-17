@@ -345,6 +345,20 @@ describe('useBrandVoice', () => {
     );
   });
 
+  it('maps generic API errors even when the server omits a closing parenthesis', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new ApiError(502, 'Request failed (HTTP 502 Bad Gateway'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.error).toBe(
+      'Failed to load threads. The service returned an unexpected error (HTTP 502). Please try again.',
+    );
+  });
+
   it('keeps specific API error messages', async () => {
     vi.mocked(listThreads).mockRejectedValue(new ApiError(404, 'Thread not found'));
 

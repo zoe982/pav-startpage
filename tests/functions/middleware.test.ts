@@ -181,4 +181,36 @@ describe('root middleware', () => {
     await onRequest(ctx);
     expect(ctx.next).toHaveBeenCalled();
   });
+
+  it('loads guest app grants for external users', async () => {
+    const externalUser = {
+      id: 'u2',
+      email: 'external@example.com',
+      name: 'External',
+      picture_url: null,
+      is_admin: 0,
+    };
+    const db = createMockD1(new Map([
+      [[
+        `SELECT u.id, u.email, u.name, u.picture_url, u.is_admin
+     FROM sessions s
+     JOIN users u ON s.user_id = u.id
+     WHERE s.id = ? AND s.expires_at > datetime('now')`,
+      ].join(''), externalUser],
+      ['SELECT app_key FROM guest_grants WHERE email = ?', [{ app_key: 'wiki' }, { app_key: 'templates' }]],
+    ]));
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/wiki', {
+        headers: { Cookie: '__session=abc' },
+      }),
+      env: { DB: db },
+    });
+
+    await onRequest(ctx);
+
+    expect(ctx.next).toHaveBeenCalled();
+    expect(ctx.data.user.isInternal).toBe(false);
+    expect(ctx.data.user.appGrants).toEqual(['wiki', 'templates']);
+  });
 });

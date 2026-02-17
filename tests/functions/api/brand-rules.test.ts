@@ -5,6 +5,20 @@ const internalUser = { isInternal: true, appGrants: [] as string[] };
 import { createMockContext, createMockD1 } from '../../cf-helpers.ts';
 
 describe('GET /api/brand-rules', () => {
+  it('returns 403 for users without brand-voice access', async () => {
+    const ctx = createMockContext({
+      data: {
+        user: {
+          isInternal: false,
+          appGrants: [],
+        },
+      },
+    });
+
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(403);
+  });
+
   it('returns brand rules and services', async () => {
     const db = createMockD1(new Map([[
       'SELECT rules_markdown, services_markdown, updated_at FROM brand_settings WHERE id = 1',
