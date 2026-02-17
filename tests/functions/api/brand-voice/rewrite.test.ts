@@ -518,6 +518,58 @@ describe('Brand Voice chat API', () => {
     expect(body.thread.messages).toHaveLength(2);
   });
 
+  it('POST start includes structured first-turn sections when rough draft is provided', async () => {
+    const { db } = createStatefulDb({
+      rulesMarkdown: '# Rules',
+      servicesMarkdown: '# Services',
+    });
+
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                assistantMessage: 'Drafted your content.',
+                draft: 'Hello from Pet Air Valet',
+                threadTitle: 'Welcome email',
+              }),
+            },
+          },
+        ],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          goal: 'Write a welcome email.',
+          roughDraft: 'Hi there, welcome aboard.',
+          noDraftProvided: false,
+          style: 'email',
+          mode: 'draft',
+        }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+
+    const [url, init] = vi.mocked(globalThis.fetch).mock.calls[0] ?? [];
+    expect(url).toBe('https://gateway.example.com/chat/completions');
+    const requestBody = requestBodyString(init!);
+    expect(requestBody).toContain('Goal:');
+    expect(requestBody).toContain('Write a welcome email.');
+    expect(requestBody).toContain('Rough draft:');
+    expect(requestBody).toContain('Hi there, welcome aboard.');
+    expect(requestBody).not.toContain('Rough draft:\n---\nNo draft available\n---');
+  });
+
   it('POST start returns 400 when structured first-turn fields are missing', async () => {
     const { db } = createStatefulDb();
 

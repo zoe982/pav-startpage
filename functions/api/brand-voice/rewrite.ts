@@ -387,7 +387,7 @@ function parseStartPromptInput(body: RewriteBody): StartPromptInput {
 function buildFirstTurnMessage(input: StartPromptInput, style: OutputStyle, mode: Mode): string {
   const roughDraftSection = input.noDraftProvided
     ? 'No draft available'
-    : input.roughDraft ?? 'No draft available';
+    : input.roughDraft;
 
   return [
     'First-turn setup payload:',

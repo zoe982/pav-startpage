@@ -239,6 +239,25 @@ describe('StartPage', () => {
     });
   });
 
+  it('uses quick-links heading when search matches both internal apps and links', async () => {
+    vi.mocked(useLinks).mockReturnValue({
+      links: [mockLink({ id: '1', title: 'Brand flights', description: 'Brand portal' })],
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderWithProviders(<StartPage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    setMaterialTextFieldValue(getSearchField(), 'brand');
+    await waitFor(() => {
+      expect(screen.getByText('Results for "brand"')).toBeInTheDocument();
+      expect(screen.getByText('Quick Links')).toBeInTheDocument();
+    });
+  });
+
   it('keeps quick links heading when search matches internal apps and quick links', async () => {
     vi.mocked(useLinks).mockReturnValue({
       links: [mockLink({ id: '1', title: 'Brand wiki', description: 'Brand operations notes' })],

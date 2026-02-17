@@ -216,6 +216,33 @@ describe('BrandVoicePage', () => {
     expect(canvas).toHaveValue('Latest draft text');
   });
 
+  it('does not keep duplicate undo entries for repeated same-value canvas edits', async () => {
+    const user = userEvent.setup();
+    mockHook();
+
+    renderWithProviders(<BrandVoicePage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    const canvas = screen.getByLabelText('Canvas draft');
+
+    await act(async () => {
+      fireEvent.change(canvas, { target: { value: 'Draft version 2' } });
+    });
+    await act(async () => {
+      fireEvent.change(canvas, { target: { value: 'Draft version 2' } });
+    });
+    await act(async () => {
+      fireEvent.change(canvas, { target: { value: 'Draft version 2' } });
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Undo edit' }));
+    expect(canvas).toHaveValue('Latest draft text');
+
+    await user.click(screen.getByRole('button', { name: 'Undo edit' }));
+    expect(canvas).toHaveValue('Latest draft text');
+  });
+
   it('does not overwrite local canvas edits when assistant draft updates until apply is clicked', async () => {
     const user = userEvent.setup();
     const loadThreads = vi.fn();

@@ -18,7 +18,7 @@
     "test:ui": "vitest run tests/pages tests/components tests/App.test.tsx",
     "test:guard": "rg -n \"\\b(?:it|test|describe)\\.(?:only|skip)\\b|\\bx(?:it|test|describe)\\b\" tests src functions && { echo 'Focused or skipped tests are not allowed in production workflows.'; exit 1; } || true",
     "test:ci": "pnpm test:integration && pnpm test:ui && pnpm test:coverage",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --maxWorkers=1",
     "db:migrate": "wrangler d1 execute pavinfo-start-db --local --file=migrations/0001_initial_schema.sql",
     "verify:production": "pnpm lint:fix && pnpm lint && pnpm typecheck && pnpm lint:semgrep && pnpm test:guard && pnpm test:ci",
     "predeploy": "pnpm verify:production",
