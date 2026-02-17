@@ -4,6 +4,12 @@ import {
   updateBrandRules,
   rewriteText,
   refineText,
+  listThreads,
+  getThread,
+  startThread,
+  replyInThread,
+  renameThread,
+  pinThreadDraft,
 } from '../../src/api/brandVoice.ts';
 
 vi.mock('../../src/api/client.ts', () => ({
@@ -131,5 +137,102 @@ describe('refineText', () => {
       }),
       signal: controller.signal,
     });
+  });
+});
+
+describe('thread APIs', () => {
+  it('lists threads', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ threads: [{ id: 'thread-1', title: 'T1' }] });
+
+    const result = await listThreads();
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite');
+    expect(result).toEqual({ threads: [{ id: 'thread-1', title: 'T1' }] });
+  });
+
+  it('fetches a thread by id', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1' } });
+
+    const result = await getThread('thread-1');
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite?threadId=thread-1');
+    expect(result).toEqual({ thread: { id: 'thread-1' } });
+  });
+
+  it('starts a thread', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1' } });
+
+    const result = await startThread({
+      text: 'Draft this',
+      style: 'email',
+      mode: 'draft',
+      customStyleDescription: 'Friendly',
+    });
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'start',
+        text: 'Draft this',
+        style: 'email',
+        mode: 'draft',
+        customStyleDescription: 'Friendly',
+      }),
+    });
+    expect(result).toEqual({ thread: { id: 'thread-1' } });
+  });
+
+  it('replies in a thread', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1' } });
+
+    const result = await replyInThread({
+      threadId: 'thread-1',
+      message: 'Make it shorter',
+      style: 'email',
+      mode: 'draft',
+    });
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'reply',
+        threadId: 'thread-1',
+        message: 'Make it shorter',
+        style: 'email',
+        mode: 'draft',
+      }),
+    });
+    expect(result).toEqual({ thread: { id: 'thread-1' } });
+  });
+
+  it('renames a thread', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1', title: 'Renamed' } });
+
+    const result = await renameThread('thread-1', 'Renamed');
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'rename',
+        threadId: 'thread-1',
+        title: 'Renamed',
+      }),
+    });
+    expect(result).toEqual({ thread: { id: 'thread-1', title: 'Renamed' } });
+  });
+
+  it('pins latest draft for a thread', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1', pinnedDraft: 'Body' } });
+
+    const result = await pinThreadDraft('thread-1');
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'pin',
+        threadId: 'thread-1',
+      }),
+    });
+    expect(result).toEqual({ thread: { id: 'thread-1', pinnedDraft: 'Body' } });
   });
 });
