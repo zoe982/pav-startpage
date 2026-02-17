@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "db:migrate": "wrangler d1 execute pavinfo-start-db --local --file=migrations/0001_initial_schema.sql"
+    "db:migrate": "wrangler d1 execute pavinfo-start-db --local --file=migrations/0001_initial_schema.sql",
+    "deploy": "wrangler pages deploy dist --branch=production"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
