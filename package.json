@@ -13,9 +13,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.functions.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run tests/api tests/functions",
+    "test:ui": "vitest run tests/pages tests/components tests/App.test.tsx",
+    "test:ci": "pnpm test:integration && pnpm test:ui && pnpm test:coverage",
     "test:coverage": "vitest run --coverage",
     "db:migrate": "wrangler d1 execute pavinfo-start-db --local --file=migrations/0001_initial_schema.sql",
-    "predeploy": "pnpm lint && pnpm typecheck && pnpm lint:semgrep && pnpm test:coverage",
+    "predeploy": "pnpm lint && pnpm typecheck && pnpm lint:semgrep && pnpm test:ci",
     "deploy": "pnpm build && git push && wrangler pages deploy dist --branch=production"
   },
   "dependencies": {

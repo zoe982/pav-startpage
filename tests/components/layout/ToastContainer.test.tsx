@@ -20,7 +20,7 @@ describe('ToastContainer', () => {
     });
     expect(screen.getByText('Saved!')).toBeInTheDocument();
     const toastEl = screen.getByText('Saved!').closest('div');
-    expect(toastEl?.className).toContain('bg-green-600');
+    expect(toastEl?.className).toContain('bg-success-container');
   });
 
   it('renders error toast', () => {
@@ -29,7 +29,7 @@ describe('ToastContainer', () => {
       toast: { toasts },
     });
     const toastEl = screen.getByText('Failed!').closest('div');
-    expect(toastEl?.className).toContain('bg-red-600');
+    expect(toastEl?.className).toContain('bg-error-container');
   });
 
   it('renders info toast', () => {
