@@ -16,19 +16,35 @@ describe('Header', () => {
     expect(screen.queryByText('Wiki')).not.toBeInTheDocument();
   });
 
-  it('shows nav links when authenticated', () => {
+  it('shows nav links when authenticated and handles home/wiki navigation clicks', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<Header />, {
       auth: { user: mockUser(), isAuthenticated: true },
+      route: '/wiki',
     });
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('Wiki')).toBeInTheDocument();
+    const homeButton = screen.getByTestId('header-action-home');
+    const wikiButton = screen.getByTestId('header-action-wiki');
+
+    expect(homeButton).toHaveAttribute('data-m3-component', 'text-button');
+    expect(wikiButton).toHaveAttribute('data-m3-component', 'text-button');
+    expect(wikiButton.className).toContain('bg-secondary-container');
+
+    await user.click(homeButton);
+    expect(homeButton.className).toContain('bg-secondary-container');
+    await user.click(wikiButton);
+    expect(wikiButton.className).toContain('bg-secondary-container');
   });
 
-  it('shows Admin link for admin users', () => {
+  it('shows Admin link for admin users and handles admin navigation click', async () => {
+    const user = userEvent.setup();
     renderWithProviders(<Header />, {
       auth: { user: mockAdminUser(), isAuthenticated: true },
+      route: '/wiki',
     });
-    expect(screen.getByText('Admin')).toBeInTheDocument();
+    const adminButton = screen.getByTestId('header-action-admin');
+    expect(adminButton).toBeInTheDocument();
+    await user.click(adminButton);
+    expect(adminButton.className).toContain('bg-tertiary-container');
   });
 
   it('does not show Admin link for non-admin users', () => {
@@ -95,7 +111,9 @@ describe('Header', () => {
       auth: { user: mockUser(), isAuthenticated: true, logout: logoutFn },
     });
 
-    await userEvent.click(screen.getByText('Sign out'));
+    const signOutButton = screen.getByTestId('header-action-signout');
+    expect(signOutButton).toHaveAttribute('data-m3-component', 'text-button');
+    fireEvent.click(signOutButton);
     expect(logoutFn).toHaveBeenCalled();
   });
 
@@ -114,7 +132,7 @@ describe('Header', () => {
       });
 
       expect(screen.getByText('Offline. Some actions require a connection.')).toBeInTheDocument();
-      await user.click(screen.getByRole('button', { name: 'Retry' }));
+      await user.click(screen.getByTestId('header-offline-retry'));
     } finally {
       if (onLineDescriptor) {
         Object.defineProperty(window.navigator, 'onLine', onLineDescriptor);

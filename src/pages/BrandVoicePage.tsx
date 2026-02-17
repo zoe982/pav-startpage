@@ -1,23 +1,26 @@
-import type { JSX, SyntheticEvent } from 'react';
-import { useEffect, useState } from 'react';
+import type { JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppShell } from '../components/layout/AppShell.tsx';
 import { useBrandVoice } from '../hooks/useBrandVoice.ts';
 import type { BrandMode, OutputStyle } from '../types/brandVoice.ts';
+import { ThreadRail } from '../components/brandVoice/ThreadRail.tsx';
+import { ConversationPanel } from '../components/brandVoice/ConversationPanel.tsx';
+import { FirstTurnSetupCard } from '../components/brandVoice/FirstTurnSetupCard.tsx';
+import { ComposerBar } from '../components/brandVoice/ComposerBar.tsx';
+import { CanvasPanel } from '../components/brandVoice/CanvasPanel.tsx';
+import { DraftVersionHistoryDialog } from '../components/brandVoice/DraftVersionHistoryDialog.tsx';
 
-const OUTPUT_STYLES: { readonly value: OutputStyle; readonly label: string }[] = [
-  { value: 'email', label: 'Email' },
-  { value: 'whatsapp', label: 'WhatsApp' },
-  { value: 'document', label: 'Document' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'other', label: 'Other' },
-];
+type LayoutMode = 'expanded' | 'medium' | 'compact';
 
-type RenameThreadForm = HTMLFormElement & {
-  readonly elements: HTMLFormControlsCollection & {
-    readonly threadTitle: HTMLInputElement;
-  };
-};
+type SaveStatus = 'Idle' | 'Unsaved' | 'Saving' | 'Saved';
+
+const AUTOSAVE_DEBOUNCE_MS = 800;
+
+function getLayoutMode(width: number): LayoutMode {
+  if (width < 840) return 'compact';
+  if (width < 1200) return 'medium';
+  return 'expanded';
+}
 
 export function BrandVoicePage(): JSX.Element {
   const {
@@ -31,64 +34,324 @@ export function BrandVoicePage(): JSX.Element {
     sendMessage,
     renameActiveThread,
     pinActiveDraft,
+    saveActiveDraft,
+    restoreActiveDraftVersion,
     clearActiveThread,
   } = useBrandVoice();
 
   const [mode, setMode] = useState<BrandMode>('draft');
   const [style, setStyle] = useState<OutputStyle>('email');
   const [customStyleDescription, setCustomStyleDescription] = useState('');
-  const [message, setMessage] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [goal, setGoal] = useState('');
+  const [roughDraft, setRoughDraft] = useState('');
+  const [noDraftProvided, setNoDraftProvided] = useState(false);
+  const [revisionMessage, setRevisionMessage] = useState('');
+  const [canvasText, setCanvasText] = useState('');
+  const [undoStack, setUndoStack] = useState<readonly string[]>([]);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('Idle');
+  const [hasUnsavedCanvasEdits, setHasUnsavedCanvasEdits] = useState(false);
+  const [pendingAssistantDraft, setPendingAssistantDraft] = useState<string | null>(null);
+  const [isCopying, setIsCopying] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => getLayoutMode(window.innerWidth));
+  const [compactPanel, setCompactPanel] = useState<'chat' | 'canvas'>('chat');
+  const [isThreadSheetOpen, setIsThreadSheetOpen] = useState(false);
+
+  const previousThreadIdRef = useRef<string | null>(null);
+  const previousServerDraftRef = useRef<string | null>(null);
 
   useEffect(() => {
     void loadThreads();
   }, [loadThreads]);
 
-  const handleSend = async (event: SyntheticEvent): Promise<void> => {
-    event.preventDefault();
-    const text = message.trim();
-    if (!text) return;
+  useEffect(() => {
+    const onResize = (): void => {
+      setLayoutMode(getLayoutMode(window.innerWidth));
+    };
 
-    if (activeThread) {
-      await sendMessage(text, style, mode, customStyleDescription || undefined);
-    } else {
-      await startThread(text, style, mode, customStyleDescription || undefined);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeThread) {
+      previousThreadIdRef.current = null;
+      previousServerDraftRef.current = null;
+      setCanvasText('');
+      setUndoStack([]);
+      setHasUnsavedCanvasEdits(false);
+      setPendingAssistantDraft(null);
+      setSaveStatus('Idle');
+      return;
     }
 
-    setMessage('');
-  };
+    const isNewThread = previousThreadIdRef.current !== activeThread.id;
+    const serverDraftChanged = previousServerDraftRef.current !== activeThread.latestDraft;
 
-  const handleRename = async (event: SyntheticEvent<HTMLFormElement>, currentTitle: string): Promise<void> => {
-    event.preventDefault();
-    const form = event.currentTarget as RenameThreadForm;
-    const nextTitle = form.elements.threadTitle.value.trim();
-    if (!nextTitle || nextTitle === currentTitle) return;
+    if (isNewThread) {
+      setCanvasText(activeThread.latestDraft);
+      setUndoStack([]);
+      setHasUnsavedCanvasEdits(false);
+      setPendingAssistantDraft(null);
+      setSaveStatus('Idle');
+    } else if (serverDraftChanged) {
+      if (hasUnsavedCanvasEdits && canvasText !== activeThread.latestDraft) {
+        setPendingAssistantDraft(activeThread.latestDraft);
+      } else {
+        setCanvasText(activeThread.latestDraft);
+        setHasUnsavedCanvasEdits(false);
+        setPendingAssistantDraft(null);
+        setSaveStatus('Idle');
+      }
+    }
 
-    await renameActiveThread(nextTitle);
-  };
+    previousThreadIdRef.current = activeThread.id;
+    previousServerDraftRef.current = activeThread.latestDraft;
+  }, [activeThread, canvasText, hasUnsavedCanvasEdits]);
 
-  const handleNewThread = (): void => {
+  useEffect(() => {
+    if (!activeThread || !hasUnsavedCanvasEdits) return;
+
+    if (canvasText === activeThread.latestDraft) {
+      setHasUnsavedCanvasEdits(false);
+      setSaveStatus('Idle');
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSaveStatus('Saving');
+      void (async () => {
+        await saveActiveDraft(canvasText);
+        setHasUnsavedCanvasEdits(false);
+        setPendingAssistantDraft(null);
+        setSaveStatus('Saved');
+      })();
+    }, AUTOSAVE_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [activeThread, canvasText, hasUnsavedCanvasEdits, saveActiveDraft]);
+
+  const isExpanded = layoutMode === 'expanded';
+  const isCompact = layoutMode === 'compact';
+
+  const contextLabel = activeThread
+    ? `Context: ${activeThread.mode} · ${activeThread.style}`
+    : null;
+
+  const handleSelectThread = useCallback((threadId: string): void => {
+    void selectThread(threadId);
+    setIsThreadSheetOpen(false);
+  }, [selectThread]);
+
+  const handleStartThread = useCallback(async (): Promise<void> => {
+    const trimmedGoal = goal.trim();
+    const trimmedRoughDraft = roughDraft.trim();
+    if (!trimmedGoal) return;
+    if (!trimmedRoughDraft && !noDraftProvided) return;
+
+    await startThread({
+      goal: trimmedGoal,
+      ...(trimmedRoughDraft ? { roughDraft: trimmedRoughDraft } : {}),
+      noDraftProvided,
+      style,
+      mode,
+      ...(style === 'other' && customStyleDescription.trim().length > 0
+        ? { customStyleDescription: customStyleDescription.trim() }
+        : {}),
+    });
+
+    setGoal('');
+    setRoughDraft('');
+    setNoDraftProvided(false);
+    setCustomStyleDescription('');
+    setRevisionMessage('');
+  }, [
+    customStyleDescription,
+    goal,
+    mode,
+    noDraftProvided,
+    roughDraft,
+    startThread,
+    style,
+  ]);
+
+  const handleSendRevision = useCallback(async (): Promise<void> => {
+    const text = revisionMessage.trim();
+    if (!text) return;
+    await sendMessage(text);
+    setRevisionMessage('');
+  }, [revisionMessage, sendMessage]);
+
+  const handleNewThread = useCallback((): void => {
     clearActiveThread();
     setMode('draft');
     setStyle('email');
     setCustomStyleDescription('');
-    setMessage('');
-    setCopied(false);
-  };
+    setGoal('');
+    setRoughDraft('');
+    setNoDraftProvided(false);
+    setRevisionMessage('');
+    setCanvasText('');
+    setUndoStack([]);
+    setHasUnsavedCanvasEdits(false);
+    setPendingAssistantDraft(null);
+    setSaveStatus('Idle');
+    setCompactPanel('chat');
+  }, [clearActiveThread]);
 
-  const latestDraft = activeThread?.latestDraft ?? '';
+  const handleCanvasChange = useCallback((nextText: string): void => {
+    setUndoStack((current) => {
+      if (current[current.length - 1] === canvasText) return current;
+      return [...current, canvasText];
+    });
+    setCanvasText(nextText);
+    setHasUnsavedCanvasEdits(true);
+    setSaveStatus('Unsaved');
+  }, [canvasText]);
 
-  const handleCopy = async (): Promise<void> => {
-    await navigator.clipboard.writeText(latestDraft);
-    setCopied(true);
-    setTimeout(() => { setCopied(false); }, 1200);
-  };
+  const handleUndo = useCallback((): void => {
+    setUndoStack((current) => {
+      const previousText = current.at(-1);
+      if (previousText === undefined) return current;
+      setCanvasText(previousText);
+      setHasUnsavedCanvasEdits(true);
+      setSaveStatus('Unsaved');
+      return current.slice(0, -1);
+    });
+  }, []);
 
-  const hasMessages = (activeThread?.messages.length ?? 0) > 0;
+  const handleApplyAssistantUpdate = useCallback((): void => {
+    if (!pendingAssistantDraft) return;
+
+    setUndoStack((current) => [...current, canvasText]);
+    setCanvasText(pendingAssistantDraft);
+    setHasUnsavedCanvasEdits(false);
+    setPendingAssistantDraft(null);
+    setSaveStatus('Idle');
+    previousServerDraftRef.current = pendingAssistantDraft;
+  }, [canvasText, pendingAssistantDraft]);
+
+  const handleCopy = useCallback(async (): Promise<void> => {
+    if (!canvasText.trim()) return;
+
+    const clipboard = navigator.clipboard;
+
+    setIsCopying(true);
+    try {
+      await clipboard.writeText(canvasText);
+    } finally {
+      setIsCopying(false);
+    }
+  }, [canvasText]);
+
+  const handlePin = useCallback(async (): Promise<void> => {
+    await pinActiveDraft();
+  }, [pinActiveDraft]);
+
+  const handleRestoreVersion = useCallback((versionId: string): void => {
+    void (async () => {
+      await restoreActiveDraftVersion(versionId);
+      setIsVersionHistoryOpen(false);
+    })();
+  }, [restoreActiveDraftVersion]);
+
+  const chatPane = useMemo(() => (
+    <ConversationPanel
+      activeThread={activeThread}
+      contextLabel={contextLabel}
+      isLoading={isLoading}
+      onRenameThread={renameActiveThread}
+    >
+      {activeThread ? (
+        <ComposerBar
+          message={revisionMessage}
+          isLoading={isLoading}
+          onMessageChange={setRevisionMessage}
+          onSubmit={handleSendRevision}
+        />
+      ) : (
+        <FirstTurnSetupCard
+          mode={mode}
+          style={style}
+          customStyleDescription={customStyleDescription}
+          goal={goal}
+          roughDraft={roughDraft}
+          noDraftProvided={noDraftProvided}
+          isLoading={isLoading}
+          onModeChange={setMode}
+          onStyleChange={setStyle}
+          onCustomStyleDescriptionChange={setCustomStyleDescription}
+          onGoalChange={setGoal}
+          onRoughDraftChange={(value) => {
+            setRoughDraft(value);
+            if (value.trim().length > 0) {
+              setNoDraftProvided(false);
+            }
+          }}
+          onNoDraftProvidedChange={(value) => {
+            setNoDraftProvided(value);
+            if (value) {
+              setRoughDraft('');
+            }
+          }}
+          onSubmit={handleStartThread}
+        />
+      )}
+    </ConversationPanel>
+  ), [
+    activeThread,
+    contextLabel,
+    customStyleDescription,
+    goal,
+    handleSendRevision,
+    handleStartThread,
+    isLoading,
+    mode,
+    noDraftProvided,
+    renameActiveThread,
+    revisionMessage,
+    roughDraft,
+    style,
+  ]);
+
+  const canvasPane = useMemo(() => (
+    <CanvasPanel
+      canvasText={canvasText}
+      saveStatus={saveStatus}
+      pendingAssistantDraft={pendingAssistantDraft !== null}
+      canUndo={undoStack.length > 0}
+      isLoading={isLoading}
+      isCopying={isCopying}
+      pinnedDraft={activeThread?.pinnedDraft ?? null}
+      onCanvasChange={handleCanvasChange}
+      onUndo={handleUndo}
+      onApplyAssistantUpdate={handleApplyAssistantUpdate}
+      onOpenVersionHistory={() => { setIsVersionHistoryOpen(true); }}
+      onCopy={handleCopy}
+      onPin={handlePin}
+    />
+  ), [
+    activeThread?.pinnedDraft,
+    canvasText,
+    handleApplyAssistantUpdate,
+    handleCanvasChange,
+    handleCopy,
+    handlePin,
+    handleUndo,
+    isCopying,
+    isLoading,
+    pendingAssistantDraft,
+    saveStatus,
+    undoStack.length,
+  ]);
 
   return (
     <AppShell>
-      <div className="animate-fade-up space-y-5">
+      <div className="brand-voice-page animate-fade-up space-y-5">
         <header className="rounded-3xl border border-outline-variant/50 bg-surface-container p-5 shadow-[var(--shadow-elevation-1)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
@@ -97,16 +360,27 @@ export function BrandVoicePage(): JSX.Element {
               </p>
               <h1 className="font-display text-3xl font-semibold text-on-surface">Brand Voice Studio</h1>
               <p className="max-w-2xl text-sm text-on-surface-variant">
-                Draft, refine, and pin final copy with one focused workspace.
+                Chat, generate, and edit in one workspace with durable draft history.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleNewThread}
-              className="state-layer touch-target rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-1)] motion-standard hover:shadow-[var(--shadow-elevation-2)]"
-            >
-              New thread
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {!isExpanded && (
+                <button
+                  type="button"
+                  onClick={() => { setIsThreadSheetOpen(true); }}
+                  className="state-layer touch-target rounded-full border border-outline px-4 py-2 text-sm text-on-surface-variant"
+                >
+                  Open threads
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleNewThread}
+                className="state-layer touch-target rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-1)]"
+              >
+                New thread
+              </button>
+            </div>
           </div>
         </header>
 
@@ -121,221 +395,88 @@ export function BrandVoicePage(): JSX.Element {
               onClick={() => { void loadThreads(); }}
               disabled={isLoading}
               aria-label="Retry loading threads"
-              className="state-layer touch-target rounded-full border border-on-error-container/25 px-4 py-1.5 text-xs font-semibold text-on-error-container motion-standard disabled:opacity-50"
+              className="state-layer touch-target rounded-full border border-on-error-container/25 px-4 py-1.5 text-xs font-semibold text-on-error-container disabled:opacity-50"
             >
               Retry loading threads
             </button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1.2fr)_minmax(0,1fr)]">
-          <aside className="rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-on-surface-variant">Threads</h2>
-              <span className="rounded-full bg-surface-container-high px-2 py-1 text-xs text-on-surface-variant">
-                {threads.length}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {threads.map((thread) => (
-                <button
-                  key={thread.id}
-                  type="button"
-                  onClick={() => { void selectThread(thread.id); }}
-                  className={`state-layer block w-full rounded-xl border px-3 py-2 text-left text-sm motion-standard ${
-                    activeThread?.id === thread.id
-                      ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
-                      : 'border-outline-variant/60 bg-surface-container-lowest text-on-surface-variant hover:border-outline'
-                  }`}
-                >
-                  {thread.title}
-                </button>
-              ))}
-              {threads.length === 0 && (
-                <p className="rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest px-3 py-4 text-sm text-outline">
-                  No threads yet. Start with your first prompt.
-                </p>
-              )}
-            </div>
-          </aside>
-
-          <section className="flex min-h-[560px] flex-col gap-4 rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-on-surface">Conversation</h2>
-              <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold uppercase tracking-[0.1em] text-on-surface-variant">
-                {mode}
-              </span>
-            </div>
-
-            {activeThread && (
-              <form
-                className="flex flex-wrap gap-2"
-                onSubmit={(event) => { void handleRename(event, activeThread.title); }}
-              >
-                <input
-                  aria-label="Thread title"
-                  key={activeThread.id}
-                  name="threadTitle"
-                  type="text"
-                  defaultValue={activeThread.title}
-                  className="min-w-[220px] flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface shadow-[var(--shadow-elevation-1)]"
-                />
-                <button
-                  type="submit"
-                  className="state-layer touch-target rounded-full border border-outline bg-surface-container px-4 py-2 text-sm text-on-surface-variant motion-standard hover:border-outline/80"
-                >
-                  Save title
-                </button>
-              </form>
-            )}
-
-            <div className="flex-1 overflow-auto rounded-2xl border border-outline-variant/80 bg-surface-container-lowest p-3">
-              {!activeThread && (
-                <p className="text-sm text-outline">Start a new conversation to generate your first draft.</p>
-              )}
-
-              {activeThread?.messages.length === 0 && (
-                <p className="text-sm text-outline">No messages yet.</p>
-              )}
-
-              {hasMessages && (
-                <div className="space-y-2">
-                  {activeThread?.messages.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`max-w-[92%] rounded-2xl px-3 py-2 text-sm ${
-                        item.role === 'assistant'
-                          ? 'bg-primary-container text-on-primary-container'
-                          : 'ml-auto bg-surface-container-high text-on-surface'
-                      }`}
-                    >
-                      {item.content}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <form onSubmit={handleSend} className="space-y-3 rounded-2xl border border-outline-variant/70 bg-surface p-3 shadow-[var(--shadow-elevation-1)]">
-              <h3 className="text-sm font-semibold text-on-surface">Compose request</h3>
-
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-on-surface-variant">Mode</p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    aria-pressed={mode === 'rewrite'}
-                    onClick={() => { setMode('rewrite'); }}
-                    className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
-                      mode === 'rewrite'
-                        ? 'bg-secondary-container text-on-secondary-container'
-                        : 'bg-surface-container-low text-on-surface-variant'
-                    }`}
-                  >
-                    Rewrite
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={mode === 'draft'}
-                    onClick={() => { setMode('draft'); }}
-                    className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
-                      mode === 'draft'
-                        ? 'bg-secondary-container text-on-secondary-container'
-                        : 'bg-surface-container-low text-on-surface-variant'
-                    }`}
-                  >
-                    Draft
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-on-surface-variant">Output style</p>
-                <div className="flex flex-wrap gap-2">
-                  {OUTPUT_STYLES.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      aria-pressed={style === option.value}
-                      onClick={() => { setStyle(option.value); }}
-                      className={`state-layer touch-target rounded-full border px-3 py-1.5 text-xs motion-standard ${
-                        style === option.value
-                          ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
-                          : 'border-outline-variant text-on-surface-variant hover:border-outline'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {style === 'other' && (
-                <input
-                  aria-label="Custom style"
-                  type="text"
-                  value={customStyleDescription}
-                  onChange={(event) => { setCustomStyleDescription(event.target.value); }}
-                  placeholder="Describe custom format"
-                  className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface"
-                />
-              )}
-
-              <textarea
-                aria-label="Message"
-                value={message}
-                onChange={(event) => { setMessage(event.target.value); }}
-                rows={4}
-                placeholder={activeThread ? 'Share feedback for the next revision...' : 'Describe what you want drafted...'}
-                className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface"
+        {isThreadSheetOpen && !isExpanded && (
+          <div role="dialog" aria-label="Thread list" className="fixed inset-0 z-30 grid place-items-center bg-scrim/35 px-3">
+            <div className="w-full max-w-sm rounded-3xl border border-outline-variant bg-surface p-4 shadow-[var(--shadow-elevation-3)]">
+              <h3 className="mb-3 text-lg font-semibold text-on-surface">Thread list</h3>
+              <ThreadRail
+                threads={threads}
+                activeThreadId={activeThread?.id ?? null}
+                onSelectThread={handleSelectThread}
               />
-
-              <div className="flex justify-end">
+              <div className="mt-4 flex justify-end">
                 <button
-                  type="submit"
-                  disabled={isLoading || !message.trim()}
-                  className="state-layer touch-target rounded-full bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-1)] motion-standard disabled:opacity-40"
+                  type="button"
+                  onClick={() => { setIsThreadSheetOpen(false); }}
+                  className="state-layer touch-target rounded-full border border-outline px-3 py-1 text-xs font-semibold text-on-surface-variant"
                 >
-                  Send
+                  Close
                 </button>
               </div>
-            </form>
-          </section>
+            </div>
+          </div>
+        )}
 
-          <section className="flex min-h-[560px] flex-col rounded-3xl border border-outline-variant/50 bg-surface-container-low p-4 shadow-[var(--shadow-elevation-1)]">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-on-surface">Latest Draft</h2>
+        {isExpanded && (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1.2fr)_minmax(0,1fr)]">
+            <ThreadRail
+              threads={threads}
+              activeThreadId={activeThread?.id ?? null}
+              onSelectThread={handleSelectThread}
+            />
+            {chatPane}
+            {canvasPane}
+          </div>
+        )}
+
+        {!isExpanded && !isCompact && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {chatPane}
+            {canvasPane}
+          </div>
+        )}
+
+        {isCompact && (
+          <div className="space-y-3">
+            <div role="tablist" aria-label="Chat and canvas tabs" className="flex gap-2 rounded-full bg-surface-container-low p-1">
               <button
+                role="tab"
                 type="button"
-                onClick={() => { void handleCopy(); }}
-                disabled={!latestDraft}
-                className="state-layer touch-target rounded-full border border-outline px-3 py-1 text-xs font-semibold text-on-surface-variant motion-standard disabled:opacity-40"
+                aria-selected={compactPanel === 'chat'}
+                onClick={() => { setCompactPanel('chat'); }}
+                className={`rounded-full px-4 py-2 text-sm ${compactPanel === 'chat' ? 'bg-primary text-on-primary' : 'text-on-surface'}`}
               >
-                {copied ? 'Copied' : 'Copy'}
+                Chat
+              </button>
+              <button
+                role="tab"
+                type="button"
+                aria-selected={compactPanel === 'canvas'}
+                onClick={() => { setCompactPanel('canvas'); }}
+                className={`rounded-full px-4 py-2 text-sm ${compactPanel === 'canvas' ? 'bg-primary text-on-primary' : 'text-on-surface'}`}
+              >
+                Canvas
               </button>
             </div>
-
-            <div className="mb-3 flex-1 whitespace-pre-wrap rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface">
-              {latestDraft || 'The latest draft will appear here.'}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => { void pinActiveDraft(); }}
-              disabled={!latestDraft || isLoading}
-              className="state-layer touch-target rounded-full bg-secondary-container px-4 py-2 text-sm font-semibold text-on-secondary-container motion-standard disabled:opacity-40"
-            >
-              Use this draft
-            </button>
-
-            {activeThread?.pinnedDraft && (
-              <p className="mt-2 rounded-lg bg-success-container px-2 py-1 text-xs text-on-success-container">
-                Draft pinned and ready to use.
-              </p>
-            )}
-          </section>
-        </div>
+            {compactPanel === 'chat' ? chatPane : canvasPane}
+          </div>
+        )}
       </div>
+
+      <DraftVersionHistoryDialog
+        open={isVersionHistoryOpen}
+        versions={activeThread?.draftVersions ?? []}
+        isLoading={isLoading}
+        onClose={() => { setIsVersionHistoryOpen(false); }}
+        onRestore={handleRestoreVersion}
+      />
     </AppShell>
   );
 }

@@ -35,6 +35,17 @@ export interface BrandVoiceMessage {
   readonly content: string;
 }
 
+export type BrandVoiceDraftVersionSource = 'assistant' | 'manual' | 'restore';
+
+export interface BrandVoiceDraftVersion {
+  readonly id: string;
+  readonly versionNumber: number;
+  readonly draftText: string;
+  readonly source: BrandVoiceDraftVersionSource;
+  readonly createdAt: string;
+  readonly createdByName: string;
+}
+
 export interface BrandVoiceThread {
   readonly id: string;
   readonly title: string;
@@ -43,6 +54,7 @@ export interface BrandVoiceThread {
   readonly customStyleDescription: string | null;
   readonly latestDraft: string;
   readonly pinnedDraft: string | null;
+  readonly draftVersions: readonly BrandVoiceDraftVersion[];
   readonly messages: readonly BrandVoiceMessage[];
 }
 
@@ -55,7 +67,10 @@ export interface ThreadDetailResponse {
 }
 
 export interface StartThreadRequest {
-  readonly text: string;
+  readonly goal: string;
+  readonly roughDraft?: string;
+  readonly noDraftProvided: boolean;
+  readonly text?: string;
   readonly style: OutputStyle;
   readonly mode: BrandMode;
   readonly customStyleDescription?: string;

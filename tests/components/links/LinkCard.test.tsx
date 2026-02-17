@@ -4,6 +4,12 @@ import { LinkCard } from '../../../src/components/links/LinkCard.tsx';
 import { mockLink } from '../../helpers.tsx';
 
 describe('LinkCard', () => {
+  it('renders with elevated card wrapper semantics', () => {
+    const { container } = render(<LinkCard link={mockLink({ title: 'Google', url: 'https://google.com' })} />);
+    const card = container.querySelector('[data-m3-component="elevated-card"]');
+    expect(card).toBeInTheDocument();
+  });
+
   it('renders link title and URL', () => {
     render(<LinkCard link={mockLink({ title: 'Google', url: 'https://google.com' })} />);
     expect(screen.getByText('Google')).toBeInTheDocument();

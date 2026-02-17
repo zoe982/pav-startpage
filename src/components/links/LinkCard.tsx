@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { Link } from '../../types/link.ts';
+import { M3ElevatedCard } from '../m3/material.tsx';
 
 // Inline SVG paths from Material Design icons — no external font needed
 const ICON_PATHS = new Map<string, string>([
@@ -81,7 +82,7 @@ function SvgIcon({ name }: { readonly name: string }): JSX.Element | null {
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className="h-5 w-5 text-pav-terra"
+      className="h-5 w-5 text-on-secondary-container"
       aria-hidden="true"
     >
       <path d={path} />
@@ -104,36 +105,38 @@ export function LinkCard({ link }: { readonly link: Link }): JSX.Element {
   const favicon = !icon ? (link.iconUrl ?? getFaviconUrl(link.url)) : '';
 
   return (
-    <a
-      href={link.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
-    >
-      <div className="flex items-center gap-3">
-        {icon ? (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pav-gold/15">
-            <SvgIcon name={icon} />
-          </div>
-        ) : favicon ? (
-          <img
-            src={favicon}
-            alt=""
-            className="h-8 w-8 rounded"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pav-gold/15 text-sm font-bold text-pav-terra">
-            {link.title.charAt(0).toUpperCase()}
-          </div>
+    <M3ElevatedCard className="rounded-2xl border border-outline-variant/70 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]">
+      <a
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="state-layer group flex h-full flex-col gap-2 rounded-2xl p-6"
+      >
+        <div className="flex items-center gap-3">
+          {icon ? (
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container">
+              <SvgIcon name={icon} />
+            </div>
+          ) : favicon ? (
+            <img
+              src={favicon}
+              alt=""
+              className="h-8 w-8 rounded"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-sm font-bold text-on-secondary-container">
+              {link.title.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <h3 className="text-sm font-semibold text-on-surface group-hover:text-tertiary">
+            {link.title}
+          </h3>
+        </div>
+        {link.description && (
+          <p className="text-sm text-on-surface-variant">{link.description}</p>
         )}
-        <h3 className="text-sm font-semibold text-pav-blue group-hover:text-pav-terra">
-          {link.title}
-        </h3>
-      </div>
-      {link.description && (
-        <p className="text-sm text-on-surface-variant">{link.description}</p>
-      )}
-    </a>
+      </a>
+    </M3ElevatedCard>
   );
 }

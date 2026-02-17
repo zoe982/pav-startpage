@@ -1,9 +1,10 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../hooks/useAuth.ts';
 import { useAppAccess } from '../../hooks/useAppAccess.ts';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus.ts';
+import { M3FilledTonalButton, M3TextButton } from '../m3/material.tsx';
 
 function UserAvatar({ name, pictureUrl }: { readonly name: string; readonly pictureUrl?: string | null }): JSX.Element {
   const [failed, setFailed] = useState(false);
@@ -22,51 +23,69 @@ function UserAvatar({ name, pictureUrl }: { readonly name: string; readonly pict
     );
   }
   return (
-    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pav-terra text-sm font-semibold text-on-primary">
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary-container text-sm font-semibold text-on-tertiary-container">
       {name.charAt(0).toUpperCase()}
     </div>
   );
+}
+
+function isActivePath(pathname: string, targetPath: string): boolean {
+  if (targetPath === '/') {
+    return pathname === '/';
+  }
+  return pathname.startsWith(targetPath);
 }
 
 export function Header(): JSX.Element {
   const { user, isAuthenticated, logout } = useAuth();
   const { hasAccess } = useAppAccess();
   const isOnline = useOnlineStatus();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const sharedNavButtonClass =
+    'touch-target rounded-full px-4 py-2 text-sm font-medium';
 
   return (
-    <header className="border-b border-pav-tan/30 bg-pav-cream">
+    <header className="border-b border-outline-variant/60 bg-surface-container-low">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="state-layer touch-target flex items-center gap-3 rounded-lg text-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue focus-visible:ring-offset-2">
+          <Link
+            to="/"
+            className="state-layer touch-target flex items-center gap-3 rounded-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
             <img src="/pav_logo_clean_flat_2048.webp" alt="" className="h-10 w-10" />
             <div className="flex flex-col leading-tight">
-              <span className="font-serif text-lg font-bold">Pet Air Valet</span>
+              <span className="font-serif text-lg font-bold text-on-surface">Pet Air Valet</span>
               <span className="font-serif text-xs italic text-on-surface-variant">Fly Together, In-Cabin</span>
             </div>
           </Link>
           {isAuthenticated && (
-            <nav className="hidden items-center gap-6 sm:flex">
-              <Link
-                to="/"
-                className="state-layer touch-target inline-flex items-center rounded-md px-2 py-2 text-sm font-medium text-on-surface motion-standard hover:text-pav-blue"
+            <nav className="hidden items-center gap-2 sm:flex" aria-label="Primary">
+              <M3TextButton
+                dataTestId="header-action-home"
+                className={`${sharedNavButtonClass} ${isActivePath(location.pathname, '/') ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant'}`}
+                onClick={() => { void navigate('/'); }}
               >
                 Home
-              </Link>
+              </M3TextButton>
               {hasAccess('wiki') && (
-                <Link
-                  to="/wiki"
-                  className="state-layer touch-target inline-flex items-center rounded-md px-2 py-2 text-sm font-medium text-on-surface motion-standard hover:text-pav-blue"
+                <M3TextButton
+                  dataTestId="header-action-wiki"
+                  className={`${sharedNavButtonClass} ${isActivePath(location.pathname, '/wiki') ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant'}`}
+                  onClick={() => { void navigate('/wiki'); }}
                 >
                   Wiki
-                </Link>
+                </M3TextButton>
               )}
               {user?.isAdmin && (
-                <Link
-                  to="/admin"
-                  className="state-layer touch-target inline-flex items-center rounded-md px-2 py-2 text-sm font-medium text-pav-terra motion-standard hover:text-pav-terra-hover"
+                <M3TextButton
+                  dataTestId="header-action-admin"
+                  className={`${sharedNavButtonClass} ${isActivePath(location.pathname, '/admin') ? 'bg-tertiary-container text-on-tertiary-container' : 'text-tertiary'}`}
+                  onClick={() => { void navigate('/admin'); }}
                 >
                   Admin
-                </Link>
+                </M3TextButton>
               )}
             </nav>
           )}
@@ -79,29 +98,31 @@ export function Header(): JSX.Element {
                 {user.name}
               </span>
             </div>
-            <button
+            <M3TextButton
+              dataTestId="header-action-signout"
+              className="touch-target rounded-full px-4 py-2 text-sm text-on-surface-variant"
               onClick={logout}
-              className="state-layer touch-target rounded-md px-3 py-2 text-sm text-on-surface-variant motion-standard hover:bg-pav-tan/20 hover:text-pav-blue"
             >
               Sign out
-            </button>
+            </M3TextButton>
           </div>
         )}
       </div>
       {!isOnline && (
-        <div className="border-t border-outline-variant bg-error-container/60">
+        <div className="border-t border-outline-variant bg-error-container/70">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex items-center gap-2 text-xs font-semibold text-on-error-container">
               <span className="h-2 w-2 rounded-full bg-error" aria-hidden="true" />
               Offline. Some actions require a connection.
             </div>
-            <button
+            <M3FilledTonalButton
+              dataTestId="header-offline-retry"
               type="button"
               onClick={() => { window.location.reload(); }}
-              className="state-layer touch-target rounded-full px-3 py-1 text-xs font-semibold text-on-error-container motion-standard hover:bg-error/10"
+              className="touch-target rounded-full px-3 py-1 text-xs font-semibold"
             >
               Retry
-            </button>
+            </M3FilledTonalButton>
           </div>
         </div>
       )}

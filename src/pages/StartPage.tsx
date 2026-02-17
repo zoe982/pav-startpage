@@ -8,6 +8,12 @@ import { useAppAccess } from '../hooks/useAppAccess.ts';
 import type { AppKey } from '../types/auth.ts';
 import type { WikiPageSummary } from '../types/wiki.ts';
 import { fetchWikiPages } from '../api/wiki.ts';
+import {
+  M3ElevatedCard,
+  M3IconButton,
+  M3OutlinedTextField,
+  type MaterialTextFieldRef,
+} from '../components/m3/material.tsx';
 
 interface InternalApp {
   readonly title: string;
@@ -34,12 +40,16 @@ const INTERNAL_APPS: InternalApp[] = [
   },
 ];
 
+function isSearchFieldFocused(inputRef: MaterialTextFieldRef | null): boolean {
+  return document.activeElement === inputRef || Boolean(inputRef?.shadowRoot?.activeElement);
+}
+
 export function StartPage(): JSX.Element {
   const { links, isLoading: linksLoading } = useLinks();
   const { isInternal, hasAccess } = useAppAccess();
   const [pinnedPages, setPinnedPages] = useState<WikiPageSummary[]>([]);
   const [search, setSearch] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<MaterialTextFieldRef | null>(null);
 
   const accessibleApps = useMemo(
     () => INTERNAL_APPS.filter((app) => hasAccess(app.key)),
@@ -48,19 +58,25 @@ export function StartPage(): JSX.Element {
 
   useEffect(() => {
     if (!hasAccess('wiki')) return;
+    let isMounted = true;
     void fetchWikiPages().then((pages) => {
+      if (!isMounted) return;
       setPinnedPages(pages.filter((p) => p.showOnStart));
     });
+
+    return () => {
+      isMounted = false;
+    };
   }, [hasAccess]);
 
   // Cmd/Ctrl+K to focus search
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent): void {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
+    function handleKeyDown(event: KeyboardEvent): void {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
         inputRef.current?.focus();
       }
-      if (e.key === 'Escape' && document.activeElement === inputRef.current) {
+      if (event.key === 'Escape' && isSearchFieldFocused(inputRef.current)) {
         setSearch('');
         inputRef.current?.blur();
       }
@@ -74,21 +90,21 @@ export function StartPage(): JSX.Element {
   const filteredLinks = useMemo(() => {
     const sorted = [...links].sort((a, b) => a.title.localeCompare(b.title));
     if (!search.trim()) return sorted;
-    const q = search.toLowerCase();
+    const query = search.toLowerCase();
     return sorted.filter(
       (link) =>
-        link.title.toLowerCase().includes(q) ||
-        (link.description?.toLowerCase().includes(q) ?? false),
+        link.title.toLowerCase().includes(query) ||
+        (link.description?.toLowerCase().includes(query) ?? false),
     );
   }, [links, search]);
 
   const filteredInternalApps = useMemo(() => {
     if (!search.trim()) return accessibleApps;
-    const q = search.toLowerCase();
+    const query = search.toLowerCase();
     return accessibleApps.filter(
       (app) =>
-        app.title.toLowerCase().includes(q) ||
-        app.description.toLowerCase().includes(q),
+        app.title.toLowerCase().includes(query) ||
+        app.description.toLowerCase().includes(query),
     );
   }, [search, accessibleApps]);
 
@@ -105,87 +121,92 @@ export function StartPage(): JSX.Element {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
-                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-outline"
+                className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-on-surface-variant"
                 aria-hidden="true"
               >
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
               </svg>
-              <input
+              <M3OutlinedTextField
                 ref={inputRef}
-                type="text"
-                autoFocus
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                }}
+                onValueChange={setSearch}
                 placeholder="Search apps..."
-                className="touch-target w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-4 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)] placeholder:text-outline motion-standard focus-visible:border-pav-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-gold/30"
+                autoFocus
+                ariaLabel="Search apps"
+                className="touch-target w-full rounded-2xl border border-outline-variant bg-surface-container-lowest py-4 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)]"
+                dataTestId="start-search-field"
               />
               {search ? (
-                <button
-                  onClick={() => { setSearch(''); inputRef.current?.focus(); }}
-                  className="state-layer touch-target-icon absolute right-4 top-1/2 -translate-y-1/2 rounded-md p-2 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
-                  aria-label="Clear search"
+                <M3IconButton
+                  onClick={() => {
+                    setSearch('');
+                    inputRef.current?.focus();
+                  }}
+                  className="state-layer touch-target-icon absolute right-4 top-1/2 -translate-y-1/2 rounded-full text-on-surface-variant"
+                  ariaLabel="Clear search"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
                     <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                   </svg>
-                </button>
+                </M3IconButton>
               ) : (
-                <kbd className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded border border-pav-tan/40 bg-pav-cream px-2 py-1 text-xs font-medium text-outline">
+                <kbd className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded border border-outline-variant bg-surface-container px-2 py-1 text-xs font-medium text-on-surface-variant">
                   ⌘K
                 </kbd>
               )}
             </div>
           </div>
 
-          {/* Team Tools */}
           {filteredInternalApps.length > 0 && (
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-pav-blue">
+              <h2 className="text-xl font-semibold text-on-surface">
                 {search ? `Results for "${search}"` : 'Team Tools'}
               </h2>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredInternalApps.map((app) => (
-                  <Link
+                  <M3ElevatedCard
                     key={app.to}
-                    to={app.to}
-                    className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+                    dataTestId={`internal-app-card-${app.key}`}
+                    className="rounded-2xl border border-outline-variant/70 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pav-gold/15">
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="h-5 w-5 text-pav-terra"
-                          aria-hidden="true"
-                        >
-                          <path d={app.icon} />
-                        </svg>
+                    <Link
+                      to={app.to}
+                      className="state-layer group flex h-full flex-col gap-2 rounded-2xl p-6"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            className="h-5 w-5 text-on-secondary-container"
+                            aria-hidden="true"
+                          >
+                            <path d={app.icon} />
+                          </svg>
+                        </div>
+                        <h3 className="text-sm font-semibold text-on-surface group-hover:text-tertiary">
+                          {app.title}
+                        </h3>
                       </div>
-                      <h3 className="text-sm font-semibold text-pav-blue group-hover:text-pav-terra">
-                        {app.title}
-                      </h3>
-                    </div>
-                    <p className="text-sm text-on-surface-variant">{app.description}</p>
-                  </Link>
+                      <p className="text-sm text-on-surface-variant">{app.description}</p>
+                    </Link>
+                  </M3ElevatedCard>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Quick Links — internal users only */}
           {isInternal && (!search || filteredLinks.length > 0) && (
             <>
-              <h2 className="text-xl font-bold text-pav-blue">
+              <h2 className="text-xl font-semibold text-on-surface">
                 {search && filteredInternalApps.length > 0 ? 'Quick Links' : search ? `Results for "${search}"` : 'Quick Links'}
               </h2>
               {linksLoading ? (
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {Array.from({ length: 4 }, (_, i) => (
+                  {Array.from({ length: 4 }, (_, index) => (
                     <div
-                      key={i}
+                      key={index}
                       className="h-24 skeleton-shimmer rounded-xl"
                     />
                   ))}
@@ -199,7 +220,7 @@ export function StartPage(): JSX.Element {
           )}
 
           {hasNoResults && (
-            <p className="mt-8 text-center text-sm text-outline">
+            <p className="mt-8 text-center text-sm text-on-surface-variant">
               No apps matching &ldquo;{search}&rdquo;
             </p>
           )}
@@ -207,19 +228,23 @@ export function StartPage(): JSX.Element {
 
         {pinnedPages.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold text-pav-blue">
+            <h2 className="text-xl font-semibold text-on-surface">
               Pinned Wiki Pages
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               {pinnedPages.map((page) => (
-                <Link
+                <M3ElevatedCard
                   key={page.id}
-                  to={`/wiki/${page.slug}`}
-                  className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+                  className="rounded-2xl border border-outline-variant/70 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]"
                 >
-                  <h3 className="font-semibold text-pav-blue">{page.title}</h3>
-                  <p className="mt-1 text-sm text-on-surface-variant">View page</p>
-                </Link>
+                  <Link
+                    to={`/wiki/${page.slug}`}
+                    className="state-layer flex h-full flex-col rounded-2xl p-6"
+                  >
+                    <h3 className="font-semibold text-on-surface">{page.title}</h3>
+                    <p className="mt-1 text-sm text-on-surface-variant">View page</p>
+                  </Link>
+                </M3ElevatedCard>
               ))}
             </div>
           </div>

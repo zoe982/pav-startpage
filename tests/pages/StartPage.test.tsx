@@ -3,6 +3,7 @@ import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StartPage } from '../../src/pages/StartPage.tsx';
 import { renderWithProviders, mockUser, mockLink } from '../helpers.tsx';
+import { getMaterialTextFieldValue, setMaterialTextFieldValue } from '../utils/materialTextField.ts';
 
 vi.mock('../../src/hooks/useLinks.ts', () => ({
   useLinks: vi.fn(),
@@ -16,6 +17,10 @@ import { useLinks } from '../../src/hooks/useLinks.ts';
 import { fetchWikiPages } from '../../src/api/wiki.ts';
 
 describe('StartPage', () => {
+  function getSearchField(): HTMLElement {
+    return screen.getByTestId('start-search-field');
+  }
+
   beforeEach(() => {
     vi.mocked(useLinks).mockReset();
     vi.mocked(fetchWikiPages).mockReset();
@@ -49,7 +54,11 @@ describe('StartPage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
+    expect(screen.getByTestId('start-search-field')).toHaveAttribute('data-m3-component', 'outlined-text-field');
+    expect(screen.getByTestId('internal-app-card-brand-voice')).toHaveAttribute('data-m3-component', 'elevated-card');
     expect(screen.getByText('Quick Links')).toBeInTheDocument();
+    expect(screen.getByText('Quick Links').className).toContain('text-on-surface');
+    expect(screen.getByText('Team Tools').className).toContain('text-on-surface');
     expect(screen.getByText('My Link')).toBeInTheDocument();
   });
 
@@ -73,6 +82,7 @@ describe('StartPage', () => {
       expect(screen.getByText('Pinned Page')).toBeInTheDocument();
     });
     expect(screen.getByText('Pinned Wiki Pages')).toBeInTheDocument();
+    expect(screen.getByText('Pinned Wiki Pages').className).toContain('text-on-surface');
     expect(screen.queryByText('Other Page')).not.toBeInTheDocument();
   });
 
@@ -104,7 +114,7 @@ describe('StartPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search apps...')).toBeInTheDocument();
+      expect(screen.getByTestId('start-search-field')).toBeInTheDocument();
     });
     expect(fetchWikiPages).not.toHaveBeenCalled();
   });
@@ -125,18 +135,19 @@ describe('StartPage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    const input = screen.getByPlaceholderText('Search apps...');
-    await user.type(input, 'brand');
-    expect(screen.getByText('Results for "brand"')).toBeInTheDocument();
-    expect(screen.getByText('Brand Voice')).toBeInTheDocument();
+    const searchField = getSearchField();
+    setMaterialTextFieldValue(searchField, 'brand');
+    await waitFor(() => {
+      expect(screen.getByText('Results for "brand"')).toBeInTheDocument();
+      expect(screen.getByText('Brand Voice')).toBeInTheDocument();
+    });
 
-    await user.click(screen.getByRole('button', { name: 'Clear search' }));
-    expect(input).toHaveValue('');
+    await user.click(screen.getByLabelText('Clear search'));
+    expect(getMaterialTextFieldValue(searchField)).toBe('');
     expect(screen.getByText('⌘K')).toBeInTheDocument();
   });
 
   it('shows no-results message when search matches nothing', async () => {
-    const user = userEvent.setup();
     vi.mocked(useLinks).mockReturnValue({
       links: [mockLink({ id: '1', title: 'Atlas', description: 'Flight docs' })],
       isLoading: false,
@@ -148,12 +159,13 @@ describe('StartPage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    await user.type(screen.getByPlaceholderText('Search apps...'), 'zzz-not-found');
-    expect(screen.getByText('No apps matching “zzz-not-found”')).toBeInTheDocument();
+    setMaterialTextFieldValue(getSearchField(), 'zzz-not-found');
+    await waitFor(() => {
+      expect(screen.getByText('No apps matching “zzz-not-found”')).toBeInTheDocument();
+    });
   });
 
   it('supports keyboard shortcuts for focus and escape clear', async () => {
-    const user = userEvent.setup();
     vi.mocked(useLinks).mockReturnValue({
       links: [mockLink({ id: '1', title: 'Atlas' })],
       isLoading: false,
@@ -165,19 +177,51 @@ describe('StartPage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    const input = screen.getByPlaceholderText('Search apps...');
-    input.blur();
+    const searchField = getSearchField();
+    searchField.blur();
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
-    expect(input).toHaveFocus();
+    expect(searchField).toHaveFocus();
 
-    await user.type(input, 'atlas');
-    expect(input).toHaveValue('atlas');
+    setMaterialTextFieldValue(searchField, 'atlas');
+    await waitFor(() => {
+      expect(getMaterialTextFieldValue(searchField)).toBe('atlas');
+    });
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(input).toHaveValue('');
+    await waitFor(() => {
+      expect(getMaterialTextFieldValue(searchField)).toBe('');
+    });
+  });
+
+  it('clears search when escape is pressed while the text-field shadow input is active', async () => {
+    vi.mocked(useLinks).mockReturnValue({
+      links: [mockLink({ id: '1', title: 'Atlas' })],
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderWithProviders(<StartPage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    const searchField = getSearchField();
+    setMaterialTextFieldValue(searchField, 'atlas');
+    await waitFor(() => {
+      expect(getMaterialTextFieldValue(searchField)).toBe('atlas');
+    });
+
+    Object.defineProperty(searchField, 'shadowRoot', {
+      configurable: true,
+      value: { activeElement: document.createElement('input') },
+    });
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(getMaterialTextFieldValue(searchField)).toBe('');
+    });
   });
 
   it('shows quick-links search heading when only links match', async () => {
-    const user = userEvent.setup();
     vi.mocked(useLinks).mockReturnValue({
       links: [mockLink({ id: '1', title: 'Atlas', description: 'Flight docs' })],
       isLoading: false,
@@ -189,8 +233,51 @@ describe('StartPage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    await user.type(screen.getByPlaceholderText('Search apps...'), 'flight');
-    expect(screen.getByText('Results for "flight"')).toBeInTheDocument();
+    setMaterialTextFieldValue(getSearchField(), 'flight');
+    await waitFor(() => {
+      expect(screen.getByText('Results for "flight"')).toBeInTheDocument();
+    });
+  });
+
+  it('keeps quick links heading when search matches internal apps and quick links', async () => {
+    vi.mocked(useLinks).mockReturnValue({
+      links: [mockLink({ id: '1', title: 'Brand wiki', description: 'Brand operations notes' })],
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderWithProviders(<StartPage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    setMaterialTextFieldValue(getSearchField(), 'brand');
+    await waitFor(() => {
+      expect(screen.getByText('Quick Links')).toBeInTheDocument();
+    });
+  });
+
+  it('does not clear search when escape is pressed and search field is not focused', async () => {
+    vi.mocked(useLinks).mockReturnValue({
+      links: [mockLink({ id: '1', title: 'Atlas' })],
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderWithProviders(<StartPage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+    });
+
+    const searchField = getSearchField();
+    setMaterialTextFieldValue(searchField, 'atlas');
+    await waitFor(() => {
+      expect(getMaterialTextFieldValue(searchField)).toBe('atlas');
+    });
+
+    searchField.blur();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(getMaterialTextFieldValue(searchField)).toBe('atlas');
   });
 
   it('hides quick links section for non-internal users', async () => {
@@ -203,20 +290,40 @@ describe('StartPage', () => {
 
     renderWithProviders(<StartPage />, {
       auth: {
-        user: mockUser({ isInternal: false, appGrants: [{ appKey: 'wiki' }] }),
+        user: mockUser({ isInternal: false, appGrants: ['wiki'] }),
         isAuthenticated: true,
       },
     });
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search apps...')).toBeInTheDocument();
+      expect(screen.getByTestId('start-search-field')).toBeInTheDocument();
     });
     expect(screen.queryByText('Quick Links')).not.toBeInTheDocument();
     expect(screen.queryByText('Internal Link')).not.toBeInTheDocument();
   });
 
+  it('shows only granted internal apps for non-internal users', async () => {
+    vi.mocked(useLinks).mockReturnValue({
+      links: [],
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderWithProviders(<StartPage />, {
+      auth: {
+        user: mockUser({ isInternal: false, appGrants: ['templates'] }),
+        isAuthenticated: true,
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Shared Templates')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Brand Voice')).not.toBeInTheDocument();
+  });
+
   it('handles links with null descriptions when filtering', async () => {
-    const user = userEvent.setup();
     vi.mocked(useLinks).mockReturnValue({
       links: [mockLink({ id: '1', title: 'Atlas', description: null })],
       isLoading: false,
@@ -228,7 +335,9 @@ describe('StartPage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    await user.type(screen.getByPlaceholderText('Search apps...'), 'zzz-no-match');
-    expect(screen.getByText('No apps matching “zzz-no-match”')).toBeInTheDocument();
+    setMaterialTextFieldValue(getSearchField(), 'zzz-no-match');
+    await waitFor(() => {
+      expect(screen.getByText('No apps matching “zzz-no-match”')).toBeInTheDocument();
+    });
   });
 });

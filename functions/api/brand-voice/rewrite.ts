@@ -4,6 +4,7 @@ import { assertAppAccess } from '../../types.ts';
 type OutputStyle = 'email' | 'whatsapp' | 'document' | 'instagram' | 'facebook' | 'other';
 type Mode = 'rewrite' | 'draft';
 type MessageRole = 'user' | 'assistant';
+type DraftVersionSource = 'assistant' | 'manual' | 'restore';
 
 const VALID_STYLES: ReadonlySet<string> = new Set(['email', 'whatsapp', 'document', 'instagram', 'facebook', 'other']);
 const VALID_MODES: ReadonlySet<string> = new Set(['rewrite', 'draft']);
@@ -13,22 +14,27 @@ const MAX_CUSTOM_STYLE_LENGTH = 500;
 const MAX_TITLE_LENGTH = 180;
 
 const STYLE_INSTRUCTIONS: Record<OutputStyle, string> = {
-  email: 'Format the output for a professional email. Use appropriate greeting and sign-off structure. Keep paragraphs short and scannable.',
-  whatsapp: 'Format the output for a WhatsApp message. Keep it concise and conversational. Use short paragraphs. No formal greetings or sign-offs.',
-  document: 'Format the output for a formal document. Use complete sentences, proper paragraph structure, and a professional tone throughout.',
+  email: 'Format the output for a professional email. Use appropriate greeting and sign-off structure. Keep paragraphs short and scannable. Best practices: clear subject-ready opening, one request per paragraph, and explicit next step.',
+  whatsapp: 'Format the output for a WhatsApp message. Keep it concise and conversational. Use short paragraphs. No formal greetings or sign-offs. Best practices: lead with the ask, keep to 2-4 short blocks, and include one clear CTA.',
+  document: 'Format the output for a formal document. Use complete sentences, proper paragraph structure, and a professional tone throughout. Best practices: logical heading flow, concise factual statements, and a decisive closing summary.',
   instagram: `Format the output as an Instagram post with two clearly labeled sections:
 
 **IMAGE TEXT:** Short, bold text for the image itself (1-2 lines max, punchy and attention-grabbing, suitable for overlay on a photo). Use sentence case.
 
 **CAPTION:** An engaging Instagram caption. Lead with a strong hook in the first line (only ~125 characters show before "More"). Keep the full caption under 2,200 characters. Use line breaks for readability. Add 3-5 relevant hashtags at the end. Keep the tone warm, approachable, and on-brand. Include a clear call to action.`,
-  facebook: 'Format the output as a Facebook post. Lead with a compelling hook in the first 1-2 lines (only ~125 characters show before "See More"). Keep the total post concise — ideally 40-80 words for maximum engagement. Use short paragraphs with line breaks for scannability. Include a clear call to action. Use 1-3 relevant hashtags at most — do not over-tag. Keep the tone warm, professional, and conversational.',
-  other: 'Format the output as general-purpose text. Keep it clear and well-structured.',
+  facebook: 'Format the output as a Facebook post. Lead with a compelling hook in the first 1-2 lines (only ~125 characters show before "See More"). Keep the total post concise — ideally 40-80 words for maximum engagement. Use short paragraphs with line breaks for scannability. Include a clear call to action. Use 1-3 relevant hashtags at most — do not over-tag. Keep the tone warm, professional, and conversational. Best practices: hook first, action near end, hashtags last.',
+  other: 'Format the output as general-purpose text. Keep it clear and well-structured. Best practices: strong opening line, clean paragraph cadence, and explicit outcome statement.',
 };
 
 interface RewriteBody {
   action?: string;
   threadId?: string;
   text?: string;
+  goal?: string;
+  roughDraft?: string;
+  noDraftProvided?: boolean;
+  draftText?: string;
+  versionId?: string;
   message?: string;
   mode?: string;
   style?: string;
@@ -56,6 +62,15 @@ interface MessageRow {
   role: MessageRole;
   content: string;
   draft_text: string | null;
+}
+
+interface DraftVersionRow {
+  id: string;
+  version_number: number;
+  draft_text: string;
+  source: DraftVersionSource;
+  created_at: string;
+  created_by_name: string;
 }
 
 interface OpenAIChoice {
@@ -242,7 +257,24 @@ async function fetchMessagesForThread(env: Env, threadId: string): Promise<Messa
   return results;
 }
 
-function toThreadResponse(thread: ThreadRow, messages: MessageRow[]): {
+async function fetchDraftVersionsForThread(env: Env, threadId: string): Promise<DraftVersionRow[]> {
+  const { results } = await env.DB.prepare(
+    `SELECT id, version_number, draft_text, source, created_at, created_by_name
+     FROM brand_voice_draft_versions
+     WHERE thread_id = ?
+     ORDER BY version_number DESC, created_at DESC`,
+  )
+    .bind(threadId)
+    .all<DraftVersionRow>();
+
+  return results;
+}
+
+function toThreadResponse(
+  thread: ThreadRow,
+  messages: MessageRow[],
+  draftVersions: DraftVersionRow[],
+): {
   id: string;
   title: string;
   mode: Mode;
@@ -250,6 +282,14 @@ function toThreadResponse(thread: ThreadRow, messages: MessageRow[]): {
   customStyleDescription: string | null;
   latestDraft: string;
   pinnedDraft: string | null;
+  draftVersions: {
+    id: string;
+    versionNumber: number;
+    draftText: string;
+    source: DraftVersionSource;
+    createdAt: string;
+    createdByName: string;
+  }[];
   messages: { id: string; role: MessageRole; content: string }[];
 } {
   return {
@@ -260,6 +300,14 @@ function toThreadResponse(thread: ThreadRow, messages: MessageRow[]): {
     customStyleDescription: thread.custom_style_description,
     latestDraft: thread.latest_draft,
     pinnedDraft: thread.pinned_draft,
+    draftVersions: draftVersions.map((version) => ({
+      id: version.id,
+      versionNumber: version.version_number,
+      draftText: version.draft_text,
+      source: version.source,
+      createdAt: version.created_at,
+      createdByName: version.created_by_name,
+    })),
     messages: messages.map((message) => ({
       id: message.id,
       role: message.role,
@@ -301,6 +349,96 @@ function validateText(value: unknown, errorMessage: string): string {
     throw new Error('Text must be under 10,000 characters');
   }
   return value;
+}
+
+interface StartPromptInput {
+  goal: string;
+  roughDraft: string | null;
+  noDraftProvided: boolean;
+}
+
+function parseStartPromptInput(body: RewriteBody): StartPromptInput {
+  const goalValue = typeof body.goal === 'string' && body.goal.trim()
+    ? body.goal
+    : body.text;
+
+  const goal = validateText(goalValue, 'goal is required');
+
+  const roughDraft = typeof body.roughDraft === 'string'
+    ? body.roughDraft.trim()
+    : '';
+  if (roughDraft.length > MAX_TEXT_LENGTH) {
+    throw new Error('roughDraft must be under 10,000 characters');
+  }
+
+  const hasRoughDraft = roughDraft.length > 0;
+  const noDraftProvided = body.noDraftProvided === true;
+  if (!hasRoughDraft && !noDraftProvided && typeof body.text !== 'string') {
+    throw new Error('roughDraft or noDraftProvided is required');
+  }
+
+  return {
+    goal,
+    roughDraft: hasRoughDraft ? roughDraft : null,
+    noDraftProvided: noDraftProvided || !hasRoughDraft,
+  };
+}
+
+function buildFirstTurnMessage(input: StartPromptInput, style: OutputStyle, mode: Mode): string {
+  const roughDraftSection = input.noDraftProvided
+    ? 'No draft available'
+    : input.roughDraft ?? 'No draft available';
+
+  return [
+    'First-turn setup payload:',
+    `Mode: ${mode}`,
+    `Requested style: ${style}`,
+    'Goal:',
+    '---',
+    input.goal,
+    '---',
+    'Rough draft:',
+    '---',
+    roughDraftSection,
+    '---',
+  ].join('\n');
+}
+
+async function nextDraftVersionNumber(env: Env, threadId: string): Promise<number> {
+  const row = await env.DB.prepare(
+    'SELECT MAX(version_number) AS max_version FROM brand_voice_draft_versions WHERE thread_id = ?',
+  )
+    .bind(threadId)
+    .first<{ max_version: number | null }>();
+
+  return (row?.max_version ?? 0) + 1;
+}
+
+async function insertDraftVersion(
+  env: Env,
+  threadId: string,
+  draftText: string,
+  source: DraftVersionSource,
+  createdBy: string | null,
+  createdByName: string,
+): Promise<void> {
+  const versionNumber = await nextDraftVersionNumber(env, threadId);
+
+  await env.DB.prepare(
+    `INSERT INTO brand_voice_draft_versions
+      (id, thread_id, version_number, draft_text, source, created_by, created_by_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      crypto.randomUUID(),
+      threadId,
+      versionNumber,
+      draftText,
+      source,
+      createdBy,
+      createdByName,
+    )
+    .run();
 }
 
 async function callAiGateway(
@@ -366,7 +504,8 @@ async function buildThreadPayload(env: Env, threadId: string): Promise<Response>
   }
 
   const messages = await fetchMessagesForThread(env, threadId);
-  return Response.json({ thread: toThreadResponse(thread, messages) });
+  const draftVersions = await fetchDraftVersionsForThread(env, threadId);
+  return Response.json({ thread: toThreadResponse(thread, messages, draftVersions) });
 }
 
 export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
@@ -405,10 +544,10 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
 
   if (action === 'start') {
     let customStyleDescription: string | null;
-    let text: string;
+    let startPromptInput: StartPromptInput;
 
     try {
-      text = validateText(body.text, 'text is required');
+      startPromptInput = parseStartPromptInput(body);
       customStyleDescription = validateCustomStyle(body.customStyleDescription);
     } catch {
       return Response.json({ error: 'Invalid request' }, { status: 400 });
@@ -433,7 +572,7 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
       settings.rules_markdown,
       settings.services_markdown,
       [],
-      text,
+      buildFirstTurnMessage(startPromptInput, style, mode),
       true,
     );
 
@@ -471,7 +610,7 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
         userMessageId,
         threadId,
         'user',
-        text,
+        startPromptInput.goal,
         null,
         data.user.id,
         data.user.name,
@@ -493,6 +632,15 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
         'Brand Voice Colleague',
       )
       .run();
+
+    await insertDraftVersion(
+      env,
+      threadId,
+      aiResult.draft,
+      'assistant',
+      null,
+      'Brand Voice Colleague',
+    );
 
     const payload = await buildThreadPayload(env, threadId);
     const responseBody = await payload.json();
@@ -599,6 +747,106 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
         threadId,
       )
       .run();
+
+    await insertDraftVersion(
+      env,
+      threadId,
+      aiResult.draft,
+      'assistant',
+      null,
+      'Brand Voice Colleague',
+    );
+
+    return await buildThreadPayload(env, threadId);
+  }
+
+  if (action === 'saveDraft') {
+    const threadId = typeof body.threadId === 'string' ? body.threadId : '';
+    if (!threadId) {
+      return Response.json({ error: 'threadId is required' }, { status: 400 });
+    }
+
+    let draftText: string;
+    try {
+      draftText = validateText(body.draftText, 'draftText is required');
+    } catch {
+      return Response.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    const existing = await env.DB.prepare('SELECT id FROM brand_voice_threads WHERE id = ?')
+      .bind(threadId)
+      .first();
+
+    if (!existing) {
+      return Response.json({ error: 'Thread not found' }, { status: 404 });
+    }
+
+    await env.DB.prepare(
+      `UPDATE brand_voice_threads
+       SET latest_draft = ?, updated_at = datetime('now'), last_message_at = datetime('now')
+       WHERE id = ?`,
+    )
+      .bind(draftText, threadId)
+      .run();
+
+    await insertDraftVersion(
+      env,
+      threadId,
+      draftText,
+      'manual',
+      data.user.id,
+      data.user.name,
+    );
+
+    return await buildThreadPayload(env, threadId);
+  }
+
+  if (action === 'restoreVersion') {
+    const threadId = typeof body.threadId === 'string' ? body.threadId : '';
+    const versionId = typeof body.versionId === 'string' ? body.versionId : '';
+    if (!threadId) {
+      return Response.json({ error: 'threadId is required' }, { status: 400 });
+    }
+    if (!versionId) {
+      return Response.json({ error: 'versionId is required' }, { status: 400 });
+    }
+
+    const existing = await env.DB.prepare('SELECT id FROM brand_voice_threads WHERE id = ?')
+      .bind(threadId)
+      .first();
+
+    if (!existing) {
+      return Response.json({ error: 'Thread not found' }, { status: 404 });
+    }
+
+    const version = await env.DB.prepare(
+      `SELECT id, version_number, draft_text, source, created_at, created_by_name
+       FROM brand_voice_draft_versions
+       WHERE id = ? AND thread_id = ?`,
+    )
+      .bind(versionId, threadId)
+      .first<DraftVersionRow>();
+
+    if (!version) {
+      return Response.json({ error: 'Version not found' }, { status: 404 });
+    }
+
+    await env.DB.prepare(
+      `UPDATE brand_voice_threads
+       SET latest_draft = ?, updated_at = datetime('now'), last_message_at = datetime('now')
+       WHERE id = ?`,
+    )
+      .bind(version.draft_text, threadId)
+      .run();
+
+    await insertDraftVersion(
+      env,
+      threadId,
+      version.draft_text,
+      'restore',
+      data.user.id,
+      data.user.name,
+    );
 
     return await buildThreadPayload(env, threadId);
   }

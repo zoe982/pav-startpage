@@ -28,11 +28,23 @@ interface MessageRow {
   created_at: string;
 }
 
+interface DraftVersionRow {
+  id: string;
+  thread_id: string;
+  version_number: number;
+  draft_text: string;
+  source: 'assistant' | 'manual' | 'restore';
+  created_by: string | null;
+  created_by_name: string;
+  created_at: string;
+}
+
 interface DbState {
   rulesMarkdown: string;
   servicesMarkdown: string;
   threads: ThreadRow[];
   messages: MessageRow[];
+  draftVersions: DraftVersionRow[];
 }
 
 function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
@@ -41,6 +53,7 @@ function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
     servicesMarkdown: initial.servicesMarkdown ?? '# Services',
     threads: initial.threads ?? [],
     messages: initial.messages ?? [],
+    draftVersions: initial.draftVersions ?? [],
   };
 
   const db = {
@@ -71,6 +84,23 @@ function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
             return state.threads.find((thread) => thread.id === id) ?? null;
           }
 
+          if (query.includes('FROM brand_voice_draft_versions') && query.includes('MAX(version_number)')) {
+            const firstBoundValue = boundValues[0];
+            const threadId = typeof firstBoundValue === 'string' ? firstBoundValue : '';
+            const versions = state.draftVersions.filter((version) => version.thread_id === threadId);
+            const maxVersion = versions.length === 0
+              ? null
+              : Math.max(...versions.map((version) => version.version_number));
+            return { max_version: maxVersion };
+          }
+
+          if (query.includes('FROM brand_voice_draft_versions') && query.includes('WHERE id = ?') && query.includes('thread_id = ?')) {
+            const [versionIdBound, threadIdBound] = boundValues;
+            const versionId = typeof versionIdBound === 'string' ? versionIdBound : '';
+            const threadId = typeof threadIdBound === 'string' ? threadIdBound : '';
+            return state.draftVersions.find((version) => version.id === versionId && version.thread_id === threadId) ?? null;
+          }
+
           return null;
         }),
         all: vi.fn(async () => {
@@ -93,6 +123,16 @@ function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
               results: state.messages
                 .filter((message) => message.thread_id === threadId)
                 .sort((a, b) => (a.created_at < b.created_at ? -1 : 1)),
+            };
+          }
+
+          if (query.includes('FROM brand_voice_draft_versions') && query.includes('WHERE thread_id = ?')) {
+            const firstBoundValue = boundValues[0];
+            const threadId = typeof firstBoundValue === 'string' ? firstBoundValue : '';
+            return {
+              results: state.draftVersions
+                .filter((version) => version.thread_id === threadId)
+                .sort((a, b) => b.version_number - a.version_number),
             };
           }
 
@@ -171,6 +211,37 @@ function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
             });
           }
 
+          if (query.includes('INSERT INTO brand_voice_draft_versions')) {
+            const [
+              id,
+              threadId,
+              versionNumber,
+              draftText,
+              source,
+              createdBy,
+              createdByName,
+            ] = boundValues as [
+              string,
+              string,
+              number,
+              string,
+              DraftVersionRow['source'],
+              string | null,
+              string,
+            ];
+
+            state.draftVersions.push({
+              id,
+              thread_id: threadId,
+              version_number: versionNumber,
+              draft_text: draftText,
+              source,
+              created_by: createdBy,
+              created_by_name: createdByName,
+              created_at: '2026-02-17T12:50:00.000Z',
+            });
+          }
+
           if (query.includes('UPDATE brand_voice_threads SET title = ?')) {
             const [title, id] = boundValues as [string, string];
             const thread = state.threads.find((item) => item.id === id);
@@ -205,6 +276,16 @@ function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
               thread.latest_draft = latestDraft;
               thread.updated_at = '2026-02-17T12:20:00.000Z';
               thread.last_message_at = '2026-02-17T12:20:00.000Z';
+            }
+          }
+
+          if (query.includes('UPDATE brand_voice_threads') && query.includes('SET latest_draft = ?') && !query.includes('SET mode = ?')) {
+            const [latestDraft, id] = boundValues as [string, string];
+            const thread = state.threads.find((item) => item.id === id);
+            if (thread) {
+              thread.latest_draft = latestDraft;
+              thread.updated_at = '2026-02-17T12:55:00.000Z';
+              thread.last_message_at = '2026-02-17T12:55:00.000Z';
             }
           }
 
@@ -268,12 +349,24 @@ describe('Brand Voice chat API', () => {
 
   beforeEach(() => {
     globalThis.fetch = vi.fn();
-    vi.spyOn(crypto, 'randomUUID')
-      .mockReturnValueOnce('thread-1' as ReturnType<typeof crypto.randomUUID>)
-      .mockReturnValueOnce('msg-user-1' as ReturnType<typeof crypto.randomUUID>)
-      .mockReturnValueOnce('msg-assistant-1' as ReturnType<typeof crypto.randomUUID>)
-      .mockReturnValueOnce('msg-user-2' as ReturnType<typeof crypto.randomUUID>)
-      .mockReturnValueOnce('msg-assistant-2' as ReturnType<typeof crypto.randomUUID>);
+    const seededIds = [
+      'thread-1',
+      'msg-user-1',
+      'msg-assistant-1',
+      'version-1',
+      'msg-user-2',
+      'msg-assistant-2',
+      'version-2',
+      'version-3',
+      'version-4',
+    ];
+    let idIndex = 0;
+    vi.spyOn(crypto, 'randomUUID').mockImplementation(() => {
+      const fallback = `uuid-${idIndex + 1}`;
+      const value = seededIds[idIndex] ?? fallback;
+      idIndex += 1;
+      return value as ReturnType<typeof crypto.randomUUID>;
+    });
   });
 
   afterEach(() => {
@@ -398,7 +491,7 @@ describe('Brand Voice chat API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'start',
-          text: 'Write a welcome email',
+          text: 'Write a welcome email. Need a polished welcome message.',
           style: 'email',
           mode: 'draft',
         }),
@@ -413,10 +506,152 @@ describe('Brand Voice chat API', () => {
 
     const response = await onRequestPost(ctx);
     expect(response.status).toBe(201);
-    const body = await response.json() as { thread: { id: string; title: string; messages: unknown[] } };
+    const body = await response.json() as {
+      thread: {
+        id: string;
+        title: string;
+        messages: unknown[];
+      };
+    };
     expect(body.thread.id).toBe('thread-1');
     expect(body.thread.title).toContain('(Test User)');
     expect(body.thread.messages).toHaveLength(2);
+  });
+
+  it('POST start returns 400 when structured first-turn fields are missing', async () => {
+    const { db } = createStatefulDb();
+
+    const missingGoalCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          noDraftProvided: true,
+        }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingDraftChoiceCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          goal: 'Write a welcome email',
+          noDraftProvided: false,
+          roughDraft: '   ',
+        }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingGoalResponse = await onRequestPost(missingGoalCtx);
+    const missingDraftChoiceResponse = await onRequestPost(missingDraftChoiceCtx);
+
+    expect(missingGoalResponse.status).toBe(400);
+    expect(missingDraftChoiceResponse.status).toBe(400);
+  });
+
+  it('POST start builds first-turn payload with no draft fallback when acknowledged', async () => {
+    const { db } = createStatefulDb({
+      rulesMarkdown: '# Rules',
+      servicesMarkdown: '# Services',
+    });
+
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                assistantMessage: 'Drafted your content.',
+                draft: 'Hello from Pet Air Valet',
+                threadTitle: 'Welcome email',
+              }),
+            },
+          },
+        ],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          goal: 'Draft a welcome message',
+          noDraftProvided: true,
+          style: 'email',
+          mode: 'draft',
+        }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls.at(-1);
+    expect(fetchCall).toBeDefined();
+    if (!fetchCall) return;
+    const body = requestBodyString(fetchCall[1] as RequestInit | undefined);
+    expect(body).toContain('Rough draft:');
+    expect(body).toContain('No draft available');
+  });
+
+  it('POST start builds first-turn payload with provided rough draft', async () => {
+    const { db } = createStatefulDb({
+      rulesMarkdown: '# Rules',
+      servicesMarkdown: '# Services',
+    });
+
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                assistantMessage: 'Drafted your content.',
+                draft: 'Hello from Pet Air Valet',
+                threadTitle: 'Welcome email',
+              }),
+            },
+          },
+        ],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          goal: 'Draft a welcome message',
+          roughDraft: 'Initial copy from operations',
+          noDraftProvided: false,
+          style: 'email',
+          mode: 'draft',
+        }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls.at(-1);
+    expect(fetchCall).toBeDefined();
+    if (!fetchCall) return;
+    const body = requestBodyString(fetchCall[1] as RequestInit | undefined);
+    expect(body).toContain('Initial copy from operations');
   });
 
   it('POST reply uses conversation history and returns thread', async () => {
@@ -579,6 +814,239 @@ describe('Brand Voice chat API', () => {
     expect(body.thread.pinnedDraft).toBe('Pinned me');
   });
 
+  it('POST saveDraft validates required fields and missing thread', async () => {
+    const { db } = createStatefulDb();
+
+    const missingThreadIdCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveDraft', threadId: 42, draftText: 'Draft text' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const invalidDraftCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveDraft', threadId: 'thread-1', draftText: '' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingThreadCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveDraft', threadId: 'missing', draftText: 'Draft text' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingThreadIdResponse = await onRequestPost(missingThreadIdCtx);
+    const invalidDraftResponse = await onRequestPost(invalidDraftCtx);
+    const missingThreadResponse = await onRequestPost(missingThreadCtx);
+
+    expect(missingThreadIdResponse.status).toBe(400);
+    expect(invalidDraftResponse.status).toBe(400);
+    expect(missingThreadResponse.status).toBe(404);
+  });
+
+  it('POST saveDraft updates latest draft and appends a manual version', async () => {
+    const { db } = createStatefulDb({
+      threads: [
+        {
+          id: 'thread-1',
+          title: 'Thread',
+          mode: 'draft',
+          style: 'email',
+          custom_style_description: null,
+          latest_draft: 'Old draft',
+          pinned_draft: null,
+          created_by: 'user-1',
+          created_by_name: 'Test User',
+          created_at: '2026-02-17T12:00:00.000Z',
+          updated_at: '2026-02-17T12:00:00.000Z',
+          last_message_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+      draftVersions: [
+        {
+          id: 'existing-version',
+          thread_id: 'thread-1',
+          version_number: 1,
+          draft_text: 'Old draft',
+          source: 'assistant',
+          created_by: null,
+          created_by_name: 'Brand Voice Colleague',
+          created_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+    });
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveDraft', threadId: 'thread-1', draftText: 'Manually edited draft' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { thread: { latestDraft: string; draftVersions: { source: string; draftText: string }[] } };
+    expect(body.thread.latestDraft).toBe('Manually edited draft');
+    expect(body.thread.draftVersions[0]).toMatchObject({
+      source: 'manual',
+      draftText: 'Manually edited draft',
+    });
+  });
+
+  it('POST restoreVersion validates required fields and missing resources', async () => {
+    const { db } = createStatefulDb({
+      threads: [
+        {
+          id: 'thread-1',
+          title: 'Thread',
+          mode: 'draft',
+          style: 'email',
+          custom_style_description: null,
+          latest_draft: 'Current draft',
+          pinned_draft: null,
+          created_by: 'user-1',
+          created_by_name: 'Test User',
+          created_at: '2026-02-17T12:00:00.000Z',
+          updated_at: '2026-02-17T12:00:00.000Z',
+          last_message_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+    });
+
+    const missingThreadIdCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restoreVersion', threadId: 12, versionId: 'version-1' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingVersionIdCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restoreVersion', threadId: 'thread-1', versionId: '' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const invalidVersionIdCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restoreVersion', threadId: 'thread-1', versionId: 99 }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingThreadCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restoreVersion', threadId: 'missing', versionId: 'version-1' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+    const missingVersionCtx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restoreVersion', threadId: 'thread-1', versionId: 'missing' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const missingThreadIdResponse = await onRequestPost(missingThreadIdCtx);
+    const missingVersionIdResponse = await onRequestPost(missingVersionIdCtx);
+    const invalidVersionIdResponse = await onRequestPost(invalidVersionIdCtx);
+    const missingThreadResponse = await onRequestPost(missingThreadCtx);
+    const missingVersionResponse = await onRequestPost(missingVersionCtx);
+
+    expect(missingThreadIdResponse.status).toBe(400);
+    expect(missingVersionIdResponse.status).toBe(400);
+    expect(invalidVersionIdResponse.status).toBe(400);
+    expect(missingThreadResponse.status).toBe(404);
+    expect(missingVersionResponse.status).toBe(404);
+  });
+
+  it('POST restoreVersion restores an older draft and appends a restore version', async () => {
+    const { db } = createStatefulDb({
+      threads: [
+        {
+          id: 'thread-1',
+          title: 'Thread',
+          mode: 'draft',
+          style: 'email',
+          custom_style_description: null,
+          latest_draft: 'Current draft',
+          pinned_draft: null,
+          created_by: 'user-1',
+          created_by_name: 'Test User',
+          created_at: '2026-02-17T12:00:00.000Z',
+          updated_at: '2026-02-17T12:00:00.000Z',
+          last_message_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+      draftVersions: [
+        {
+          id: 'version-7',
+          thread_id: 'thread-1',
+          version_number: 7,
+          draft_text: 'Current draft',
+          source: 'manual',
+          created_by: 'user-1',
+          created_by_name: 'Test User',
+          created_at: '2026-02-17T12:10:00.000Z',
+        },
+        {
+          id: 'version-3',
+          thread_id: 'thread-1',
+          version_number: 3,
+          draft_text: 'Recovered draft',
+          source: 'assistant',
+          created_by: null,
+          created_by_name: 'Brand Voice Colleague',
+          created_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+    });
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restoreVersion', threadId: 'thread-1', versionId: 'version-3' }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { thread: { latestDraft: string; draftVersions: { source: string; draftText: string }[] } };
+    expect(body.thread.latestDraft).toBe('Recovered draft');
+    expect(body.thread.draftVersions[0]).toMatchObject({
+      source: 'restore',
+      draftText: 'Recovered draft',
+    });
+  });
+
   it('POST returns 400 for unsupported action', async () => {
     const { db } = createStatefulDb();
 
@@ -737,6 +1205,28 @@ describe('Brand Voice chat API', () => {
 
     const response = await onRequestPost(ctx);
     expect(response.status).toBe(400);
+  });
+
+  it('POST start validates roughDraft length limit', async () => {
+    const { db } = createStatefulDb();
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          goal: 'Write a welcome email',
+          roughDraft: 'x'.repeat(10001),
+          noDraftProvided: false,
+        }),
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid request' });
   });
 
   it('POST start returns 502 when AI gateway fails', async () => {

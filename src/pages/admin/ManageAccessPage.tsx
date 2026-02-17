@@ -170,6 +170,7 @@ export function ManageAccessPage(): JSX.Element {
                         <button
                           key={opt.key}
                           type="button"
+                          data-testid={`app-option-${opt.key}`}
                           onClick={() => { toggleApp(opt.key); }}
                           className={`state-layer touch-target inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold motion-standard ${
                             selectedApps.has(opt.key)
@@ -189,6 +190,7 @@ export function ManageAccessPage(): JSX.Element {
                   </fieldset>
                   <button
                     type="button"
+                    data-testid="add-guest-submit"
                     onClick={() => { void handleAddGuest(); }}
                     disabled={isSubmitting || !newEmail.trim() || selectedApps.size === 0}
                     className="state-layer touch-target rounded-full bg-pav-terra px-6 py-2 text-sm font-semibold text-on-primary motion-standard hover:bg-pav-terra-hover disabled:cursor-not-allowed disabled:opacity-40"
@@ -267,6 +269,7 @@ export function ManageAccessPage(): JSX.Element {
                     </div>
                     <button
                       type="button"
+                      data-testid={`admin-toggle-${u.id}`}
                       onClick={() => { void handleToggleAdmin(u.id, u.isAdmin); }}
                       className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
                         u.isAdmin

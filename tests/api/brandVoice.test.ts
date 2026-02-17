@@ -10,6 +10,8 @@ import {
   replyInThread,
   renameThread,
   pinThreadDraft,
+  saveThreadDraft,
+  restoreThreadDraftVersion,
 } from '../../src/api/brandVoice.ts';
 
 vi.mock('../../src/api/client.ts', () => ({
@@ -21,6 +23,16 @@ import { apiFetch } from '../../src/api/client.ts';
 beforeEach(() => {
   vi.mocked(apiFetch).mockReset();
 });
+
+function readJsonRequestBody(options: RequestInit | undefined): unknown {
+  expect(options).toBeDefined();
+  const body = options?.body;
+  expect(typeof body).toBe('string');
+  if (typeof body !== 'string') {
+    throw new TypeError('Expected request body to be JSON string.');
+  }
+  return JSON.parse(body) as unknown;
+}
 
 describe('fetchBrandRules', () => {
   it('calls apiFetch with /api/brand-rules', async () => {
@@ -163,21 +175,27 @@ describe('thread APIs', () => {
     vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1' } });
 
     const result = await startThread({
+      goal: 'Draft this',
+      roughDraft: 'Initial rough draft',
+      noDraftProvided: true,
       text: 'Draft this',
       style: 'email',
       mode: 'draft',
       customStyleDescription: 'Friendly',
     });
 
-    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'start',
-        text: 'Draft this',
-        style: 'email',
-        mode: 'draft',
-        customStyleDescription: 'Friendly',
-      }),
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', expect.any(Object));
+    const startOptions = vi.mocked(apiFetch).mock.calls[0]?.[1];
+    expect(startOptions?.method).toBe('POST');
+    expect(readJsonRequestBody(startOptions)).toEqual({
+      action: 'start',
+      goal: 'Draft this',
+      roughDraft: 'Initial rough draft',
+      noDraftProvided: true,
+      text: 'Draft this',
+      style: 'email',
+      mode: 'draft',
+      customStyleDescription: 'Friendly',
     });
     expect(result).toEqual({ thread: { id: 'thread-1' } });
   });
@@ -186,19 +204,21 @@ describe('thread APIs', () => {
     vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-2' } });
 
     await startThread({
-      text: 'Draft this without custom style',
+      goal: 'Draft this without custom style',
+      noDraftProvided: true,
       style: 'document',
       mode: 'rewrite',
     });
 
-    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'start',
-        text: 'Draft this without custom style',
-        style: 'document',
-        mode: 'rewrite',
-      }),
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', expect.any(Object));
+    const startOptions = vi.mocked(apiFetch).mock.calls[0]?.[1];
+    expect(startOptions?.method).toBe('POST');
+    expect(readJsonRequestBody(startOptions)).toEqual({
+      action: 'start',
+      goal: 'Draft this without custom style',
+      noDraftProvided: true,
+      style: 'document',
+      mode: 'rewrite',
     });
   });
 
@@ -274,5 +294,37 @@ describe('thread APIs', () => {
       }),
     });
     expect(result).toEqual({ thread: { id: 'thread-1', pinnedDraft: 'Body' } });
+  });
+
+  it('saves a thread draft', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1', latestDraft: 'Saved draft' } });
+
+    const result = await saveThreadDraft('thread-1', 'Saved draft');
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'saveDraft',
+        threadId: 'thread-1',
+        draftText: 'Saved draft',
+      }),
+    });
+    expect(result).toEqual({ thread: { id: 'thread-1', latestDraft: 'Saved draft' } });
+  });
+
+  it('restores a thread draft version', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ thread: { id: 'thread-1', latestDraft: 'Restored draft' } });
+
+    const result = await restoreThreadDraftVersion('thread-1', 'version-7');
+
+    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'restoreVersion',
+        threadId: 'thread-1',
+        versionId: 'version-7',
+      }),
+    });
+    expect(result).toEqual({ thread: { id: 'thread-1', latestDraft: 'Restored draft' } });
   });
 });

@@ -87,10 +87,10 @@ describe('ManageAccessPage', () => {
     });
 
     await user.type(screen.getByPlaceholderText('guest@example.com'), '  guest@example.com  ');
-    await user.click(screen.getByRole('button', { name: 'Wiki' }));
-    await user.click(screen.getByRole('button', { name: 'Wiki' }));
-    await user.click(screen.getByRole('button', { name: 'Templates' }));
-    await user.click(screen.getByRole('button', { name: 'Add Guest' }));
+    await user.click(screen.getByTestId('app-option-wiki'));
+    await user.click(screen.getByTestId('app-option-wiki'));
+    await user.click(screen.getByTestId('app-option-templates'));
+    await user.click(screen.getByTestId('add-guest-submit'));
 
     await waitFor(() => {
       expect(addGuest).toHaveBeenCalledWith('guest@example.com', ['templates']);
@@ -134,8 +134,8 @@ describe('ManageAccessPage', () => {
     });
 
     await user.type(screen.getByPlaceholderText('guest@example.com'), 'guest@example.com');
-    await user.click(screen.getByRole('button', { name: 'Wiki' }));
-    await user.click(screen.getByRole('button', { name: 'Add Guest' }));
+    await user.click(screen.getByTestId('app-option-wiki'));
+    await user.click(screen.getByTestId('add-guest-submit'));
 
     await waitFor(() => {
       expect(addToast).toHaveBeenCalledWith('Duplicate guest', 'error');
@@ -155,8 +155,8 @@ describe('ManageAccessPage', () => {
     });
 
     await user.type(screen.getByPlaceholderText('guest@example.com'), 'guest@example.com');
-    await user.click(screen.getByRole('button', { name: 'Wiki' }));
-    await user.click(screen.getByRole('button', { name: 'Add Guest' }));
+    await user.click(screen.getByTestId('app-option-wiki'));
+    await user.click(screen.getByTestId('add-guest-submit'));
 
     await waitFor(() => {
       expect(addToast).toHaveBeenCalledWith('Failed to add guest', 'error');
@@ -281,13 +281,13 @@ describe('ManageAccessPage', () => {
     expect(document.querySelector('img[src="https://example.com/alice.png"]')).toBeInTheDocument();
     expect(screen.getByText('B')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'User' }));
+    await user.click(screen.getByTestId('admin-toggle-user-1'));
     await waitFor(() => {
       expect(updateAdminStatus).toHaveBeenCalledWith('user-1', true);
     });
     expect(addToast).toHaveBeenCalledWith('Admin status granted', 'success');
 
-    await user.click(screen.getByRole('button', { name: 'Admin' }));
+    await user.click(screen.getByTestId('admin-toggle-user-2'));
     await waitFor(() => {
       expect(updateAdminStatus).toHaveBeenCalledWith('user-2', false);
     });
@@ -315,7 +315,7 @@ describe('ManageAccessPage', () => {
     });
 
     await user.click(screen.getByRole('button', { name: 'Admins' }));
-    await user.click(screen.getByRole('button', { name: 'User' }));
+    await user.click(screen.getByTestId('admin-toggle-user-1'));
 
     await waitFor(() => {
       expect(addToast).toHaveBeenCalledWith('Failed to update admin status', 'error');

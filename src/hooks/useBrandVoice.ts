@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import type {
-  BrandMode,
   BrandVoiceThread,
   BrandVoiceThreadSummary,
-  OutputStyle,
+  ReplyThreadRequest,
+  StartThreadRequest,
 } from '../types/brandVoice.ts';
 import { ApiError } from '../api/client.ts';
 import {
@@ -13,6 +13,8 @@ import {
   replyInThread as replyInThreadRequest,
   renameThread as renameThreadRequest,
   pinThreadDraft as pinThreadDraftRequest,
+  saveThreadDraft as saveThreadDraftRequest,
+  restoreThreadDraftVersion as restoreThreadDraftVersionRequest,
 } from '../api/brandVoice.ts';
 
 interface UseBrandVoiceReturn {
@@ -22,20 +24,12 @@ interface UseBrandVoiceReturn {
   readonly error: string | null;
   readonly loadThreads: () => Promise<void>;
   readonly selectThread: (threadId: string) => Promise<void>;
-  readonly startThread: (
-    text: string,
-    style: OutputStyle,
-    mode: BrandMode,
-    customStyleDescription?: string,
-  ) => Promise<void>;
-  readonly sendMessage: (
-    message: string,
-    style?: OutputStyle,
-    mode?: BrandMode,
-    customStyleDescription?: string,
-  ) => Promise<void>;
+  readonly startThread: (request: StartThreadRequest) => Promise<void>;
+  readonly sendMessage: (message: string) => Promise<void>;
   readonly renameActiveThread: (title: string) => Promise<void>;
   readonly pinActiveDraft: () => Promise<void>;
+  readonly saveActiveDraft: (draftText: string) => Promise<void>;
+  readonly restoreActiveDraftVersion: (versionId: string) => Promise<void>;
   readonly clearActiveThread: () => void;
 }
 
@@ -153,23 +147,11 @@ export function useBrandVoice(): UseBrandVoiceReturn {
     }
   }, [applyThreadUpdate]);
 
-  const startThread = useCallback(async (
-    text: string,
-    style: OutputStyle,
-    mode: BrandMode,
-    customStyleDescription?: string,
-  ) => {
+  const startThread = useCallback(async (request: StartThreadRequest) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await startThreadRequest({
-        text,
-        style,
-        mode,
-        ...(customStyleDescription
-          ? { customStyleDescription }
-          : {}),
-      });
+      const response = await startThreadRequest(request);
       applyThreadUpdate(response.thread);
     } catch (err) {
       setError(toErrorMessage(err, 'Failed to start thread'));
@@ -178,26 +160,17 @@ export function useBrandVoice(): UseBrandVoiceReturn {
     }
   }, [applyThreadUpdate]);
 
-  const sendMessage = useCallback(async (
-    message: string,
-    style?: OutputStyle,
-    mode?: BrandMode,
-    customStyleDescription?: string,
-  ) => {
+  const sendMessage = useCallback(async (message: string) => {
     if (!activeThread) return;
 
     try {
       setIsLoading(true);
       setError(null);
-      const response = await replyInThreadRequest({
+      const payload: ReplyThreadRequest = {
         threadId: activeThread.id,
         message,
-        ...(style ? { style } : {}),
-        ...(mode ? { mode } : {}),
-        ...(customStyleDescription
-          ? { customStyleDescription }
-          : {}),
-      });
+      };
+      const response = await replyInThreadRequest(payload);
       applyThreadUpdate(response.thread);
     } catch (err) {
       setError(toErrorMessage(err, 'Failed to send message'));
@@ -236,6 +209,36 @@ export function useBrandVoice(): UseBrandVoiceReturn {
     }
   }, [activeThread, applyThreadUpdate]);
 
+  const saveActiveDraft = useCallback(async (draftText: string) => {
+    if (!activeThread) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await saveThreadDraftRequest(activeThread.id, draftText);
+      applyThreadUpdate(response.thread);
+    } catch (err) {
+      setError(toErrorMessage(err, 'Failed to save draft'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeThread, applyThreadUpdate]);
+
+  const restoreActiveDraftVersion = useCallback(async (versionId: string) => {
+    if (!activeThread) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await restoreThreadDraftVersionRequest(activeThread.id, versionId);
+      applyThreadUpdate(response.thread);
+    } catch (err) {
+      setError(toErrorMessage(err, 'Failed to restore version'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeThread, applyThreadUpdate]);
+
   const clearActiveThread = useCallback(() => {
     setActiveThread(null);
   }, []);
@@ -251,6 +254,8 @@ export function useBrandVoice(): UseBrandVoiceReturn {
     sendMessage,
     renameActiveThread,
     pinActiveDraft,
+    saveActiveDraft,
+    restoreActiveDraftVersion,
     clearActiveThread,
   } as const;
 }

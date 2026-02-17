@@ -97,17 +97,36 @@ export async function getThread(threadId: string): Promise<ThreadDetailResponse>
 }
 
 export async function startThread(request: StartThreadRequest): Promise<ThreadDetailResponse> {
+  const payload: {
+    action: 'start';
+    goal: string;
+    roughDraft?: string;
+    noDraftProvided: boolean;
+    text?: string;
+    style: OutputStyle;
+    mode: BrandMode;
+    customStyleDescription?: string;
+  } = {
+    action: 'start',
+    goal: request.goal,
+    noDraftProvided: request.noDraftProvided,
+    style: request.style,
+    mode: request.mode,
+  };
+
+  if (request.roughDraft) {
+    payload.roughDraft = request.roughDraft;
+  }
+  if (request.text) {
+    payload.text = request.text;
+  }
+  if (request.customStyleDescription) {
+    payload.customStyleDescription = request.customStyleDescription;
+  }
+
   return await apiFetch<ThreadDetailResponse>('/api/brand-voice/rewrite', {
     method: 'POST',
-    body: JSON.stringify({
-      action: 'start',
-      text: request.text,
-      style: request.style,
-      mode: request.mode,
-      ...(request.customStyleDescription
-        ? { customStyleDescription: request.customStyleDescription }
-        : {}),
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -144,6 +163,34 @@ export async function pinThreadDraft(threadId: string): Promise<ThreadDetailResp
     body: JSON.stringify({
       action: 'pin',
       threadId,
+    }),
+  });
+}
+
+export async function saveThreadDraft(
+  threadId: string,
+  draftText: string,
+): Promise<ThreadDetailResponse> {
+  return await apiFetch<ThreadDetailResponse>('/api/brand-voice/rewrite', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'saveDraft',
+      threadId,
+      draftText,
+    }),
+  });
+}
+
+export async function restoreThreadDraftVersion(
+  threadId: string,
+  versionId: string,
+): Promise<ThreadDetailResponse> {
+  return await apiFetch<ThreadDetailResponse>('/api/brand-voice/rewrite', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'restoreVersion',
+      threadId,
+      versionId,
     }),
   });
 }

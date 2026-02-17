@@ -356,3 +356,31 @@ h1, h2, h3 {
     opacity: 0.16;
   }
 }
+
+/* Material wrapper overrides for Header + Start slice */
+md-text-button[data-m3-component='text-button'] {
+  --md-text-button-container-shape: var(--md-sys-shape-corner-full);
+  --md-text-button-label-text-color: var(--md-sys-color-on-surface-variant);
+}
+
+md-filled-tonal-button[data-m3-component='filled-tonal-button'] {
+  --md-filled-tonal-button-container-shape: var(--md-sys-shape-corner-full);
+  --md-filled-tonal-button-container-color: var(--md-sys-color-secondary-container);
+  --md-filled-tonal-button-label-text-color: var(--md-sys-color-on-secondary-container);
+}
+
+md-icon-button[data-m3-component='icon-button'] {
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+}
+
+md-outlined-text-field[data-m3-component='outlined-text-field'] {
+  --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-extra-large);
+  --md-outlined-text-field-input-text-color: var(--md-sys-color-on-surface);
+  --md-outlined-text-field-outline-color: var(--md-sys-color-outline-variant);
+  --md-outlined-text-field-focus-outline-color: var(--md-sys-color-primary);
+}
+
+md-elevated-card[data-m3-component='elevated-card'] {
+  --md-elevated-card-container-shape: var(--md-sys-shape-corner-extra-large);
+  --md-elevated-card-container-color: var(--md-sys-color-surface-container-lowest);
+}

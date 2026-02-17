@@ -11,6 +11,8 @@ vi.mock('../../src/api/brandVoice.ts', () => ({
   replyInThread: vi.fn(),
   renameThread: vi.fn(),
   pinThreadDraft: vi.fn(),
+  saveThreadDraft: vi.fn(),
+  restoreThreadDraftVersion: vi.fn(),
 }));
 
 import {
@@ -20,6 +22,8 @@ import {
   replyInThread,
   renameThread,
   pinThreadDraft,
+  saveThreadDraft,
+  restoreThreadDraftVersion,
 } from '../../src/api/brandVoice.ts';
 
 function buildThread(overrides: Partial<BrandVoiceThread> = {}): BrandVoiceThread {
@@ -31,6 +35,16 @@ function buildThread(overrides: Partial<BrandVoiceThread> = {}): BrandVoiceThrea
     customStyleDescription: null,
     latestDraft: 'Body v1',
     pinnedDraft: null,
+    draftVersions: [
+      {
+        id: 'version-1',
+        versionNumber: 1,
+        draftText: 'Body v1',
+        source: 'assistant',
+        createdAt: '2026-02-17T12:00:00.000Z',
+        createdByName: 'Brand Voice Colleague',
+      },
+    ],
     messages: [
       { id: 'msg-1', role: 'user', content: 'Write a welcome email' },
       { id: 'msg-2', role: 'assistant', content: 'Drafted it.' },
@@ -47,6 +61,8 @@ describe('useBrandVoice', () => {
     vi.mocked(replyInThread).mockReset();
     vi.mocked(renameThread).mockReset();
     vi.mocked(pinThreadDraft).mockReset();
+    vi.mocked(saveThreadDraft).mockReset();
+    vi.mocked(restoreThreadDraftVersion).mockReset();
   });
 
   it('starts with empty state', () => {
@@ -114,11 +130,17 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Create a new draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     expect(vi.mocked(startThread)).toHaveBeenCalledWith({
-      text: 'Create a new draft',
+      goal: 'Create a new draft',
+      noDraftProvided: true,
       style: 'email',
       mode: 'draft',
     });
@@ -136,11 +158,20 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Create a new draft', 'other', 'draft', 'Use this exact style');
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        roughDraft: 'Existing source',
+        noDraftProvided: false,
+        style: 'other',
+        mode: 'draft',
+        customStyleDescription: 'Use this exact style',
+      });
     });
 
     expect(vi.mocked(startThread)).toHaveBeenCalledWith({
-      text: 'Create a new draft',
+      goal: 'Create a new draft',
+      roughDraft: 'Existing source',
+      noDraftProvided: false,
       style: 'other',
       mode: 'draft',
       customStyleDescription: 'Use this exact style',
@@ -164,22 +195,25 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Create a new draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     await act(async () => {
-      await result.current.sendMessage('Make it shorter', 'email', 'draft');
+      await result.current.sendMessage('Make it shorter');
     });
 
     expect(vi.mocked(replyInThread)).toHaveBeenCalledWith({
       threadId: 'thread-1',
       message: 'Make it shorter',
-      style: 'email',
-      mode: 'draft',
     });
     const replyPayload = vi.mocked(replyInThread).mock.calls[0]?.[0] as Record<string, unknown>;
     expect(replyPayload).toBeDefined();
-    expect(Object.hasOwn(replyPayload, 'customStyleDescription')).toBe(false);
+    expect(Object.keys(replyPayload)).toEqual(['threadId', 'message']);
 
     expect(result.current.activeThread?.latestDraft).toBe('Body v2');
     expect(result.current.activeThread?.messages.at(-1)).toEqual({
@@ -193,20 +227,25 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.sendMessage('No thread yet', 'email', 'draft');
+      await result.current.sendMessage('No thread yet');
     });
 
     expect(vi.mocked(replyInThread)).not.toHaveBeenCalled();
   });
 
-  it('sendMessage omits optional fields when style and mode are not provided', async () => {
+  it('sendMessage posts only required fields', async () => {
     vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
     vi.mocked(replyInThread).mockResolvedValue({ thread: buildThread({ latestDraft: 'Body v3' }) });
 
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Create a new draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     await act(async () => {
@@ -219,32 +258,7 @@ describe('useBrandVoice', () => {
     });
     const payload = vi.mocked(replyInThread).mock.calls[0]?.[0] as Record<string, unknown>;
     expect(payload).toBeDefined();
-    expect(Object.hasOwn(payload, 'style')).toBe(false);
-    expect(Object.hasOwn(payload, 'mode')).toBe(false);
-    expect(Object.hasOwn(payload, 'customStyleDescription')).toBe(false);
-  });
-
-  it('sendMessage includes custom style description when provided', async () => {
-    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
-    vi.mocked(replyInThread).mockResolvedValue({ thread: buildThread({ latestDraft: 'Body v4' }) });
-
-    const { result } = renderHook(() => useBrandVoice());
-
-    await act(async () => {
-      await result.current.startThread('Create a new draft', 'email', 'draft');
-    });
-
-    await act(async () => {
-      await result.current.sendMessage('Update format', 'other', 'rewrite', 'Use newsletter formatting');
-    });
-
-    expect(vi.mocked(replyInThread)).toHaveBeenCalledWith({
-      threadId: 'thread-1',
-      message: 'Update format',
-      style: 'other',
-      mode: 'rewrite',
-      customStyleDescription: 'Use newsletter formatting',
-    });
+    expect(Object.keys(payload)).toEqual(['threadId', 'message']);
   });
 
   it('renameActiveThread updates active thread and summary title', async () => {
@@ -256,7 +270,12 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Create a new draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     await act(async () => {
@@ -277,7 +296,12 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Create a new draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     await act(async () => {
@@ -286,6 +310,84 @@ describe('useBrandVoice', () => {
 
     expect(vi.mocked(pinThreadDraft)).toHaveBeenCalledWith('thread-1');
     expect(result.current.activeThread?.pinnedDraft).toBe('Body v1');
+  });
+
+  it('saveActiveDraft persists draft text and updates versions', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(saveThreadDraft).mockResolvedValue({
+      thread: buildThread({
+        latestDraft: 'Body v2',
+        draftVersions: [
+          {
+            id: 'version-2',
+            versionNumber: 2,
+            draftText: 'Body v2',
+            source: 'manual',
+            createdAt: '2026-02-17T12:10:00.000Z',
+            createdByName: 'Test User',
+          },
+          ...buildThread().draftVersions,
+        ],
+      }),
+    });
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
+    });
+
+    await act(async () => {
+      await result.current.saveActiveDraft('Body v2');
+    });
+
+    expect(vi.mocked(saveThreadDraft)).toHaveBeenCalledWith('thread-1', 'Body v2');
+    expect(result.current.activeThread?.latestDraft).toBe('Body v2');
+    expect(result.current.activeThread?.draftVersions[0]?.id).toBe('version-2');
+  });
+
+  it('restoreActiveDraftVersion restores a prior version', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(restoreThreadDraftVersion).mockResolvedValue({
+      thread: buildThread({
+        latestDraft: 'Body v0',
+        draftVersions: [
+          {
+            id: 'version-3',
+            versionNumber: 3,
+            draftText: 'Body v0',
+            source: 'restore',
+            createdAt: '2026-02-17T12:20:00.000Z',
+            createdByName: 'Test User',
+          },
+          ...buildThread().draftVersions,
+        ],
+      }),
+    });
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread({
+        goal: 'Create a new draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
+    });
+
+    await act(async () => {
+      await result.current.restoreActiveDraftVersion('version-1');
+    });
+
+    expect(vi.mocked(restoreThreadDraftVersion)).toHaveBeenCalledWith('thread-1', 'version-1');
+    expect(result.current.activeThread?.latestDraft).toBe('Body v0');
+    expect(result.current.activeThread?.draftVersions[0]?.source).toBe('restore');
   });
 
   it('clearActiveThread clears selected thread', () => {
@@ -316,6 +418,26 @@ describe('useBrandVoice', () => {
     });
 
     expect(vi.mocked(pinThreadDraft)).not.toHaveBeenCalled();
+  });
+
+  it('saveActiveDraft is a no-op without an active thread', async () => {
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.saveActiveDraft('Body v2');
+    });
+
+    expect(vi.mocked(saveThreadDraft)).not.toHaveBeenCalled();
+  });
+
+  it('restoreActiveDraftVersion is a no-op without an active thread', async () => {
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.restoreActiveDraftVersion('version-1');
+    });
+
+    expect(vi.mocked(restoreThreadDraftVersion)).not.toHaveBeenCalled();
   });
 
   it('stores error when API call fails', async () => {
@@ -485,7 +607,12 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Need copy', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Need copy',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     expect(result.current.error).toBe(
@@ -500,7 +627,12 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Initial draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Initial draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     await act(async () => {
@@ -519,7 +651,12 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Initial draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Initial draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     await act(async () => {
@@ -536,7 +673,12 @@ describe('useBrandVoice', () => {
     const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.startThread('Initial draft', 'email', 'draft');
+      await result.current.startThread({
+        goal: 'Initial draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
     });
 
     await act(async () => {
@@ -545,4 +687,49 @@ describe('useBrandVoice', () => {
 
     expect(result.current.error).toBe('Pin failed');
   });
+
+  it('stores save-draft specific failure message', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(saveThreadDraft).mockRejectedValue(new Error('Save failed'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread({
+        goal: 'Initial draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
+    });
+
+    await act(async () => {
+      await result.current.saveActiveDraft('Body v2');
+    });
+
+    expect(result.current.error).toBe('Save failed');
+  });
+
+  it('stores restore-version specific failure message', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(restoreThreadDraftVersion).mockRejectedValue(new Error('Restore failed'));
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread({
+        goal: 'Initial draft',
+        noDraftProvided: true,
+        style: 'email',
+        mode: 'draft',
+      });
+    });
+
+    await act(async () => {
+      await result.current.restoreActiveDraftVersion('version-1');
+    });
+
+    expect(result.current.error).toBe('Restore failed');
+  });
+
 });
