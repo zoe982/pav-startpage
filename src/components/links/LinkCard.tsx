@@ -108,7 +108,7 @@ export function LinkCard({ link }: { readonly link: Link }): JSX.Element {
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+      className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
     >
       <div className="flex items-center gap-3">
         {icon ? (

@@ -29,7 +29,7 @@ export function AppAccessGuard({ children, appKey }: AppAccessGuardProps): JSX.E
           <div className="rounded-lg bg-error-container p-4 max-w-md">
             <p className="text-sm font-medium text-on-error-container">{authError}</p>
           </div>
-          <a href="/login" className="text-sm text-pav-blue hover:underline">Go to login</a>
+          <a href="/login" className="state-layer touch-target rounded-md px-3 py-2 text-sm text-pav-blue hover:underline">Go to login</a>
         </div>
       );
     }

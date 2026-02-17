@@ -28,7 +28,7 @@ const components: Components = {
     <li className="leading-relaxed" {...props}>{children}</li>
   ),
   a: ({ children, ...props }: ComponentPropsWithoutRef<'a'>) => (
-    <a className="font-medium text-pav-terra underline hover:text-pav-terra-hover" {...props}>{children}</a>
+    <a className="state-layer rounded-sm font-medium text-pav-terra underline motion-standard hover:text-pav-terra-hover" {...props}>{children}</a>
   ),
   blockquote: ({ children, ...props }: ComponentPropsWithoutRef<'blockquote'>) => (
     <blockquote className="my-4 border-l-4 border-pav-gold pl-4 italic text-on-surface-variant" {...props}>{children}</blockquote>

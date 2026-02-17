@@ -98,7 +98,7 @@ export function ManageLinksPage(): JSX.Element {
             {!showForm && !editingLink && (
               <button
                 onClick={() => { setShowForm(true); }}
-                className="state-layer rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
+                className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
               >
                 Add Link
               </button>
@@ -160,13 +160,13 @@ export function ManageLinksPage(): JSX.Element {
                           setEditingLink(link);
                           setShowForm(false);
                         }}
-                        className="rounded px-2 py-1 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
+                        className="state-layer touch-target rounded px-3 py-2 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => void handleDelete(link.id)}
-                        className="rounded px-2 py-1 text-xs text-error motion-standard hover:bg-error-container"
+                        className="state-layer touch-target rounded px-3 py-2 text-xs text-error motion-standard hover:bg-error-container"
                       >
                         Delete
                       </button>

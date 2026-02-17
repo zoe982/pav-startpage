@@ -2,9 +2,9 @@ import type { JSX } from 'react';
 import { useToast } from '../../hooks/useToast.ts';
 
 const typeStyles = {
-  success: 'bg-green-600',
-  error: 'bg-red-600',
-  info: 'bg-pav-blue',
+  success: 'bg-success-container text-on-success-container',
+  error: 'bg-error-container text-on-error-container',
+  info: 'bg-pav-blue text-on-primary',
 } as const;
 
 export function ToastContainer(): JSX.Element | null {
@@ -20,12 +20,12 @@ export function ToastContainer(): JSX.Element | null {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-on-primary shadow-[var(--shadow-elevation-3)] ${typeStyles[toast.type]}`}
+          className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium shadow-[var(--shadow-elevation-3)] ${typeStyles[toast.type]}`}
         >
           <span>{toast.message}</span>
           <button
             onClick={() => { removeToast(toast.id); }}
-            className="ml-2 opacity-70 motion-standard hover:opacity-100"
+            className="state-layer touch-target-icon ml-2 rounded-full p-1 opacity-70 motion-standard hover:opacity-100"
             aria-label="Dismiss"
           >
             &times;

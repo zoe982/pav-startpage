@@ -117,7 +117,7 @@ export function BrandVoicePage(): JSX.Element {
             <button
               type="button"
               onClick={() => { handleModeChange('rewrite'); }}
-              className={`rounded-full px-5 py-2 text-xs font-semibold tracking-wide motion-standard ${
+              className={`state-layer touch-target rounded-full px-6 py-2 text-xs font-semibold tracking-wide motion-standard ${
                 mode === 'rewrite'
                   ? 'bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
                   : 'text-on-surface-variant hover:bg-surface-container-highest'
@@ -128,7 +128,7 @@ export function BrandVoicePage(): JSX.Element {
             <button
               type="button"
               onClick={() => { handleModeChange('draft'); }}
-              className={`rounded-full px-5 py-2 text-xs font-semibold tracking-wide motion-standard ${
+              className={`state-layer touch-target rounded-full px-6 py-2 text-xs font-semibold tracking-wide motion-standard ${
                 mode === 'draft'
                   ? 'bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
                   : 'text-on-surface-variant hover:bg-surface-container-highest'
@@ -141,7 +141,7 @@ export function BrandVoicePage(): JSX.Element {
 
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* ── Input panel ── */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-black/[0.04]">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-outline-variant/40">
             <label htmlFor="brand-input" className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
               {config.label}
             </label>
@@ -154,26 +154,26 @@ export function BrandVoicePage(): JSX.Element {
               onChange={(e) => { setText(e.target.value); resize(); }}
               placeholder={config.placeholder}
               maxLength={10000}
-              className="min-h-[160px] resize-none overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 text-sm leading-relaxed text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
+              className="touch-target min-h-[160px] resize-none overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 text-sm leading-relaxed text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
             />
 
             {/* Style selector — M3 filter chips */}
             <fieldset>
               <legend className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Output Style</legend>
-              <div className="mt-2.5 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {OUTPUT_STYLES.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => { setStyle(opt.value); }}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold motion-standard ${
+                    className={`state-layer touch-target inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold motion-standard ${
                       style === opt.value
                         ? 'border-secondary-container bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
                         : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-outline hover:bg-surface-container'
                     }`}
                   >
                     {style === opt.value && (
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                       </svg>
                     )}
@@ -191,7 +191,7 @@ export function BrandVoicePage(): JSX.Element {
                 onChange={(e) => { setCustomStyleDescription(e.target.value); }}
                 placeholder="Describe the format you want, e.g. 'Instagram caption'..."
                 maxLength={500}
-                className="rounded-2xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
+                className="touch-target rounded-2xl border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
               />
             )}
 
@@ -204,7 +204,7 @@ export function BrandVoicePage(): JSX.Element {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="rounded-full px-4 py-2 text-sm font-medium text-on-surface-variant motion-standard hover:bg-surface-container-high"
+                    className="state-layer touch-target rounded-full px-4 py-2 text-sm font-medium text-on-surface-variant motion-standard hover:bg-surface-container-high"
                   >
                     Clear
                   </button>
@@ -213,7 +213,7 @@ export function BrandVoicePage(): JSX.Element {
                   <button
                     type="button"
                     onClick={cancel}
-                    className="rounded-full border border-outline px-4 py-2 text-sm font-medium text-on-surface-variant motion-standard hover:bg-surface-container-high"
+                    className="state-layer touch-target rounded-full border border-outline px-4 py-2 text-sm font-medium text-on-surface-variant motion-standard hover:bg-surface-container-high"
                   >
                     Cancel
                   </button>
@@ -221,7 +221,7 @@ export function BrandVoicePage(): JSX.Element {
                 <button
                   type="submit"
                   disabled={isLoading || !text.trim()}
-                  className="state-layer rounded-full bg-pav-blue px-6 py-2.5 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-3)] motion-standard hover:bg-pav-blue-hover hover:shadow-[var(--shadow-elevation-4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                  className="state-layer touch-target rounded-full bg-pav-blue px-6 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-3)] motion-standard hover:bg-pav-blue-hover hover:shadow-[var(--shadow-elevation-4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                 >
                   {isLoading ? `${config.buttonLabel === 'Draft' ? 'Drafting' : 'Rewriting'}\u2026` : config.buttonLabel}
                 </button>
@@ -230,7 +230,7 @@ export function BrandVoicePage(): JSX.Element {
           </form>
 
           {/* ── Output panel ── */}
-          <div className="flex flex-col gap-4 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-black/[0.04]">
+          <div className="flex flex-col gap-4 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-outline-variant/40">
             {/* Header + copy */}
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Result</span>
@@ -238,7 +238,7 @@ export function BrandVoicePage(): JSX.Element {
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold motion-standard ${
+                  className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
                     copied
                       ? 'bg-success-container text-on-success-container'
                       : 'text-on-surface-variant hover:bg-surface-container-high'
@@ -257,7 +257,7 @@ export function BrandVoicePage(): JSX.Element {
                   <button
                     type="button"
                     onClick={cancel}
-                    className="text-xs font-medium text-on-surface-variant motion-standard hover:text-on-surface"
+                    className="state-layer touch-target rounded-full px-4 py-2 text-xs font-medium text-on-surface-variant motion-standard hover:text-on-surface"
                   >
                     Cancel
                   </button>
@@ -269,7 +269,7 @@ export function BrandVoicePage(): JSX.Element {
                 </div>
               )}
               {result && !isLoading && (
-                <div className="p-5 text-sm leading-relaxed whitespace-pre-wrap select-all text-on-surface">
+                <div className="p-6 text-sm leading-relaxed whitespace-pre-wrap select-all text-on-surface">
                   {result.rewritten}
                 </div>
               )}
@@ -302,13 +302,13 @@ export function BrandVoicePage(): JSX.Element {
                     onKeyDown={(e) => { if (e.key === 'Enter') { void handleRefine(); } }}
                     placeholder="Refine: 'Make it shorter', 'More formal'..."
                     maxLength={2000}
-                    className="flex-1 rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
+                    className="touch-target flex-1 rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
                   />
                   <button
                     type="button"
                     onClick={() => { void handleRefine(); }}
                     disabled={!feedback.trim()}
-                    className="state-layer rounded-full bg-pav-blue px-5 py-2.5 text-sm font-semibold text-on-primary motion-standard hover:bg-pav-blue-hover hover:shadow-[var(--shadow-elevation-2)] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="state-layer touch-target rounded-full bg-pav-blue px-6 py-2 text-sm font-semibold text-on-primary motion-standard hover:bg-pav-blue-hover hover:shadow-[var(--shadow-elevation-2)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Refine
                   </button>
@@ -320,9 +320,9 @@ export function BrandVoicePage(): JSX.Element {
 
         {/* Full-width diff section — only in rewrite mode */}
         {mode === 'rewrite' && result && !isLoading && (
-          <div className="mt-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-black/[0.04]">
+          <div className="mt-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-outline-variant/40">
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Changes</h2>
-            <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-5">
+            <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-6">
               <DiffView original={result.original} rewritten={result.rewritten} />
             </div>
           </div>

@@ -21,7 +21,7 @@ export function AdminGuard({ children }: { readonly children: ReactNode }): JSX.
           <div className="rounded-lg bg-error-container p-4 max-w-md">
             <p className="text-sm font-medium text-on-error-container">{authError}</p>
           </div>
-          <a href="/login" className="text-sm text-pav-blue hover:underline">Go to login</a>
+          <a href="/login" className="state-layer touch-target rounded-md px-3 py-2 text-sm text-pav-blue hover:underline">Go to login</a>
         </div>
       );
     }
@@ -35,7 +35,7 @@ export function AdminGuard({ children }: { readonly children: ReactNode }): JSX.
         <p className="text-sm text-on-surface-variant">
           Your account ({user?.email}) does not have admin access.
         </p>
-        <a href="/" className="mt-2 text-sm text-pav-blue hover:underline">Back to home</a>
+        <a href="/" className="state-layer touch-target mt-2 rounded-md px-3 py-2 text-sm text-pav-blue hover:underline">Back to home</a>
       </div>
     );
   }

@@ -4,7 +4,7 @@ export function GoogleLoginButton(): JSX.Element {
   return (
     <a
       href="/api/auth/login"
-      className="inline-flex items-center gap-3 rounded-lg bg-surface-container-lowest px-6 py-3 text-sm font-medium text-on-surface shadow-[var(--shadow-elevation-2)] ring-1 ring-pav-grey/20 motion-standard hover:bg-surface-container hover:shadow-[var(--shadow-elevation-3)]"
+      className="state-layer touch-target inline-flex items-center gap-3 rounded-lg bg-surface-container-lowest px-6 py-3 text-sm font-medium text-on-surface shadow-[var(--shadow-elevation-2)] ring-1 ring-outline-variant/40 motion-standard hover:bg-surface-container hover:shadow-[var(--shadow-elevation-3)]"
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
         <path

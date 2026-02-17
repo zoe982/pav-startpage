@@ -10,7 +10,7 @@ export function NotFoundPage(): JSX.Element {
         <p className="mt-4 text-lg text-on-surface-variant">Page not found</p>
         <Link
           to="/"
-          className="state-layer mt-6 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
+          className="state-layer touch-target mt-6 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
         >
           Go home
         </Link>

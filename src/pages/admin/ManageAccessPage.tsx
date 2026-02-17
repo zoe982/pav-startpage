@@ -119,7 +119,7 @@ export function ManageAccessPage(): JSX.Element {
             <button
               type="button"
               onClick={() => { setTab('guests'); }}
-              className={`rounded-full px-5 py-2 text-xs font-semibold tracking-wide motion-standard ${
+              className={`state-layer touch-target rounded-full px-6 py-2 text-xs font-semibold tracking-wide motion-standard ${
                 tab === 'guests'
                   ? 'bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
                   : 'text-on-surface-variant hover:bg-surface-container-highest'
@@ -130,7 +130,7 @@ export function ManageAccessPage(): JSX.Element {
             <button
               type="button"
               onClick={() => { setTab('admins'); }}
-              className={`rounded-full px-5 py-2 text-xs font-semibold tracking-wide motion-standard ${
+              className={`state-layer touch-target rounded-full px-6 py-2 text-xs font-semibold tracking-wide motion-standard ${
                 tab === 'admins'
                   ? 'bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
                   : 'text-on-surface-variant hover:bg-surface-container-highest'
@@ -157,7 +157,7 @@ export function ManageAccessPage(): JSX.Element {
                     value={newEmail}
                     onChange={(e) => { setNewEmail(e.target.value); }}
                     placeholder="guest@example.com"
-                    className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
+                    className="touch-target w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
                   />
                   <fieldset>
                     <legend className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Apps</legend>
@@ -167,14 +167,14 @@ export function ManageAccessPage(): JSX.Element {
                           key={opt.key}
                           type="button"
                           onClick={() => { toggleApp(opt.key); }}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold motion-standard ${
+                          className={`state-layer touch-target inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold motion-standard ${
                             selectedApps.has(opt.key)
                               ? 'border-secondary-container bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
                               : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-outline hover:bg-surface-container'
                           }`}
                         >
                           {selectedApps.has(opt.key) && (
-                            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                             </svg>
                           )}
@@ -187,7 +187,7 @@ export function ManageAccessPage(): JSX.Element {
                     type="button"
                     onClick={() => { void handleAddGuest(); }}
                     disabled={isSubmitting || !newEmail.trim() || selectedApps.size === 0}
-                    className="state-layer rounded-full bg-pav-terra px-6 py-2.5 text-sm font-semibold text-on-primary motion-standard hover:bg-pav-terra-hover disabled:cursor-not-allowed disabled:opacity-40"
+                    className="state-layer touch-target rounded-full bg-pav-terra px-6 py-2 text-sm font-semibold text-on-primary motion-standard hover:bg-pav-terra-hover disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {isSubmitting ? 'Adding\u2026' : 'Add Guest'}
                   </button>
@@ -225,7 +225,7 @@ export function ManageAccessPage(): JSX.Element {
                               <button
                                 type="button"
                                 onClick={() => { void handleRemoveGrant(grant.id); }}
-                                className="rounded-full p-0.5 text-pav-grey motion-standard hover:bg-error-container hover:text-error"
+                                className="state-layer touch-target-icon rounded-full p-1 text-pav-grey motion-standard hover:bg-error-container hover:text-error"
                                 aria-label={`Remove ${grant.appKey} access`}
                               >
                                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
@@ -267,7 +267,7 @@ export function ManageAccessPage(): JSX.Element {
                     <button
                       type="button"
                       onClick={() => { void handleToggleAdmin(u.id, u.isAdmin); }}
-                      className={`rounded-full px-4 py-1.5 text-xs font-semibold motion-standard ${
+                      className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
                         u.isAdmin
                           ? 'bg-pav-terra text-on-primary hover:bg-pav-terra-hover'
                           : 'border border-outline-variant text-on-surface-variant hover:bg-surface-container'

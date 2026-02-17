@@ -24,7 +24,7 @@ export function Sidebar(): JSX.Element {
             <Link
               key={link.to}
               to={link.to}
-              className={`rounded-md px-3 py-2 text-sm font-medium motion-standard ${
+              className={`state-layer touch-target rounded-md px-3 py-2 text-sm font-medium motion-standard ${
                 isActive
                   ? 'bg-pav-gold/20 text-pav-blue'
                   : 'text-pav-grey hover:bg-pav-cream/50'

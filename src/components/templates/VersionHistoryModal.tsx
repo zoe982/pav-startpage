@@ -37,7 +37,7 @@ export function VersionHistoryModal({
   }, [templateId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40">
       <div className="mx-4 flex max-h-[80vh] w-full max-w-4xl flex-col rounded-xl bg-surface-container-lowest shadow-[var(--shadow-elevation-4)]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-pav-tan/30 px-6 py-4">
@@ -45,7 +45,7 @@ export function VersionHistoryModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
+            className="state-layer touch-target-icon rounded-md p-2 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
               <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -72,7 +72,7 @@ export function VersionHistoryModal({
                     key={v.id}
                     type="button"
                     onClick={() => { setSelected(v); }}
-                    className={`w-full border-b border-pav-tan/20 px-4 py-3 text-left motion-standard ${
+                    className={`state-layer touch-target w-full border-b border-pav-tan/20 px-4 py-2 text-left motion-standard ${
                       selected?.id === v.id
                         ? 'bg-pav-gold/10'
                         : 'hover:bg-pav-cream/50'
@@ -121,7 +121,7 @@ export function VersionHistoryModal({
                         <button
                           type="button"
                           onClick={() => { onRestore(selected); }}
-                          className="state-layer rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
+                          className="state-layer touch-target rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
                         >
                           Restore this version
                         </button>

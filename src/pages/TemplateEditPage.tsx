@@ -139,7 +139,7 @@ export function TemplateEditPage(): JSX.Element {
         <button
           type="button"
           onClick={() => void navigate('/templates')}
-          className="mb-4 text-sm text-on-surface-variant motion-standard hover:text-pav-blue"
+          className="state-layer touch-target mb-4 rounded-md px-2 py-2 text-sm text-on-surface-variant motion-standard hover:text-pav-blue"
         >
           &larr; Back to templates
         </button>
@@ -189,21 +189,21 @@ export function TemplateEditPage(): JSX.Element {
                 <button
                   type="button"
                   onClick={() => { setShowVersions(true); }}
-                  className="rounded-md px-3 py-1 text-xs font-medium text-on-surface-variant motion-standard hover:bg-pav-tan/20"
+                  className="state-layer touch-target rounded-md px-3 py-2 text-xs font-medium text-on-surface-variant motion-standard hover:bg-pav-tan/20"
                 >
                   History
                 </button>
                 <button
                   type="button"
                   onClick={() => { setIsEditing(true); }}
-                  className="state-layer rounded-md bg-pav-blue px-3 py-1 text-xs font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
+                  className="state-layer touch-target rounded-md bg-pav-blue px-3 py-2 text-xs font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="rounded-md px-3 py-1 text-xs font-medium text-error motion-standard hover:bg-error-container"
+                  className="state-layer touch-target rounded-md px-3 py-2 text-xs font-medium text-error motion-standard hover:bg-error-container"
                 >
                   Delete
                 </button>

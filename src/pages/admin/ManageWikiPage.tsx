@@ -48,7 +48,7 @@ export function ManageWikiPage(): JSX.Element {
             <h1 className="text-2xl font-bold text-pav-blue">Manage Wiki</h1>
             <Link
               to="/admin/wiki/new"
-              className="state-layer rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
+              className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
             >
               New Page
             </Link>
@@ -94,13 +94,13 @@ export function ManageWikiPage(): JSX.Element {
                       )}
                       <Link
                         to={`/admin/wiki/${page.slug}/edit`}
-                        className="rounded px-2 py-1 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
+                        className="state-layer touch-target rounded px-3 py-2 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
                       >
                         Edit
                       </Link>
                       <button
                         onClick={() => void handleDelete(page.slug)}
-                        className="rounded px-2 py-1 text-xs text-error motion-standard hover:bg-error-container"
+                        className="state-layer touch-target rounded px-3 py-2 text-xs text-error motion-standard hover:bg-error-container"
                       >
                         Delete
                       </button>

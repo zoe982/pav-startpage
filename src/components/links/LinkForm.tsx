@@ -51,7 +51,7 @@ export function LinkForm({
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, title: e.target.value }));
           }}
-          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+          className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
         />
       </div>
       <div>
@@ -69,7 +69,7 @@ export function LinkForm({
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, url: e.target.value }));
           }}
-          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+          className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
         />
       </div>
       <div>
@@ -86,7 +86,7 @@ export function LinkForm({
             setFormData((prev) => ({ ...prev, description: e.target.value }));
           }}
           rows={2}
-          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+          className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
         />
       </div>
       <div>
@@ -103,7 +103,7 @@ export function LinkForm({
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, iconUrl: e.target.value }));
           }}
-          className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+          className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -124,7 +124,7 @@ export function LinkForm({
                 sortOrder: parseInt(e.target.value, 10) || 0,
               }));
             }}
-            className="mt-1 block w-full rounded-md border border-pav-grey/30 px-3 py-2 text-sm shadow-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+            className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
           />
         </div>
         <div className="flex items-end gap-2 pb-2">
@@ -146,14 +146,14 @@ export function LinkForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-pav-grey/30 px-4 py-2 text-sm text-pav-grey motion-standard hover:bg-pav-cream/50"
+          className="state-layer touch-target rounded-md border border-pav-grey/30 px-4 py-2 text-sm text-pav-grey motion-standard hover:bg-pav-cream/50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover disabled:opacity-50"
+          className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover disabled:opacity-50"
         >
           {isSubmitting ? 'Saving...' : 'Save'}
         </button>

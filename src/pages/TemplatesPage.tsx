@@ -34,7 +34,7 @@ export function TemplatesPage(): JSX.Element {
           </div>
           <Link
             to="/templates/new"
-            className="state-layer shrink-0 rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
+            className="state-layer touch-target shrink-0 rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
           >
             New Template
           </Link>
@@ -47,7 +47,7 @@ export function TemplatesPage(): JSX.Element {
               key={f.value}
               type="button"
               onClick={() => { setFilter(f.value); }}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium motion-standard ${
+              className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-medium motion-standard ${
                 filter === f.value
                   ? 'bg-secondary-container text-on-secondary-container'
                   : 'bg-pav-cream text-on-surface hover:bg-pav-tan/30'

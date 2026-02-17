@@ -74,9 +74,9 @@ export function ManageBrandRulesPage(): JSX.Element {
             <button
               type="button"
               onClick={() => { setActiveTab('voice'); }}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium motion-standard ${
+              className={`state-layer touch-target rounded-md px-4 py-2 text-sm font-medium motion-standard ${
                 activeTab === 'voice'
-                  ? 'bg-surface-container-lowest text-pav-blue shadow-sm'
+                  ? 'bg-surface-container-lowest text-pav-blue shadow-[var(--shadow-elevation-1)]'
                   : 'text-pav-grey hover:text-pav-blue'
               }`}
             >
@@ -85,9 +85,9 @@ export function ManageBrandRulesPage(): JSX.Element {
             <button
               type="button"
               onClick={() => { setActiveTab('services'); }}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium motion-standard ${
+              className={`state-layer touch-target rounded-md px-4 py-2 text-sm font-medium motion-standard ${
                 activeTab === 'services'
-                  ? 'bg-surface-container-lowest text-pav-blue shadow-sm'
+                  ? 'bg-surface-container-lowest text-pav-blue shadow-[var(--shadow-elevation-1)]'
                   : 'text-pav-grey hover:text-pav-blue'
               }`}
             >
@@ -134,7 +134,7 @@ export function ManageBrandRulesPage(): JSX.Element {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover disabled:opacity-50"
+                className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Save All'}
               </button>

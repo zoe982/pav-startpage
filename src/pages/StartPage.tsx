@@ -119,12 +119,12 @@ export function StartPage(): JSX.Element {
                   setSearch(e.target.value);
                 }}
                 placeholder="Search apps..."
-                className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-3.5 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)] placeholder:text-outline motion-standard focus-visible:border-pav-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-gold/30"
+                className="touch-target w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-4 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)] placeholder:text-outline motion-standard focus-visible:border-pav-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-gold/30"
               />
               {search ? (
                 <button
                   onClick={() => { setSearch(''); inputRef.current?.focus(); }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-md p-1 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
+                  className="state-layer touch-target-icon absolute right-4 top-1/2 -translate-y-1/2 rounded-md p-2 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
                   aria-label="Clear search"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
@@ -150,7 +150,7 @@ export function StartPage(): JSX.Element {
                   <Link
                     key={app.to}
                     to={app.to}
-                    className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+                    className="state-layer group flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pav-gold/15">
@@ -214,7 +214,7 @@ export function StartPage(): JSX.Element {
                 <Link
                   key={page.id}
                   to={`/wiki/${page.slug}`}
-                  className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+                  className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
                 >
                   <h3 className="font-semibold text-pav-blue">{page.title}</h3>
                   <p className="mt-1 text-sm text-on-surface-variant">View page</p>
