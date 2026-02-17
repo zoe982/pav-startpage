@@ -20,5 +20,11 @@
 - UI tests: `pnpm test:ui`
 - Full gate: `pnpm test:ci` (must pass before finishing work)
 
+## Production Push and Deploy Gate
+- Before any push intended for production, close all testing gaps for changed behavior and files. Do not push with known coverage or assertion gaps.
+- Test gaming is prohibited. Do not use focused/skipped tests (`.only`, `.skip`, `xdescribe`, `xit`, `xtest`), do not weaken assertions to force passing results, and do not bypass failing suites.
+- Do not lower coverage thresholds, add coverage exclusions, or otherwise relax quality gates to make CI pass.
+- Production deploys must run only after lint, typecheck, security scan, anti-gaming checks, and full CI tests pass.
+
 ## Non-Code Changes
 - If a change is documentation or configuration only, explicitly state that no tests were applicable.

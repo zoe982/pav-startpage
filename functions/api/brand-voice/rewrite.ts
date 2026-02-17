@@ -106,7 +106,8 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
   const fencedMatch = fencedPattern.exec(trimmed);
   if (!fencedMatch) return null;
 
-  const rawFencedJson = fencedMatch[1];
+  const rawFencedJson = fencedMatch.at(1);
+  if (rawFencedJson === undefined) return null;
 
   try {
     const parsed = JSON.parse(rawFencedJson) as unknown;

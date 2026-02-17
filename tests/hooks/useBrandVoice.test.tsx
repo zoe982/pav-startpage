@@ -107,9 +107,9 @@ describe('useBrandVoice', () => {
       style: 'email',
       mode: 'draft',
     });
-    const startPayload = vi.mocked(startThread).mock.calls[0]?.[0];
+    const startPayload = vi.mocked(startThread).mock.calls[0]?.[0] as Record<string, unknown>;
     expect(startPayload).toBeDefined();
-    expect(Object.hasOwn(startPayload ?? {}, 'customStyleDescription')).toBe(false);
+    expect(Object.hasOwn(startPayload, 'customStyleDescription')).toBe(false);
 
     expect(result.current.activeThread?.id).toBe('thread-3');
     expect(result.current.threads[0]).toEqual({ id: 'thread-3', title: 'New Thread (Zoey)' });
@@ -145,9 +145,9 @@ describe('useBrandVoice', () => {
       style: 'email',
       mode: 'draft',
     });
-    const replyPayload = vi.mocked(replyInThread).mock.calls[0]?.[0];
+    const replyPayload = vi.mocked(replyInThread).mock.calls[0]?.[0] as Record<string, unknown>;
     expect(replyPayload).toBeDefined();
-    expect(Object.hasOwn(replyPayload ?? {}, 'customStyleDescription')).toBe(false);
+    expect(Object.hasOwn(replyPayload, 'customStyleDescription')).toBe(false);
 
     expect(result.current.activeThread?.latestDraft).toBe('Body v2');
     expect(result.current.activeThread?.messages.at(-1)).toEqual({
@@ -185,11 +185,11 @@ describe('useBrandVoice', () => {
       threadId: 'thread-1',
       message: 'Keep this concise',
     });
-    const payload = vi.mocked(replyInThread).mock.calls[0]?.[0];
+    const payload = vi.mocked(replyInThread).mock.calls[0]?.[0] as Record<string, unknown>;
     expect(payload).toBeDefined();
-    expect(Object.hasOwn(payload ?? {}, 'style')).toBe(false);
-    expect(Object.hasOwn(payload ?? {}, 'mode')).toBe(false);
-    expect(Object.hasOwn(payload ?? {}, 'customStyleDescription')).toBe(false);
+    expect(Object.hasOwn(payload, 'style')).toBe(false);
+    expect(Object.hasOwn(payload, 'mode')).toBe(false);
+    expect(Object.hasOwn(payload, 'customStyleDescription')).toBe(false);
   });
 
   it('renameActiveThread updates active thread and summary title', async () => {
