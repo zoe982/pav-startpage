@@ -17,7 +17,6 @@
     "db:migrate": "wrangler d1 execute pavinfo-start-db --local --file=migrations/0001_initial_schema.sql"
   },
   "dependencies": {
-    "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.18",
     "@uiw/react-md-editor": "^4.0.11",
     "diff": "^8.0.3",

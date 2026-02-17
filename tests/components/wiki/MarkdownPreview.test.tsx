@@ -19,8 +19,16 @@ describe('MarkdownPreview', () => {
     expect(link).toHaveAttribute('href', 'https://example.com');
   });
 
-  it('wraps in prose div', () => {
-    const { container } = render(<MarkdownPreview content="test" />);
-    expect(container.querySelector('.prose')).toBeInTheDocument();
+  it('applies styling classes to headings', () => {
+    render(<MarkdownPreview content="## Section" />);
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading.className).toContain('text-xl');
+  });
+
+  it('renders lists with bullet styling', () => {
+    const { container } = render(<MarkdownPreview content="- item one\n- item two" />);
+    const ul = container.querySelector('ul');
+    expect(ul).toBeInTheDocument();
+    expect(ul?.className).toContain('list-disc');
   });
 });
