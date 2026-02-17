@@ -1,4 +1,14 @@
-import type { BrandMode, BrandRules, OutputStyle, RefineRequest, RewriteResult } from '../types/brandVoice.ts';
+import type {
+  BrandMode,
+  BrandRules,
+  OutputStyle,
+  RefineRequest,
+  ReplyThreadRequest,
+  RewriteResult,
+  StartThreadRequest,
+  ThreadDetailResponse,
+  ThreadListResponse,
+} from '../types/brandVoice.ts';
 import { apiFetch } from './client.ts';
 
 export async function fetchBrandRules(): Promise<BrandRules> {
@@ -74,5 +84,66 @@ export async function refineText(
   }
   return await apiFetch<RewriteResult>('/api/brand-voice/rewrite', {
     ...options,
+  });
+}
+
+export async function listThreads(): Promise<ThreadListResponse> {
+  return await apiFetch<ThreadListResponse>('/api/brand-voice/rewrite');
+}
+
+export async function getThread(threadId: string): Promise<ThreadDetailResponse> {
+  const params = new URLSearchParams({ threadId });
+  return await apiFetch<ThreadDetailResponse>(`/api/brand-voice/rewrite?${params.toString()}`);
+}
+
+export async function startThread(request: StartThreadRequest): Promise<ThreadDetailResponse> {
+  return await apiFetch<ThreadDetailResponse>('/api/brand-voice/rewrite', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'start',
+      text: request.text,
+      style: request.style,
+      mode: request.mode,
+      ...(request.customStyleDescription
+        ? { customStyleDescription: request.customStyleDescription }
+        : {}),
+    }),
+  });
+}
+
+export async function replyInThread(request: ReplyThreadRequest): Promise<ThreadDetailResponse> {
+  return await apiFetch<ThreadDetailResponse>('/api/brand-voice/rewrite', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'reply',
+      threadId: request.threadId,
+      message: request.message,
+      ...(request.style ? { style: request.style } : {}),
+      ...(request.mode ? { mode: request.mode } : {}),
+      ...(request.customStyleDescription
+        ? { customStyleDescription: request.customStyleDescription }
+        : {}),
+    }),
+  });
+}
+
+export async function renameThread(threadId: string, title: string): Promise<ThreadDetailResponse> {
+  return await apiFetch<ThreadDetailResponse>('/api/brand-voice/rewrite', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'rename',
+      threadId,
+      title,
+    }),
+  });
+}
+
+export async function pinThreadDraft(threadId: string): Promise<ThreadDetailResponse> {
+  return await apiFetch<ThreadDetailResponse>('/api/brand-voice/rewrite', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'pin',
+      threadId,
+    }),
   });
 }

@@ -1,89 +1,185 @@
-import { useCallback, useRef, useState } from 'react';
-import type { BrandMode, OutputStyle, RewriteResult } from '../types/brandVoice.ts';
-import { rewriteText, refineText } from '../api/brandVoice.ts';
+import { useCallback, useState } from 'react';
+import type {
+  BrandMode,
+  BrandVoiceThread,
+  BrandVoiceThreadSummary,
+  OutputStyle,
+} from '../types/brandVoice.ts';
+import {
+  listThreads,
+  getThread,
+  startThread as startThreadRequest,
+  replyInThread as replyInThreadRequest,
+  renameThread as renameThreadRequest,
+  pinThreadDraft as pinThreadDraftRequest,
+} from '../api/brandVoice.ts';
 
-interface UseRewriteReturn {
-  readonly result: RewriteResult | null;
+interface UseBrandVoiceReturn {
+  readonly threads: readonly BrandVoiceThreadSummary[];
+  readonly activeThread: BrandVoiceThread | null;
   readonly isLoading: boolean;
   readonly error: string | null;
-  readonly feedbackHistory: readonly string[];
-  readonly rewrite: (text: string, style: OutputStyle, mode: BrandMode, customStyleDescription?: string) => Promise<void>;
-  readonly refine: (feedback: string, style: OutputStyle, mode: BrandMode, customStyleDescription?: string) => Promise<void>;
-  readonly cancel: () => void;
-  readonly reset: () => void;
+  readonly loadThreads: () => Promise<void>;
+  readonly selectThread: (threadId: string) => Promise<void>;
+  readonly startThread: (
+    text: string,
+    style: OutputStyle,
+    mode: BrandMode,
+    customStyleDescription?: string,
+  ) => Promise<void>;
+  readonly sendMessage: (
+    message: string,
+    style?: OutputStyle,
+    mode?: BrandMode,
+    customStyleDescription?: string,
+  ) => Promise<void>;
+  readonly renameActiveThread: (title: string) => Promise<void>;
+  readonly pinActiveDraft: () => Promise<void>;
+  readonly clearActiveThread: () => void;
 }
 
-export function useRewrite(): UseRewriteReturn {
-  const [result, setResult] = useState<RewriteResult | null>(null);
+function toErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+export function useBrandVoice(): UseBrandVoiceReturn {
+  const [threads, setThreads] = useState<readonly BrandVoiceThreadSummary[]>([]);
+  const [activeThread, setActiveThread] = useState<BrandVoiceThread | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [feedbackHistory, setFeedbackHistory] = useState<readonly string[]>([]);
-  const controllerRef = useRef<AbortController | null>(null);
-  const originalTextRef = useRef<string>('');
 
-  const cancel = useCallback(() => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
-    setIsLoading(false);
+  const applyThreadUpdate = useCallback((thread: BrandVoiceThread) => {
+    setActiveThread(thread);
+    setThreads((previous) => {
+      const summary = { id: thread.id, title: thread.title } as const;
+      const withoutCurrent = previous.filter((item) => item.id !== thread.id);
+      return [summary, ...withoutCurrent];
+    });
   }, []);
 
-  const rewrite = useCallback(async (text: string, style: OutputStyle, mode: BrandMode, customStyleDescription?: string) => {
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-
+  const loadThreads = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await rewriteText(text, style, mode, controller.signal, customStyleDescription);
-      setResult(data);
-      originalTextRef.current = text;
-      setFeedbackHistory([]);
+      const response = await listThreads();
+      setThreads(response.threads);
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      setError(err instanceof Error ? err.message : 'Failed to rewrite text');
+      setError(toErrorMessage(err, 'Failed to load threads'));
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const refine = useCallback(async (feedback: string, style: OutputStyle, mode: BrandMode, customStyleDescription?: string) => {
-    if (!result) return;
-
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-
+  const selectThread = useCallback(async (threadId: string) => {
     try {
       setIsLoading(true);
       setError(null);
-      const refinePayload = {
-        original: originalTextRef.current,
-        currentRewritten: result.rewritten,
-        feedback,
+      const response = await getThread(threadId);
+      applyThreadUpdate(response.thread);
+    } catch (err) {
+      setError(toErrorMessage(err, 'Failed to load thread'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [applyThreadUpdate]);
+
+  const startThread = useCallback(async (
+    text: string,
+    style: OutputStyle,
+    mode: BrandMode,
+    customStyleDescription?: string,
+  ) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await startThreadRequest({
+        text,
         style,
         mode,
-        ...(customStyleDescription ? { customStyleDescription } : {}),
-      };
-      const data = await refineText(refinePayload, controller.signal);
-      setResult(data);
-      setFeedbackHistory(prev => [...prev, feedback]);
+        customStyleDescription,
+      });
+      applyThreadUpdate(response.thread);
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      setError(err instanceof Error ? err.message : 'Failed to refine text');
+      setError(toErrorMessage(err, 'Failed to start thread'));
     } finally {
       setIsLoading(false);
     }
-  }, [result]);
+  }, [applyThreadUpdate]);
 
-  const reset = useCallback(() => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
-    setResult(null);
-    setError(null);
-    setFeedbackHistory([]);
-    originalTextRef.current = '';
+  const sendMessage = useCallback(async (
+    message: string,
+    style?: OutputStyle,
+    mode?: BrandMode,
+    customStyleDescription?: string,
+  ) => {
+    if (!activeThread) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await replyInThreadRequest({
+        threadId: activeThread.id,
+        message,
+        style,
+        mode,
+        customStyleDescription,
+      });
+      applyThreadUpdate(response.thread);
+    } catch (err) {
+      setError(toErrorMessage(err, 'Failed to send message'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeThread, applyThreadUpdate]);
+
+  const renameActiveThread = useCallback(async (title: string) => {
+    if (!activeThread) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await renameThreadRequest(activeThread.id, title);
+      applyThreadUpdate(response.thread);
+    } catch (err) {
+      setError(toErrorMessage(err, 'Failed to rename thread'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeThread, applyThreadUpdate]);
+
+  const pinActiveDraft = useCallback(async () => {
+    if (!activeThread) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await pinThreadDraftRequest(activeThread.id);
+      applyThreadUpdate(response.thread);
+    } catch (err) {
+      setError(toErrorMessage(err, 'Failed to pin draft'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeThread, applyThreadUpdate]);
+
+  const clearActiveThread = useCallback(() => {
+    setActiveThread(null);
   }, []);
 
-  return { result, isLoading, error, feedbackHistory, rewrite, refine, cancel, reset } as const;
+  return {
+    threads,
+    activeThread,
+    isLoading,
+    error,
+    loadThreads,
+    selectThread,
+    startThread,
+    sendMessage,
+    renameActiveThread,
+    pinActiveDraft,
+    clearActiveThread,
+  } as const;
 }
+
+export const useRewrite = useBrandVoice;

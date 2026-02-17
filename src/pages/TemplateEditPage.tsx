@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { AppShell } from '../components/layout/AppShell.tsx';
 import { TemplateForm } from '../components/templates/TemplateForm.tsx';
@@ -9,13 +9,11 @@ import { useTemplate } from '../hooks/useTemplates.ts';
 import { useToast } from '../hooks/useToast.ts';
 import { createTemplate, updateTemplate, deleteTemplate } from '../api/templates.ts';
 import type { TemplateFormData, TemplateVersion } from '../types/template.ts';
-
-function getCopyText(subject: string | null, content: string, type: string): string {
-  if (type === 'email' && subject) {
-    return `Subject: ${subject}\n\n${content}`;
-  }
-  return content;
-}
+import {
+  applyTemplateVariables,
+  extractTemplateVariables,
+  toTemplateVariableLabel,
+} from '../utils/templateVariables.ts';
 
 export function TemplateEditPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +25,7 @@ export function TemplateEditPage(): JSX.Element {
   const [isEditing, setIsEditing] = useState(isNew);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  const [variableValues, setVariableValues] = useState<ReadonlyMap<string, string>>(new Map());
   const [formData, setFormData] = useState<TemplateFormData>({
     title: '',
     type: 'email',
@@ -45,6 +44,24 @@ export function TemplateEditPage(): JSX.Element {
     });
     setFormInitialized(true);
   }
+
+  const variableNames = useMemo(
+    () => template ? extractTemplateVariables(template.subject, template.content) : [],
+    [template],
+  );
+
+  const resolvedTemplate = useMemo(
+    () => template ? applyTemplateVariables({
+      subject: template.subject,
+      content: template.content,
+      values: variableValues,
+    }) : null,
+    [template, variableValues],
+  );
+
+  useEffect(() => {
+    setVariableValues(new Map());
+  }, [template?.id, template?.updatedAt]);
 
   const handleSave = async (): Promise<void> => {
     setIsSubmitting(true);
@@ -185,7 +202,10 @@ export function TemplateEditPage(): JSX.Element {
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <CopyButton text={getCopyText(template.subject, template.content, template.type)} />
+                <CopyButton
+                  text={resolvedTemplate?.copyText ?? template.content}
+                  disabled={variableNames.length > 0 && (resolvedTemplate?.unresolved.length ?? 0) > 0}
+                />
                 <button
                   type="button"
                   onClick={() => { setShowVersions(true); }}
@@ -210,16 +230,51 @@ export function TemplateEditPage(): JSX.Element {
               </div>
             </div>
 
+            {variableNames.length > 0 && (
+              <section className="mt-6 rounded-xl border border-outline-variant bg-surface-container-low p-5 shadow-[var(--shadow-elevation-1)]">
+                <h2 className="text-lg font-semibold text-pav-blue">Fill Variables</h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Enter values for each variable to generate a copy-ready message.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {variableNames.map((variableName) => (
+                    <div key={variableName}>
+                      <label
+                        htmlFor={`template-variable-${variableName}`}
+                        className="block text-xs font-medium text-outline"
+                      >
+                        {toTemplateVariableLabel(variableName)}
+                      </label>
+                      <input
+                        id={`template-variable-${variableName}`}
+                        type="text"
+                        value={variableValues.get(variableName) ?? ''}
+                        onChange={(event) => {
+                          setVariableValues((current) => {
+                            const next = new Map(current);
+                            next.set(variableName, event.target.value);
+                            return next;
+                          });
+                        }}
+                        className="touch-target mt-1 block w-full rounded-md border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+                        placeholder={`Enter ${toTemplateVariableLabel(variableName).toLowerCase()}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Content */}
             <div className="mt-6 rounded-lg border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)]">
-              {template.type === 'email' && template.subject && (
+              {resolvedTemplate?.subject && resolvedTemplate.subject.trim().length > 0 && (
                 <div className="mb-4 border-b border-pav-tan/20 pb-4">
                   <span className="text-xs font-medium text-outline">SUBJECT</span>
-                  <p className="mt-1 text-sm font-medium text-on-surface">{template.subject}</p>
+                  <p className="mt-1 text-sm font-medium text-on-surface">{resolvedTemplate.subject}</p>
                 </div>
               )}
               <div className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
-                {template.content}
+                {resolvedTemplate?.content ?? template.content}
               </div>
             </div>
           </>

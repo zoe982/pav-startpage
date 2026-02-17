@@ -21,3 +21,50 @@ export interface RefineRequest {
   readonly mode: BrandMode;
   readonly customStyleDescription?: string;
 }
+
+export interface BrandVoiceThreadSummary {
+  readonly id: string;
+  readonly title: string;
+}
+
+export type BrandVoiceMessageRole = 'user' | 'assistant';
+
+export interface BrandVoiceMessage {
+  readonly id: string;
+  readonly role: BrandVoiceMessageRole;
+  readonly content: string;
+}
+
+export interface BrandVoiceThread {
+  readonly id: string;
+  readonly title: string;
+  readonly mode: BrandMode;
+  readonly style: OutputStyle;
+  readonly customStyleDescription: string | null;
+  readonly latestDraft: string;
+  readonly pinnedDraft: string | null;
+  readonly messages: readonly BrandVoiceMessage[];
+}
+
+export interface ThreadListResponse {
+  readonly threads: readonly BrandVoiceThreadSummary[];
+}
+
+export interface ThreadDetailResponse {
+  readonly thread: BrandVoiceThread;
+}
+
+export interface StartThreadRequest {
+  readonly text: string;
+  readonly style: OutputStyle;
+  readonly mode: BrandMode;
+  readonly customStyleDescription?: string;
+}
+
+export interface ReplyThreadRequest {
+  readonly threadId: string;
+  readonly message: string;
+  readonly style?: OutputStyle;
+  readonly mode?: BrandMode;
+  readonly customStyleDescription?: string;
+}

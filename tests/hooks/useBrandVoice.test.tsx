@@ -1,254 +1,229 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useRewrite } from '../../src/hooks/useBrandVoice.ts';
+import { useBrandVoice } from '../../src/hooks/useBrandVoice.ts';
+import type { BrandVoiceThread } from '../../src/types/brandVoice.ts';
 
 vi.mock('../../src/api/brandVoice.ts', () => ({
-  rewriteText: vi.fn(),
-  refineText: vi.fn(),
+  listThreads: vi.fn(),
+  getThread: vi.fn(),
+  startThread: vi.fn(),
+  replyInThread: vi.fn(),
+  renameThread: vi.fn(),
+  pinThreadDraft: vi.fn(),
 }));
 
-import { rewriteText, refineText } from '../../src/api/brandVoice.ts';
+import {
+  listThreads,
+  getThread,
+  startThread,
+  replyInThread,
+  renameThread,
+  pinThreadDraft,
+} from '../../src/api/brandVoice.ts';
 
-describe('useRewrite', () => {
+function buildThread(overrides: Partial<BrandVoiceThread> = {}): BrandVoiceThread {
+  return {
+    id: 'thread-1',
+    title: 'Welcome Email Draft (Zoey)',
+    mode: 'draft',
+    style: 'email',
+    customStyleDescription: null,
+    latestDraft: 'Body v1',
+    pinnedDraft: null,
+    messages: [
+      { id: 'msg-1', role: 'user', content: 'Write a welcome email' },
+      { id: 'msg-2', role: 'assistant', content: 'Drafted it.' },
+    ],
+    ...overrides,
+  };
+}
+
+describe('useBrandVoice', () => {
   beforeEach(() => {
-    vi.mocked(rewriteText).mockReset();
-    vi.mocked(refineText).mockReset();
+    vi.mocked(listThreads).mockReset();
+    vi.mocked(getThread).mockReset();
+    vi.mocked(startThread).mockReset();
+    vi.mocked(replyInThread).mockReset();
+    vi.mocked(renameThread).mockReset();
+    vi.mocked(pinThreadDraft).mockReset();
   });
 
-  it('starts with null result and no loading', () => {
-    const { result } = renderHook(() => useRewrite());
-    expect(result.current.result).toBeNull();
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeNull();
-    expect(result.current.feedbackHistory).toEqual([]);
-  });
+  it('starts with empty state', () => {
+    const { result } = renderHook(() => useBrandVoice());
 
-  it('rewrites text and sets result', async () => {
-    const rewriteResult = { original: 'Hi', rewritten: 'Hello' };
-    vi.mocked(rewriteText).mockResolvedValue(rewriteResult);
-
-    const { result } = renderHook(() => useRewrite());
-
-    await act(async () => {
-      await result.current.rewrite('Hi', 'email', 'rewrite');
-    });
-
-    expect(result.current.result).toEqual(rewriteResult);
+    expect(result.current.threads).toEqual([]);
+    expect(result.current.activeThread).toBeNull();
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
-  it('passes customStyleDescription to rewriteText', async () => {
-    vi.mocked(rewriteText).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-
-    const { result } = renderHook(() => useRewrite());
-
-    await act(async () => {
-      await result.current.rewrite('Hi', 'other', 'rewrite', 'Instagram caption');
+  it('loadThreads populates shared threads', async () => {
+    vi.mocked(listThreads).mockResolvedValue({
+      threads: [
+        { id: 'thread-1', title: 'T1' },
+        { id: 'thread-2', title: 'T2' },
+      ],
     });
 
-    expect(vi.mocked(rewriteText)).toHaveBeenCalledWith(
-      'Hi', 'other', 'rewrite', expect.any(AbortSignal), 'Instagram caption',
-    );
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.loadThreads();
+    });
+
+    expect(result.current.threads).toEqual([
+      { id: 'thread-1', title: 'T1' },
+      { id: 'thread-2', title: 'T2' },
+    ]);
   });
 
-  it('sets error on failure', async () => {
-    vi.mocked(rewriteText).mockRejectedValue(new Error('Network fail'));
+  it('selectThread loads thread detail', async () => {
+    vi.mocked(getThread).mockResolvedValue({ thread: buildThread() });
 
-    const { result } = renderHook(() => useRewrite());
+    const { result } = renderHook(() => useBrandVoice());
 
     await act(async () => {
-      await result.current.rewrite('Hi', 'email', 'rewrite');
+      await result.current.selectThread('thread-1');
     });
 
-    expect(result.current.error).toBe('Network fail');
-    expect(result.current.result).toBeNull();
+    expect(vi.mocked(getThread)).toHaveBeenCalledWith('thread-1');
+    expect(result.current.activeThread?.id).toBe('thread-1');
+    expect(result.current.activeThread?.latestDraft).toBe('Body v1');
   });
 
-  it('sets fallback error for non-Error throws', async () => {
-    vi.mocked(rewriteText).mockRejectedValue('string error');
-
-    const { result } = renderHook(() => useRewrite());
-
-    await act(async () => {
-      await result.current.rewrite('Hi', 'email', 'rewrite');
+  it('startThread creates and sets active thread while adding summary to list', async () => {
+    vi.mocked(startThread).mockResolvedValue({
+      thread: buildThread({ id: 'thread-3', title: 'New Thread (Zoey)' }),
     });
 
-    expect(result.current.error).toBe('Failed to rewrite text');
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Create a new draft', 'email', 'draft');
+    });
+
+    expect(vi.mocked(startThread)).toHaveBeenCalledWith({
+      text: 'Create a new draft',
+      style: 'email',
+      mode: 'draft',
+      customStyleDescription: undefined,
+    });
+
+    expect(result.current.activeThread?.id).toBe('thread-3');
+    expect(result.current.threads[0]).toEqual({ id: 'thread-3', title: 'New Thread (Zoey)' });
   });
 
-  it('reset clears result, error, and feedbackHistory', async () => {
-    const rewriteResult = { original: 'Hi', rewritten: 'Hello' };
-    vi.mocked(rewriteText).mockResolvedValue(rewriteResult);
-
-    const { result } = renderHook(() => useRewrite());
-
-    await act(async () => {
-      await result.current.rewrite('Hi', 'email', 'rewrite');
+  it('sendMessage replies on current thread and updates active draft', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(replyInThread).mockResolvedValue({
+      thread: buildThread({
+        latestDraft: 'Body v2',
+        messages: [
+          { id: 'msg-1', role: 'user', content: 'Write a welcome email' },
+          { id: 'msg-2', role: 'assistant', content: 'Drafted it.' },
+          { id: 'msg-3', role: 'user', content: 'Make it shorter' },
+          { id: 'msg-4', role: 'assistant', content: 'I tightened the copy.' },
+        ],
+      }),
     });
 
-    expect(result.current.result).not.toBeNull();
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Create a new draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('Make it shorter', 'email', 'draft');
+    });
+
+    expect(vi.mocked(replyInThread)).toHaveBeenCalledWith({
+      threadId: 'thread-1',
+      message: 'Make it shorter',
+      style: 'email',
+      mode: 'draft',
+      customStyleDescription: undefined,
+    });
+
+    expect(result.current.activeThread?.latestDraft).toBe('Body v2');
+    expect(result.current.activeThread?.messages.at(-1)).toEqual({
+      id: 'msg-4',
+      role: 'assistant',
+      content: 'I tightened the copy.',
+    });
+  });
+
+  it('sendMessage is a no-op without an active thread', async () => {
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.sendMessage('No thread yet', 'email', 'draft');
+    });
+
+    expect(vi.mocked(replyInThread)).not.toHaveBeenCalled();
+  });
+
+  it('renameActiveThread updates active thread and summary title', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(renameThread).mockResolvedValue({
+      thread: buildThread({ title: 'Final Welcome Draft' }),
+    });
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Create a new draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.renameActiveThread('Final Welcome Draft');
+    });
+
+    expect(vi.mocked(renameThread)).toHaveBeenCalledWith('thread-1', 'Final Welcome Draft');
+    expect(result.current.activeThread?.title).toBe('Final Welcome Draft');
+    expect(result.current.threads[0].title).toBe('Final Welcome Draft');
+  });
+
+  it('pinActiveDraft sets pinned draft on active thread', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(pinThreadDraft).mockResolvedValue({
+      thread: buildThread({ pinnedDraft: 'Body v1' }),
+    });
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Create a new draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.pinActiveDraft();
+    });
+
+    expect(vi.mocked(pinThreadDraft)).toHaveBeenCalledWith('thread-1');
+    expect(result.current.activeThread?.pinnedDraft).toBe('Body v1');
+  });
+
+  it('clearActiveThread clears selected thread', () => {
+    const { result } = renderHook(() => useBrandVoice());
 
     act(() => {
-      result.current.reset();
+      result.current.clearActiveThread();
     });
 
-    expect(result.current.result).toBeNull();
-    expect(result.current.error).toBeNull();
-    expect(result.current.feedbackHistory).toEqual([]);
+    expect(result.current.activeThread).toBeNull();
   });
 
-  it('cancel aborts in-flight request and clears loading', async () => {
-    vi.mocked(rewriteText).mockImplementation(
-      () => new Promise((_resolve, reject) => { /* never resolves */ }),
-    );
+  it('stores error when API call fails', async () => {
+    vi.mocked(listThreads).mockRejectedValue(new Error('Network down'));
 
-    const { result } = renderHook(() => useRewrite());
+    const { result } = renderHook(() => useBrandVoice());
 
-    // Start a rewrite (don't await — it will hang until resolved/rejected)
-    act(() => {
-      void result.current.rewrite('Hi', 'email', 'rewrite');
+    await act(async () => {
+      await result.current.loadThreads();
     });
 
-    expect(result.current.isLoading).toBe(true);
-
-    // Cancel mid-flight
-    act(() => {
-      result.current.cancel();
-    });
-
+    expect(result.current.error).toBe('Network down');
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeNull();
-
-    // Verify signal was passed to rewriteText
-    expect(vi.mocked(rewriteText)).toHaveBeenCalledWith(
-      'Hi', 'email', 'rewrite', expect.any(AbortSignal), undefined,
-    );
-  });
-
-  it('exposes cancel function', () => {
-    const { result } = renderHook(() => useRewrite());
-    expect(typeof result.current.cancel).toBe('function');
-  });
-
-  describe('refine', () => {
-    it('does nothing when there is no result', async () => {
-      const { result } = renderHook(() => useRewrite());
-
-      await act(async () => {
-        await result.current.refine('Make it shorter', 'email', 'rewrite');
-      });
-
-      expect(vi.mocked(refineText)).not.toHaveBeenCalled();
-    });
-
-    it('calls refineText and updates result and feedbackHistory', async () => {
-      vi.mocked(rewriteText).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-      vi.mocked(refineText).mockResolvedValue({ original: 'Hi', rewritten: 'Hey there' });
-
-      const { result } = renderHook(() => useRewrite());
-
-      // First, get a result
-      await act(async () => {
-        await result.current.rewrite('Hi', 'email', 'rewrite');
-      });
-
-      expect(result.current.feedbackHistory).toEqual([]);
-
-      // Now refine
-      await act(async () => {
-        await result.current.refine('Make it casual', 'email', 'rewrite');
-      });
-
-      expect(result.current.result).toEqual({ original: 'Hi', rewritten: 'Hey there' });
-      expect(result.current.feedbackHistory).toEqual(['Make it casual']);
-    });
-
-    it('accumulates multiple refinement feedback entries', async () => {
-      vi.mocked(rewriteText).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-      vi.mocked(refineText)
-        .mockResolvedValueOnce({ original: 'Hi', rewritten: 'Hey' })
-        .mockResolvedValueOnce({ original: 'Hi', rewritten: 'Hey!' });
-
-      const { result } = renderHook(() => useRewrite());
-
-      await act(async () => {
-        await result.current.rewrite('Hi', 'email', 'rewrite');
-      });
-
-      await act(async () => {
-        await result.current.refine('Shorter', 'email', 'rewrite');
-      });
-
-      await act(async () => {
-        await result.current.refine('Add excitement', 'email', 'rewrite');
-      });
-
-      expect(result.current.feedbackHistory).toEqual(['Shorter', 'Add excitement']);
-    });
-
-    it('passes customStyleDescription through refine', async () => {
-      vi.mocked(rewriteText).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-      vi.mocked(refineText).mockResolvedValue({ original: 'Hi', rewritten: 'Hey' });
-
-      const { result } = renderHook(() => useRewrite());
-
-      await act(async () => {
-        await result.current.rewrite('Hi', 'other', 'rewrite', 'Slack message');
-      });
-
-      await act(async () => {
-        await result.current.refine('Shorter', 'other', 'rewrite', 'Slack message');
-      });
-
-      expect(vi.mocked(refineText)).toHaveBeenCalledWith(
-        expect.objectContaining({
-          customStyleDescription: 'Slack message',
-          feedback: 'Shorter',
-        }),
-        expect.any(AbortSignal),
-      );
-    });
-
-    it('rewrite clears feedbackHistory from previous session', async () => {
-      vi.mocked(rewriteText).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-      vi.mocked(refineText).mockResolvedValue({ original: 'Hi', rewritten: 'Hey' });
-
-      const { result } = renderHook(() => useRewrite());
-
-      await act(async () => {
-        await result.current.rewrite('Hi', 'email', 'rewrite');
-      });
-
-      await act(async () => {
-        await result.current.refine('Shorter', 'email', 'rewrite');
-      });
-
-      expect(result.current.feedbackHistory).toEqual(['Shorter']);
-
-      // New rewrite should clear history
-      await act(async () => {
-        await result.current.rewrite('Bye', 'email', 'rewrite');
-      });
-
-      expect(result.current.feedbackHistory).toEqual([]);
-    });
-
-    it('sets error on refine failure', async () => {
-      vi.mocked(rewriteText).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-      vi.mocked(refineText).mockRejectedValue(new Error('Refine failed'));
-
-      const { result } = renderHook(() => useRewrite());
-
-      await act(async () => {
-        await result.current.rewrite('Hi', 'email', 'rewrite');
-      });
-
-      await act(async () => {
-        await result.current.refine('Shorter', 'email', 'rewrite');
-      });
-
-      expect(result.current.error).toBe('Refine failed');
-    });
   });
 });

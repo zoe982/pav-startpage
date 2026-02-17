@@ -2,9 +2,10 @@ import type { JSX } from 'react';
 import { Link } from 'react-router';
 import type { Template } from '../../types/template.ts';
 import { CopyButton } from './CopyButton.tsx';
+import { extractTemplateVariables } from '../../utils/templateVariables.ts';
 
 function getCopyText(template: Template): string {
-  if (template.type === 'email' && template.subject) {
+  if (template.subject && template.subject.trim().length > 0) {
     return `Subject: ${template.subject}\n\n${template.content}`;
   }
   return template.content;
@@ -19,6 +20,8 @@ function formatDate(iso: string): string {
 }
 
 export function TemplateCard({ template }: { readonly template: Template }): JSX.Element {
+  const variableNames = extractTemplateVariables(template.subject, template.content);
+  const hasVariables = variableNames.length > 0;
   const preview = template.content.length > 120
     ? template.content.slice(0, 120) + '...'
     : template.content;
@@ -41,11 +44,25 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
             {template.title}
           </h3>
         </Link>
-        <CopyButton text={getCopyText(template)} />
+        {hasVariables ? (
+          <Link
+            to={`/templates/${template.id}`}
+            className="state-layer touch-target rounded-md bg-primary-container px-3 py-2 text-xs font-medium text-on-primary-container motion-standard hover:bg-secondary-container"
+          >
+            Use template
+          </Link>
+        ) : (
+          <CopyButton text={getCopyText(template)} />
+        )}
       </div>
       {template.type === 'email' && template.subject && (
         <p className="text-xs text-on-surface-variant">
           <span className="font-medium">Subject:</span> {template.subject}
+        </p>
+      )}
+      {hasVariables && (
+        <p className="text-xs text-outline">
+          {variableNames.length} variable{variableNames.length === 1 ? '' : 's'} to fill before copy
         </p>
       )}
       <Link to={`/templates/${template.id}`} className="state-layer touch-target flex-1 rounded-md px-2 py-2">

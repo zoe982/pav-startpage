@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 import { MarkdownEditor } from '../wiki/MarkdownEditor.tsx';
 import type { TemplateFormData, TemplateType } from '../../types/template.ts';
+import { extractTemplateVariables, toTemplateVariableToken } from '../../utils/templateVariables.ts';
 
 interface TemplateFormProps {
   readonly formData: TemplateFormData;
@@ -24,6 +25,8 @@ export function TemplateForm({
   isSubmitting,
   submitLabel,
 }: TemplateFormProps): JSX.Element {
+  const variables = extractTemplateVariables(formData.subject, formData.content);
+
   const handleSubmit = (e: React.SyntheticEvent): void => {
     e.preventDefault();
     onSubmit();
@@ -66,21 +69,19 @@ export function TemplateForm({
         </div>
       </div>
 
-      {formData.type === 'email' && (
-        <div>
-          <label htmlFor="template-subject" className="block text-sm font-medium text-pav-grey">
-            Subject Line
-          </label>
-          <input
-            id="template-subject"
-            type="text"
-            value={formData.subject}
-            onChange={(e) => { onChange({ ...formData, subject: e.target.value }); }}
-            className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
-            placeholder="Email subject line"
-          />
-        </div>
-      )}
+      <div>
+        <label htmlFor="template-subject" className="block text-sm font-medium text-pav-grey">
+          Subject Line
+        </label>
+        <input
+          id="template-subject"
+          type="text"
+          value={formData.subject}
+          onChange={(e) => { onChange({ ...formData, subject: e.target.value }); }}
+          className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+          placeholder="Optional subject (supports {{client_name}})"
+        />
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-pav-grey">Content</label>
@@ -91,6 +92,31 @@ export function TemplateForm({
           />
         </div>
       </div>
+
+      <section className="rounded-xl border border-outline-variant bg-surface-container-low p-4">
+        <h2 className="text-sm font-semibold text-pav-blue">Variables</h2>
+        <p className="mt-1 text-sm text-on-surface-variant">
+          Define placeholders directly in subject or content using
+          {' '}
+          <code className="rounded bg-surface-container-high px-1 py-0.5 text-xs">{toTemplateVariableToken('client_name')}</code>
+          .
+          Use lowercase letters, numbers, and underscores only.
+        </p>
+        {variables.length === 0 ? (
+          <p className="mt-3 text-xs text-outline">No variables defined yet.</p>
+        ) : (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {variables.map((variableName) => (
+              <span
+                key={variableName}
+                className="rounded-full bg-secondary-container px-3 py-1 text-xs font-medium text-on-secondary-container"
+              >
+                {toTemplateVariableToken(variableName)}
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="flex justify-end gap-3 pt-4">
         <button

@@ -1,8 +1,7 @@
-import type { JSX, SyntheticEvent } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import type { JSX, FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { AppShell } from '../components/layout/AppShell.tsx';
-import { DiffView } from '../components/brandVoice/DiffView.tsx';
-import { useRewrite } from '../hooks/useBrandVoice.ts';
+import { useBrandVoice } from '../hooks/useBrandVoice.ts';
 import type { BrandMode, OutputStyle } from '../types/brandVoice.ts';
 
 const OUTPUT_STYLES: { readonly value: OutputStyle; readonly label: string }[] = [
@@ -14,319 +13,286 @@ const OUTPUT_STYLES: { readonly value: OutputStyle; readonly label: string }[] =
   { value: 'other', label: 'Other' },
 ];
 
-const MODE_CONFIG: Record<BrandMode, { label: string; placeholder: string; buttonLabel: string }> = {
-  rewrite: {
-    label: 'Original Text',
-    placeholder: 'Paste the text you want to rewrite in brand voice...',
-    buttonLabel: 'Rewrite',
-  },
-  draft: {
-    label: 'What do you need?',
-    placeholder: 'Describe what you need, e.g. "Write a WhatsApp bio", "Create a welcome email for new clients"...',
-    buttonLabel: 'Draft',
-  },
-};
-
-function useAutoResize(): { readonly ref: React.RefObject<HTMLTextAreaElement | null>; readonly resize: () => void } {
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  const resize = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
-
-  useEffect(() => { resize(); }, [resize]);
-
-  return { ref, resize };
-}
-
-function getModeConfig(mode: BrandMode): { label: string; placeholder: string; buttonLabel: string } {
-  switch (mode) {
-    case 'rewrite':
-      return MODE_CONFIG.rewrite;
-    case 'draft':
-    default:
-      return MODE_CONFIG.draft;
-  }
-}
-
 export function BrandVoicePage(): JSX.Element {
-  const [text, setText] = useState('');
+  const {
+    threads,
+    activeThread,
+    isLoading,
+    error,
+    loadThreads,
+    selectThread,
+    startThread,
+    sendMessage,
+    renameActiveThread,
+    pinActiveDraft,
+    clearActiveThread,
+  } = useBrandVoice();
+
+  const [mode, setMode] = useState<BrandMode>('draft');
   const [style, setStyle] = useState<OutputStyle>('email');
-  const [mode, setMode] = useState<BrandMode>('rewrite');
   const [customStyleDescription, setCustomStyleDescription] = useState('');
-  const [feedback, setFeedback] = useState('');
-  const { result, isLoading, error, feedbackHistory, rewrite, refine, cancel, reset } = useRewrite();
+  const [message, setMessage] = useState('');
+  const [titleDraft, setTitleDraft] = useState('');
   const [copied, setCopied] = useState(false);
-  const { ref: textareaRef, resize } = useAutoResize();
 
-  const config = getModeConfig(mode);
+  useEffect(() => {
+    void loadThreads();
+  }, [loadThreads]);
 
-  const handleSubmit = async (e: SyntheticEvent): Promise<void> => {
-    e.preventDefault();
-    if (!text.trim()) return;
-    await rewrite(text, style, mode, customStyleDescription || undefined);
+  useEffect(() => {
+    if (!activeThread) {
+      setTitleDraft('');
+      return;
+    }
+
+    setMode(activeThread.mode);
+    setStyle(activeThread.style);
+    setCustomStyleDescription(activeThread.customStyleDescription ?? '');
+    setTitleDraft(activeThread.title);
+  }, [activeThread]);
+
+  const handleSend = async (event: FormEvent): Promise<void> => {
+    event.preventDefault();
+    const text = message.trim();
+    if (!text) return;
+
+    if (activeThread) {
+      await sendMessage(text, style, mode, customStyleDescription || undefined);
+    } else {
+      await startThread(text, style, mode, customStyleDescription || undefined);
+    }
+
+    setMessage('');
+  };
+
+  const handleRename = async (): Promise<void> => {
+    if (!activeThread) return;
+
+    const nextTitle = titleDraft.trim();
+    if (!nextTitle || nextTitle === activeThread.title) return;
+
+    await renameActiveThread(nextTitle);
+  };
+
+  const handleNewThread = (): void => {
+    clearActiveThread();
+    setMode('draft');
+    setStyle('email');
+    setCustomStyleDescription('');
+    setMessage('');
+    setTitleDraft('');
+    setCopied(false);
   };
 
   const handleCopy = async (): Promise<void> => {
-    if (!result) return;
-    await navigator.clipboard.writeText(result.rewritten);
+    if (!activeThread?.latestDraft) return;
+    await navigator.clipboard.writeText(activeThread.latestDraft);
     setCopied(true);
-    setTimeout(() => { setCopied(false); }, 2000);
-  };
-
-  const handleReset = (): void => {
-    setText('');
-    setCustomStyleDescription('');
-    setFeedback('');
-    reset();
-    setCopied(false);
-  };
-
-  const handleModeChange = (newMode: BrandMode): void => {
-    setMode(newMode);
-    reset();
-    setCopied(false);
-    setFeedback('');
-  };
-
-  const handleRefine = async (): Promise<void> => {
-    if (!feedback.trim()) return;
-    const currentFeedback = feedback;
-    setFeedback('');
-    await refine(currentFeedback, style, mode, customStyleDescription || undefined);
+    setTimeout(() => { setCopied(false); }, 1200);
   };
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl animate-fade-up">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-on-surface">Brand Voice</h1>
-            <p className="mt-1 font-serif text-sm italic text-on-surface-variant">
-              {mode === 'rewrite'
-                ? 'Paste text to rewrite it in Pet Air Valet\u2019s brand voice.'
-                : 'Describe what you need and we\u2019ll draft it in brand voice.'}
+            <h1 className="font-display text-2xl font-bold text-on-surface">Brand Voice Chat</h1>
+            <p className="text-sm text-on-surface-variant">
+              Iterate with the assistant until the draft is ready.
             </p>
           </div>
-          {/* Mode toggle — M3 segmented button */}
-          <div className="flex shrink-0 gap-1 rounded-full bg-surface-container-high p-1 ring-1 ring-outline-variant">
-            <button
-              type="button"
-              onClick={() => { handleModeChange('rewrite'); }}
-              className={`state-layer touch-target rounded-full px-6 py-2 text-xs font-semibold tracking-wide motion-standard ${
-                mode === 'rewrite'
-                  ? 'bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
-                  : 'text-on-surface-variant hover:bg-surface-container-highest'
-              }`}
-            >
-              Rewrite
-            </button>
-            <button
-              type="button"
-              onClick={() => { handleModeChange('draft'); }}
-              className={`state-layer touch-target rounded-full px-6 py-2 text-xs font-semibold tracking-wide motion-standard ${
-                mode === 'draft'
-                  ? 'bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
-                  : 'text-on-surface-variant hover:bg-surface-container-highest'
-              }`}
-            >
-              Draft
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleNewThread}
+            className="rounded-full bg-pav-blue px-4 py-2 text-sm font-semibold text-on-primary"
+          >
+            New thread
+          </button>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* ── Input panel ── */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-outline-variant/40">
-            <label htmlFor="brand-input" className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-              {config.label}
-            </label>
+        {error && (
+          <div className="mb-4 rounded-xl bg-error-container p-3 text-sm text-on-error-container">
+            {error}
+          </div>
+        )}
 
-            {/* M3 outlined text field — white bg, visible border, auto-expands */}
-            <textarea
-              ref={textareaRef}
-              id="brand-input"
-              value={text}
-              onChange={(e) => { setText(e.target.value); resize(); }}
-              placeholder={config.placeholder}
-              maxLength={10000}
-              className="touch-target min-h-[160px] resize-none overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 text-sm leading-relaxed text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
-            />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr_1fr]">
+          <aside className="rounded-2xl bg-surface p-4 ring-1 ring-outline-variant/40">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Threads</h2>
+            <div className="space-y-2">
+              {threads.map((thread) => (
+                <button
+                  key={thread.id}
+                  type="button"
+                  onClick={() => { void selectThread(thread.id); }}
+                  className={`block w-full rounded-xl px-3 py-2 text-left text-sm motion-standard ${
+                    activeThread?.id === thread.id
+                      ? 'bg-secondary-container text-on-secondary-container'
+                      : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  {thread.title}
+                </button>
+              ))}
+              {threads.length === 0 && (
+                <p className="text-sm text-outline">No threads yet.</p>
+              )}
+            </div>
+          </aside>
 
-            {/* Style selector — M3 filter chips */}
-            <fieldset>
-              <legend className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Output Style</legend>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {OUTPUT_STYLES.map((opt) => (
+          <section className="flex min-h-[520px] flex-col rounded-2xl bg-surface p-4 ring-1 ring-outline-variant/40">
+            {activeThread && (
+              <div className="mb-3 flex gap-2">
+                <input
+                  aria-label="Thread title"
+                  type="text"
+                  value={titleDraft}
+                  onChange={(event) => { setTitleDraft(event.target.value); }}
+                  className="flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => { void handleRename(); }}
+                  className="rounded-full border border-outline px-4 py-2 text-sm text-on-surface-variant"
+                >
+                  Save title
+                </button>
+              </div>
+            )}
+
+            <div className="mb-4 flex-1 overflow-auto rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
+              {!activeThread && (
+                <p className="text-sm text-outline">Start a new conversation to generate your first draft.</p>
+              )}
+
+              {activeThread && activeThread.messages.length === 0 && (
+                <p className="text-sm text-outline">No messages yet.</p>
+              )}
+
+              {activeThread && activeThread.messages.length > 0 && (
+                <div className="space-y-2">
+                  {activeThread.messages.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`rounded-xl px-3 py-2 text-sm ${
+                        item.role === 'assistant'
+                          ? 'bg-primary-container text-on-primary-container'
+                          : 'bg-surface-container-high text-on-surface'
+                      }`}
+                    >
+                      {item.content}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSend} className="space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setMode('rewrite'); }}
+                  className={`rounded-full px-4 py-2 text-xs font-semibold ${
+                    mode === 'rewrite'
+                      ? 'bg-secondary-container text-on-secondary-container'
+                      : 'bg-surface-container-low text-on-surface-variant'
+                  }`}
+                >
+                  Rewrite
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode('draft'); }}
+                  className={`rounded-full px-4 py-2 text-xs font-semibold ${
+                    mode === 'draft'
+                      ? 'bg-secondary-container text-on-secondary-container'
+                      : 'bg-surface-container-low text-on-surface-variant'
+                  }`}
+                >
+                  Draft
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {OUTPUT_STYLES.map((option) => (
                   <button
-                    key={opt.value}
+                    key={option.value}
                     type="button"
-                    onClick={() => { setStyle(opt.value); }}
-                    className={`state-layer touch-target inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold motion-standard ${
-                      style === opt.value
-                        ? 'border-secondary-container bg-secondary-container text-on-secondary-container shadow-[var(--shadow-elevation-1)]'
-                        : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-outline hover:bg-surface-container'
+                    onClick={() => { setStyle(option.value); }}
+                    className={`rounded-full border px-3 py-1.5 text-xs ${
+                      style === option.value
+                        ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
+                        : 'border-outline-variant text-on-surface-variant'
                     }`}
                   >
-                    {style === opt.value && (
-                      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                    {opt.label}
+                    {option.label}
                   </button>
                 ))}
               </div>
-            </fieldset>
 
-            {/* Custom style description */}
-            {style === 'other' && (
-              <input
-                type="text"
-                value={customStyleDescription}
-                onChange={(e) => { setCustomStyleDescription(e.target.value); }}
-                placeholder="Describe the format you want, e.g. 'Instagram caption'..."
-                maxLength={500}
-                className="touch-target rounded-2xl border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
+              {style === 'other' && (
+                <input
+                  aria-label="Custom style"
+                  type="text"
+                  value={customStyleDescription}
+                  onChange={(event) => { setCustomStyleDescription(event.target.value); }}
+                  placeholder="Describe custom format"
+                  className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm"
+                />
+              )}
+
+              <textarea
+                aria-label="Message"
+                value={message}
+                onChange={(event) => { setMessage(event.target.value); }}
+                rows={4}
+                placeholder={activeThread ? 'Share feedback for the next revision...' : 'Describe what you want drafted...'}
+                className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-sm"
               />
-            )}
 
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-xs tabular-nums text-outline">
-                {text.length.toLocaleString()} / 10,000
-              </span>
-              <div className="flex gap-2">
-                {result && (
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="state-layer touch-target rounded-full px-4 py-2 text-sm font-medium text-on-surface-variant motion-standard hover:bg-surface-container-high"
-                  >
-                    Clear
-                  </button>
-                )}
-                {isLoading && (
-                  <button
-                    type="button"
-                    onClick={cancel}
-                    className="state-layer touch-target rounded-full border border-outline px-4 py-2 text-sm font-medium text-on-surface-variant motion-standard hover:bg-surface-container-high"
-                  >
-                    Cancel
-                  </button>
-                )}
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={isLoading || !text.trim()}
-                  className="state-layer touch-target rounded-full bg-pav-blue px-6 py-2 text-sm font-semibold text-on-primary shadow-[var(--shadow-elevation-3)] motion-standard hover:bg-pav-blue-hover hover:shadow-[var(--shadow-elevation-4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                  disabled={isLoading || !message.trim()}
+                  className="rounded-full bg-pav-blue px-5 py-2 text-sm font-semibold text-on-primary disabled:opacity-40"
                 >
-                  {isLoading ? `${config.buttonLabel === 'Draft' ? 'Drafting' : 'Rewriting'}\u2026` : config.buttonLabel}
+                  Send
                 </button>
               </div>
-            </div>
-          </form>
+            </form>
+          </section>
 
-          {/* ── Output panel ── */}
-          <div className="flex flex-col gap-4 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-outline-variant/40">
-            {/* Header + copy */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Result</span>
-              {result && !isLoading && (
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
-                    copied
-                      ? 'bg-success-container text-on-success-container'
-                      : 'text-on-surface-variant hover:bg-surface-container-high'
-                  }`}
-                >
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
-              )}
+          <section className="flex min-h-[520px] flex-col rounded-2xl bg-surface p-4 ring-1 ring-outline-variant/40">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-on-surface">Latest Draft</h2>
+              <button
+                type="button"
+                onClick={() => { void handleCopy(); }}
+                disabled={!activeThread?.latestDraft}
+                className="rounded-full border border-outline px-3 py-1 text-xs text-on-surface-variant disabled:opacity-40"
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </button>
             </div>
 
-            {/* Result area */}
-            <div className="min-h-[300px] rounded-2xl border border-outline-variant bg-surface-container-lowest">
-              {isLoading && (
-                <div className="flex h-full flex-col items-center justify-center gap-3 py-20">
-                  <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-pav-blue/20 border-t-pav-blue" />
-                  <button
-                    type="button"
-                    onClick={cancel}
-                    className="state-layer touch-target rounded-full px-4 py-2 text-xs font-medium text-on-surface-variant motion-standard hover:text-on-surface"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-              {error && (
-                <div className="m-4 rounded-xl bg-error-container p-4 text-sm font-medium text-on-error-container ring-1 ring-error/20">
-                  {error}
-                </div>
-              )}
-              {result && !isLoading && (
-                <div className="p-6 text-sm leading-relaxed whitespace-pre-wrap select-all text-on-surface">
-                  {result.rewritten}
-                </div>
-              )}
-              {!result && !isLoading && !error && (
-                <p className="py-20 text-center text-sm text-outline">
-                  {mode === 'rewrite'
-                    ? 'Your rewritten text will appear here.'
-                    : 'Your drafted content will appear here.'}
-                </p>
-              )}
+            <div className="mb-3 flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-sm whitespace-pre-wrap text-on-surface">
+              {activeThread?.latestDraft || 'The latest draft will appear here.'}
             </div>
 
-            {/* Feedback / Refinement */}
-            {result && !isLoading && (
-              <div className="flex flex-col gap-3">
-                {feedbackHistory.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {feedbackHistory.map((fb, i) => (
-                      <span key={i} className="rounded-full bg-surface-container-highest px-3 py-1 text-xs font-medium text-on-surface-variant">
-                        {fb}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={feedback}
-                    onChange={(e) => { setFeedback(e.target.value); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { void handleRefine(); } }}
-                    placeholder="Refine: 'Make it shorter', 'More formal'..."
-                    maxLength={2000}
-                    className="touch-target flex-1 rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => { void handleRefine(); }}
-                    disabled={!feedback.trim()}
-                    className="state-layer touch-target rounded-full bg-pav-blue px-6 py-2 text-sm font-semibold text-on-primary motion-standard hover:bg-pav-blue-hover hover:shadow-[var(--shadow-elevation-2)] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Refine
-                  </button>
-                </div>
-              </div>
+            <button
+              type="button"
+              onClick={() => { void pinActiveDraft(); }}
+              disabled={!activeThread?.latestDraft || isLoading}
+              className="rounded-full bg-secondary-container px-4 py-2 text-sm font-semibold text-on-secondary-container disabled:opacity-40"
+            >
+              Use this draft
+            </button>
+
+            {activeThread?.pinnedDraft && (
+              <p className="mt-2 text-xs text-success">Draft pinned and ready to use.</p>
             )}
-          </div>
+          </section>
         </div>
-
-        {/* Full-width diff section — only in rewrite mode */}
-        {mode === 'rewrite' && result && !isLoading && (
-          <div className="mt-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-elevation-2)] ring-1 ring-outline-variant/40">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Changes</h2>
-            <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-6">
-              <DiffView original={result.original} rewritten={result.rewritten} />
-            </div>
-          </div>
-        )}
       </div>
     </AppShell>
   );

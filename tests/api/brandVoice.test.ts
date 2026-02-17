@@ -8,14 +8,6 @@ import {
 
 vi.mock('../../src/api/client.ts', () => ({
   apiFetch: vi.fn(),
-  ApiError: class ApiError extends Error {
-    readonly status: number;
-    constructor(status: number, message: string) {
-      super(message);
-      this.name = 'ApiError';
-      this.status = status;
-    }
-  },
 }));
 
 import { apiFetch } from '../../src/api/client.ts';
@@ -27,7 +19,9 @@ beforeEach(() => {
 describe('fetchBrandRules', () => {
   it('calls apiFetch with /api/brand-rules', async () => {
     vi.mocked(apiFetch).mockResolvedValue({ rulesMarkdown: '', servicesMarkdown: '', updatedAt: null });
+
     const result = await fetchBrandRules();
+
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-rules');
     expect(result).toEqual({ rulesMarkdown: '', servicesMarkdown: '', updatedAt: null });
   });
@@ -35,117 +29,106 @@ describe('fetchBrandRules', () => {
 
 describe('updateBrandRules', () => {
   it('calls apiFetch with PUT and body', async () => {
-    const data = { rulesMarkdown: '# Rules', servicesMarkdown: '# Services' };
-    vi.mocked(apiFetch).mockResolvedValue({ ...data, updatedAt: '2025-01-01' });
-    const result = await updateBrandRules(data);
+    const payload = { rulesMarkdown: '# Rules', servicesMarkdown: '# Services' };
+    vi.mocked(apiFetch).mockResolvedValue({ ...payload, updatedAt: '2026-02-17T00:00:00.000Z' });
+
+    const result = await updateBrandRules(payload);
+
     expect(apiFetch).toHaveBeenCalledWith('/api/admin/brand-rules', {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
-    expect(result).toEqual({ ...data, updatedAt: '2025-01-01' });
+    expect(result).toEqual({ ...payload, updatedAt: '2026-02-17T00:00:00.000Z' });
   });
 });
 
 describe('rewriteText', () => {
-  it('calls apiFetch with POST and body including style and mode', async () => {
-    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-    const result = await rewriteText('Hi', 'email', 'rewrite');
+  it('posts rewrite payload without optional fields', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'A', rewritten: 'B' });
+
+    const result = await rewriteText('A', 'email', 'rewrite');
+
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
+      body: JSON.stringify({
+        text: 'A',
+        style: 'email',
+        mode: 'rewrite',
+      }),
     });
-    expect(result).toEqual({ original: 'Hi', rewritten: 'Hello' });
+    expect(result).toEqual({ original: 'A', rewritten: 'B' });
   });
 
-  it('passes draft mode correctly', async () => {
-    vi.mocked(apiFetch).mockResolvedValue({ original: 'Write a bio', rewritten: 'A bio...' });
-    await rewriteText('Write a bio', 'whatsapp', 'draft');
-    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
-      method: 'POST',
-      body: JSON.stringify({ text: 'Write a bio', style: 'whatsapp', mode: 'draft' }),
-    });
-  });
-
-  it('passes AbortSignal when provided', async () => {
-    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
+  it('includes optional custom style and abort signal when provided', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'A', rewritten: 'B' });
     const controller = new AbortController();
-    await rewriteText('Hi', 'email', 'rewrite', controller.signal);
-    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
-      method: 'POST',
-      body: JSON.stringify({ text: 'Hi', style: 'email', mode: 'rewrite' }),
-      signal: controller.signal,
-    });
-  });
 
-  it('passes customStyleDescription when provided', async () => {
-    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hello' });
-    await rewriteText('Hi', 'other', 'rewrite', undefined, 'Instagram caption');
+    await rewriteText('A', 'other', 'draft', controller.signal, 'Friendly and concise');
+
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
-      body: JSON.stringify({ text: 'Hi', style: 'other', mode: 'rewrite', customStyleDescription: 'Instagram caption' }),
+      body: JSON.stringify({
+        text: 'A',
+        style: 'other',
+        mode: 'draft',
+        customStyleDescription: 'Friendly and concise',
+      }),
+      signal: controller.signal,
     });
   });
 });
 
 describe('refineText', () => {
-  it('calls apiFetch with refinement fields', async () => {
-    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hello, revised' });
+  it('posts refinement payload without optional custom style', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'A', rewritten: 'B' });
+
     const result = await refineText({
-      original: 'Hi',
-      currentRewritten: 'Hello',
-      feedback: 'Make it shorter',
+      original: 'A',
+      currentRewritten: 'Current',
+      feedback: 'Shorter please',
       style: 'email',
       mode: 'rewrite',
     });
+
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
       body: JSON.stringify({
-        text: 'Hi',
+        text: 'A',
         style: 'email',
         mode: 'rewrite',
-        currentRewritten: 'Hello',
-        feedback: 'Make it shorter',
+        currentRewritten: 'Current',
+        feedback: 'Shorter please',
       }),
     });
-    expect(result).toEqual({ original: 'Hi', rewritten: 'Hello, revised' });
+    expect(result).toEqual({ original: 'A', rewritten: 'B' });
   });
 
-  it('passes customStyleDescription through refinement', async () => {
-    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hey!' });
-    await refineText({
-      original: 'Hi',
-      currentRewritten: 'Hello',
-      feedback: 'More casual',
-      style: 'other',
-      mode: 'rewrite',
-      customStyleDescription: 'Slack message',
-    });
+  it('includes optional custom style and abort signal when provided', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ original: 'A', rewritten: 'B' });
+    const controller = new AbortController();
+
+    await refineText(
+      {
+        original: 'A',
+        currentRewritten: 'Current',
+        feedback: 'Shorter please',
+        style: 'other',
+        mode: 'draft',
+        customStyleDescription: 'Less formal',
+      },
+      controller.signal,
+    );
+
     expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
       method: 'POST',
       body: JSON.stringify({
-        text: 'Hi',
+        text: 'A',
         style: 'other',
-        mode: 'rewrite',
-        currentRewritten: 'Hello',
-        feedback: 'More casual',
-        customStyleDescription: 'Slack message',
+        mode: 'draft',
+        currentRewritten: 'Current',
+        feedback: 'Shorter please',
+        customStyleDescription: 'Less formal',
       }),
-    });
-  });
-
-  it('passes AbortSignal when provided', async () => {
-    vi.mocked(apiFetch).mockResolvedValue({ original: 'Hi', rewritten: 'Hey' });
-    const controller = new AbortController();
-    await refineText({
-      original: 'Hi',
-      currentRewritten: 'Hello',
-      feedback: 'Shorter',
-      style: 'email',
-      mode: 'rewrite',
-    }, controller.signal);
-    expect(apiFetch).toHaveBeenCalledWith('/api/brand-voice/rewrite', {
-      method: 'POST',
-      body: expect.any(String),
       signal: controller.signal,
     });
   });
