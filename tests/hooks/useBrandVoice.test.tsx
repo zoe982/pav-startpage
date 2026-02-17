@@ -106,8 +106,10 @@ describe('useBrandVoice', () => {
       text: 'Create a new draft',
       style: 'email',
       mode: 'draft',
-      customStyleDescription: undefined,
     });
+    const startPayload = vi.mocked(startThread).mock.calls[0]?.[0];
+    expect(startPayload).toBeDefined();
+    expect(Object.hasOwn(startPayload ?? {}, 'customStyleDescription')).toBe(false);
 
     expect(result.current.activeThread?.id).toBe('thread-3');
     expect(result.current.threads[0]).toEqual({ id: 'thread-3', title: 'New Thread (Zoey)' });
@@ -142,8 +144,10 @@ describe('useBrandVoice', () => {
       message: 'Make it shorter',
       style: 'email',
       mode: 'draft',
-      customStyleDescription: undefined,
     });
+    const replyPayload = vi.mocked(replyInThread).mock.calls[0]?.[0];
+    expect(replyPayload).toBeDefined();
+    expect(Object.hasOwn(replyPayload ?? {}, 'customStyleDescription')).toBe(false);
 
     expect(result.current.activeThread?.latestDraft).toBe('Body v2');
     expect(result.current.activeThread?.messages.at(-1)).toEqual({
@@ -161,6 +165,31 @@ describe('useBrandVoice', () => {
     });
 
     expect(vi.mocked(replyInThread)).not.toHaveBeenCalled();
+  });
+
+  it('sendMessage omits optional fields when style and mode are not provided', async () => {
+    vi.mocked(startThread).mockResolvedValue({ thread: buildThread() });
+    vi.mocked(replyInThread).mockResolvedValue({ thread: buildThread({ latestDraft: 'Body v3' }) });
+
+    const { result } = renderHook(() => useBrandVoice());
+
+    await act(async () => {
+      await result.current.startThread('Create a new draft', 'email', 'draft');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage('Keep this concise');
+    });
+
+    expect(vi.mocked(replyInThread)).toHaveBeenCalledWith({
+      threadId: 'thread-1',
+      message: 'Keep this concise',
+    });
+    const payload = vi.mocked(replyInThread).mock.calls[0]?.[0];
+    expect(payload).toBeDefined();
+    expect(Object.hasOwn(payload ?? {}, 'style')).toBe(false);
+    expect(Object.hasOwn(payload ?? {}, 'mode')).toBe(false);
+    expect(Object.hasOwn(payload ?? {}, 'customStyleDescription')).toBe(false);
   });
 
   it('renameActiveThread updates active thread and summary title', async () => {

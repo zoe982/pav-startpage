@@ -60,12 +60,14 @@ function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
           }
 
           if (query.includes('SELECT id FROM brand_voice_threads WHERE id = ?')) {
-            const id = String(boundValues[0] ?? '');
+            const firstBoundValue = boundValues[0];
+            const id = typeof firstBoundValue === 'string' ? firstBoundValue : '';
             return state.threads.find((thread) => thread.id === id) ? { id } : null;
           }
 
           if (query.includes('FROM brand_voice_threads') && query.includes('WHERE id = ?')) {
-            const id = String(boundValues[0] ?? '');
+            const firstBoundValue = boundValues[0];
+            const id = typeof firstBoundValue === 'string' ? firstBoundValue : '';
             return state.threads.find((thread) => thread.id === id) ?? null;
           }
 
@@ -85,7 +87,8 @@ function createStatefulDb(initial: Partial<DbState> = {}): { db: D1Database } {
           }
 
           if (query.includes('FROM brand_voice_messages') && query.includes('WHERE thread_id = ?')) {
-            const threadId = String(boundValues[0] ?? '');
+            const firstBoundValue = boundValues[0];
+            const threadId = typeof firstBoundValue === 'string' ? firstBoundValue : '';
             return {
               results: state.messages
                 .filter((message) => message.thread_id === threadId)
@@ -290,7 +293,7 @@ describe('Brand Voice chat API', () => {
 
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(200);
-    const body = await response.json() as { threads: Array<{ id: string; title: string }> };
+    const body = await response.json() as { threads: { id: string; title: string }[] };
     expect(body.threads).toEqual([{ id: 'thread-1', title: 'Welcome email (Test User)' }]);
   });
 
@@ -334,7 +337,7 @@ describe('Brand Voice chat API', () => {
 
     const response = await onRequestGet(ctx);
     expect(response.status).toBe(200);
-    const body = await response.json() as { thread: { id: string; messages: Array<{ id: string }> } };
+    const body = await response.json() as { thread: { id: string; messages: { id: string }[] } };
     expect(body.thread.id).toBe('thread-1');
     expect(body.thread.messages).toEqual([{ id: 'msg-user-1', role: 'user', content: 'Need a message' }]);
   });

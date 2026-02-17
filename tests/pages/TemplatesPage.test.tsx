@@ -52,7 +52,7 @@ describe('TemplatesPage', () => {
   });
 
   it('renders templates sorted by newest updated date and supports filtering', async () => {
-    const calls: Array<string | undefined> = [];
+    const calls: (string | undefined)[] = [];
     vi.mocked(useTemplates).mockImplementation((filter?: string) => {
       calls.push(filter);
       return {

@@ -1,5 +1,5 @@
-import type { JSX, FormEvent } from 'react';
-import { useEffect, useState } from 'react';
+import type { JSX, SyntheticEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppShell } from '../components/layout/AppShell.tsx';
 import { useBrandVoice } from '../hooks/useBrandVoice.ts';
 import type { BrandMode, OutputStyle } from '../types/brandVoice.ts';
@@ -32,26 +32,14 @@ export function BrandVoicePage(): JSX.Element {
   const [style, setStyle] = useState<OutputStyle>('email');
   const [customStyleDescription, setCustomStyleDescription] = useState('');
   const [message, setMessage] = useState('');
-  const [titleDraft, setTitleDraft] = useState('');
   const [copied, setCopied] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void loadThreads();
   }, [loadThreads]);
 
-  useEffect(() => {
-    if (!activeThread) {
-      setTitleDraft('');
-      return;
-    }
-
-    setMode(activeThread.mode);
-    setStyle(activeThread.style);
-    setCustomStyleDescription(activeThread.customStyleDescription ?? '');
-    setTitleDraft(activeThread.title);
-  }, [activeThread]);
-
-  const handleSend = async (event: FormEvent): Promise<void> => {
+  const handleSend = async (event: SyntheticEvent): Promise<void> => {
     event.preventDefault();
     const text = message.trim();
     if (!text) return;
@@ -68,7 +56,7 @@ export function BrandVoicePage(): JSX.Element {
   const handleRename = async (): Promise<void> => {
     if (!activeThread) return;
 
-    const nextTitle = titleDraft.trim();
+    const nextTitle = titleInputRef.current?.value.trim() ?? '';
     if (!nextTitle || nextTitle === activeThread.title) return;
 
     await renameActiveThread(nextTitle);
@@ -80,7 +68,6 @@ export function BrandVoicePage(): JSX.Element {
     setStyle('email');
     setCustomStyleDescription('');
     setMessage('');
-    setTitleDraft('');
     setCopied(false);
   };
 
@@ -145,9 +132,10 @@ export function BrandVoicePage(): JSX.Element {
               <div className="mb-3 flex gap-2">
                 <input
                   aria-label="Thread title"
+                  key={activeThread.id}
+                  ref={titleInputRef}
                   type="text"
-                  value={titleDraft}
-                  onChange={(event) => { setTitleDraft(event.target.value); }}
+                  defaultValue={activeThread.title}
                   className="flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm"
                 />
                 <button
@@ -165,13 +153,13 @@ export function BrandVoicePage(): JSX.Element {
                 <p className="text-sm text-outline">Start a new conversation to generate your first draft.</p>
               )}
 
-              {activeThread && activeThread.messages.length === 0 && (
+              {activeThread?.messages.length === 0 && (
                 <p className="text-sm text-outline">No messages yet.</p>
               )}
 
-              {activeThread && activeThread.messages.length > 0 && (
+              {(activeThread?.messages.length ?? 0) > 0 && (
                 <div className="space-y-2">
-                  {activeThread.messages.map((item) => (
+                  {activeThread?.messages.map((item) => (
                     <div
                       key={item.id}
                       className={`rounded-xl px-3 py-2 text-sm ${
@@ -276,7 +264,7 @@ export function BrandVoicePage(): JSX.Element {
             </div>
 
             <div className="mb-3 flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest p-3 text-sm whitespace-pre-wrap text-on-surface">
-              {activeThread?.latestDraft || 'The latest draft will appear here.'}
+              {activeThread?.latestDraft ?? 'The latest draft will appear here.'}
             </div>
 
             <button

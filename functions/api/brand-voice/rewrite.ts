@@ -102,11 +102,14 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
     // Continue into fenced-json fallback.
   }
 
-  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const fencedPattern = /```(?:json)?\s*([\s\S]*?)\s*```/i;
+  const fencedMatch = fencedPattern.exec(trimmed);
   if (!fencedMatch) return null;
 
+  const rawFencedJson = fencedMatch[1];
+
   try {
-    const parsed = JSON.parse(fencedMatch[1]) as unknown;
+    const parsed = JSON.parse(rawFencedJson) as unknown;
     if (parsed !== null && typeof parsed === 'object') {
       return parsed as Record<string, unknown>;
     }
@@ -127,14 +130,18 @@ function parseAiDraft(content: string): DraftGeneration {
     };
   }
 
-  const assistantMessage = typeof parsed.assistantMessage === 'string'
-    ? parsed.assistantMessage.trim()
+  const assistantMessageRaw = parsed['assistantMessage'];
+  const draftRaw = parsed['draft'];
+  const threadTitleRaw = parsed['threadTitle'];
+
+  const assistantMessage = typeof assistantMessageRaw === 'string'
+    ? assistantMessageRaw.trim()
     : '';
-  const draft = typeof parsed.draft === 'string'
-    ? parsed.draft.trim()
+  const draft = typeof draftRaw === 'string'
+    ? draftRaw.trim()
     : '';
-  const threadTitle = typeof parsed.threadTitle === 'string'
-    ? parsed.threadTitle.trim()
+  const threadTitle = typeof threadTitleRaw === 'string'
+    ? threadTitleRaw.trim()
     : null;
 
   return {
@@ -149,7 +156,21 @@ function buildStyleInstruction(style: OutputStyle, customStyleDescription: strin
     return `Format the output according to these instructions: ${customStyleDescription}`;
   }
 
-  return STYLE_INSTRUCTIONS[style] ?? STYLE_INSTRUCTIONS.other;
+  switch (style) {
+    case 'email':
+      return STYLE_INSTRUCTIONS.email;
+    case 'whatsapp':
+      return STYLE_INSTRUCTIONS.whatsapp;
+    case 'document':
+      return STYLE_INSTRUCTIONS.document;
+    case 'instagram':
+      return STYLE_INSTRUCTIONS.instagram;
+    case 'facebook':
+      return STYLE_INSTRUCTIONS.facebook;
+    case 'other':
+    default:
+      return STYLE_INSTRUCTIONS.other;
+  }
 }
 
 function buildSystemPrompt(
@@ -229,7 +250,7 @@ function toThreadResponse(thread: ThreadRow, messages: MessageRow[]): {
   customStyleDescription: string | null;
   latestDraft: string;
   pinnedDraft: string | null;
-  messages: Array<{ id: string; role: MessageRole; content: string }>;
+  messages: { id: string; role: MessageRole; content: string }[];
 } {
   return {
     id: thread.id,
@@ -289,14 +310,14 @@ async function callAiGateway(
   customStyleDescription: string | null,
   rules: string,
   services: string,
-  history: Array<{ role: MessageRole; content: string; draftText?: string | null }>,
+  history: { role: MessageRole; content: string; draftText?: string | null }[],
   latestUserMessage: string,
   includeThreadTitle: boolean,
 ): Promise<DraftGeneration | Response> {
   const styleInstruction = buildStyleInstruction(style, customStyleDescription);
   const systemPrompt = buildSystemPrompt(mode, styleInstruction, rules, services, includeThreadTitle);
 
-  const messages: Array<{ role: string; content: string }> = [{ role: 'system', content: systemPrompt }];
+  const messages: { role: string; content: string }[] = [{ role: 'system', content: systemPrompt }];
 
   for (const message of history) {
     if (message.role === 'assistant') {

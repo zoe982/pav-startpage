@@ -97,7 +97,9 @@ export function useBrandVoice(): UseBrandVoiceReturn {
         text,
         style,
         mode,
-        customStyleDescription,
+        ...(customStyleDescription
+          ? { customStyleDescription }
+          : {}),
       });
       applyThreadUpdate(response.thread);
     } catch (err) {
@@ -121,9 +123,11 @@ export function useBrandVoice(): UseBrandVoiceReturn {
       const response = await replyInThreadRequest({
         threadId: activeThread.id,
         message,
-        style,
-        mode,
-        customStyleDescription,
+        ...(style ? { style } : {}),
+        ...(mode ? { mode } : {}),
+        ...(customStyleDescription
+          ? { customStyleDescription }
+          : {}),
       });
       applyThreadUpdate(response.thread);
     } catch (err) {
