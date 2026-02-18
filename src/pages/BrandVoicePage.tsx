@@ -441,7 +441,7 @@ export function BrandVoicePage(): JSX.Element {
                 type="button"
                 aria-selected={compactPanel === 'chat'}
                 onClick={() => { setCompactPanel('chat'); }}
-                className={`rounded-lg px-3 py-1.5 text-sm ${compactPanel === 'chat' ? 'font-medium text-on-surface' : 'text-on-surface-variant'}`}
+                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${compactPanel === 'chat' ? 'bg-secondary-container font-medium text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high/60'}`}
               >
                 Chat
               </button>
@@ -450,7 +450,7 @@ export function BrandVoicePage(): JSX.Element {
                 type="button"
                 aria-selected={compactPanel === 'canvas'}
                 onClick={() => { setCompactPanel('canvas'); }}
-                className={`rounded-lg px-3 py-1.5 text-sm ${compactPanel === 'canvas' ? 'font-medium text-on-surface' : 'text-on-surface-variant'}`}
+                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${compactPanel === 'canvas' ? 'bg-secondary-container font-medium text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high/60'}`}
               >
                 Canvas
               </button>
