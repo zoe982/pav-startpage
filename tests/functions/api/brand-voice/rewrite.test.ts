@@ -1818,7 +1818,8 @@ describe('Brand Voice chat API', () => {
   it('GET returns 500 with generic message when a non-Error is thrown', async () => {
     const db = {
       prepare: vi.fn(() => {
-        throw 'string error'; // eslint-disable-line no-throw-literal
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
+        throw 'string error';
       }),
     } as unknown as D1Database;
 

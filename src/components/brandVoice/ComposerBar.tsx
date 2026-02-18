@@ -1,4 +1,4 @@
-import { useRef, useCallback, type JSX, type KeyboardEvent } from 'react';
+import { useRef, useCallback, type JSX, type KeyboardEvent, type ChangeEvent } from 'react';
 
 interface ComposerBarProps {
   readonly message: string;
@@ -7,24 +7,28 @@ interface ComposerBarProps {
   readonly onSubmit: () => Promise<void>;
 }
 
+function resetHeight(el: HTMLTextAreaElement): void {
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
 export function ComposerBar({
   message,
   isLoading,
   onMessageChange,
   onSubmit,
 }: ComposerBarProps): JSX.Element {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(document.createElement('textarea'));
 
-  const autoResize = useCallback(() => {
-    const el = textareaRef.current!;
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
+  const handleChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>): void => {
+    onMessageChange(event.target.value);
+    resetHeight(event.target);
+  }, [onMessageChange]);
 
   const handleSubmit = useCallback(async (): Promise<void> => {
     if (isLoading || message.trim().length === 0) return;
     await onSubmit();
-    textareaRef.current!.style.height = 'auto';
+    textareaRef.current.style.height = 'auto';
   }, [isLoading, message, onSubmit]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -42,10 +46,7 @@ export function ComposerBar({
         aria-label="Revision message"
         value={message}
         placeholder="Ask for a revision..."
-        onChange={(event) => {
-          onMessageChange(event.target.value);
-          autoResize();
-        }}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         className="max-h-40 min-h-[1.5rem] flex-1 resize-none bg-transparent text-sm text-on-surface outline-none"
       />
