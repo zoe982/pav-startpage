@@ -110,4 +110,73 @@ describe('TemplateListRow', () => {
 
     expect(screen.getByText('1 variable')).toBeInTheDocument();
   });
+
+  it('renders both type badge with tertiary-container styling', () => {
+    renderWithProviders(
+      <TemplateListRow
+        template={buildTemplate({ type: 'both', subject: 'Test', content: 'Body' })}
+        isExpanded={false}
+        onToggleExpand={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Email + WA')).toBeInTheDocument();
+    expect(screen.getByText('Email + WA').className).toContain('bg-tertiary-container');
+  });
+
+  it('shows subject preview for both type with subject when expanded', () => {
+    renderWithProviders(
+      <TemplateListRow
+        template={buildTemplate({ type: 'both', subject: 'Visible subject', content: 'Body' })}
+        isExpanded
+        onToggleExpand={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Visible subject')).toBeInTheDocument();
+  });
+
+  it('does not show subject preview for both type with null subject when expanded', () => {
+    renderWithProviders(
+      <TemplateListRow
+        template={buildTemplate({ type: 'both', subject: null, content: 'Body' })}
+        isExpanded
+        onToggleExpand={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Subject:')).not.toBeInTheDocument();
+  });
+
+  it('shows no variables message in expanded view when no variables', () => {
+    renderWithProviders(
+      <TemplateListRow
+        template={buildTemplate({ subject: 'Plain', content: 'No vars here' })}
+        isExpanded
+        onToggleExpand={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('No variables required')).toBeInTheDocument();
+  });
+
+  it('copies content-only text when subject is null', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    renderWithProviders(
+      <TemplateListRow
+        template={buildTemplate({ subject: null, content: 'Content only' })}
+        isExpanded={false}
+        onToggleExpand={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(writeText).toHaveBeenCalledWith('Content only');
+  });
 });

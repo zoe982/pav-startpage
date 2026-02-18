@@ -1716,6 +1716,162 @@ describe('Brand Voice chat API', () => {
     expect(response.status).toBe(400);
   });
 
+  it('POST reply uses thread custom style description when body does not provide one', async () => {
+    const { db } = createStatefulDb({
+      rulesMarkdown: '# Rules',
+      servicesMarkdown: '# Services',
+      threads: [
+        {
+          id: 'thread-1',
+          title: 'Thread',
+          mode: 'draft',
+          style: 'other',
+          custom_style_description: 'Use bullet points only',
+          latest_draft: 'Draft',
+          pinned_draft: null,
+          created_by: 'user-1',
+          created_by_name: 'Test User',
+          created_at: '2026-02-17T12:00:00.000Z',
+          updated_at: '2026-02-17T12:00:00.000Z',
+          last_message_at: '2026-02-17T12:00:00.000Z',
+        },
+      ],
+    });
+
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({ assistantMessage: 'ok', draft: 'draft' }) } }],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reply', threadId: 'thread-1', message: 'Refine' }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(200);
+
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls.at(-1);
+    expect(fetchCall).toBeDefined();
+    if (!fetchCall) return;
+    const body = requestBodyString(fetchCall[1] as RequestInit | undefined);
+    expect(body).toContain('Use bullet points only');
+  });
+
+  it('POST start applies email style through the switch statement', async () => {
+    const { db } = createStatefulDb();
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({ assistantMessage: 'ok', draft: 'draft', threadTitle: 'Title' }) } }],
+      }), { status: 200 }),
+    );
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          text: 'Draft this',
+          style: 'email',
+        }),
+      }),
+      env: aiEnv(db),
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(201);
+
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls.at(-1);
+    expect(fetchCall).toBeDefined();
+    if (!fetchCall) return;
+    const body = requestBodyString(fetchCall[1] as RequestInit | undefined);
+    expect(body).toContain('professional email');
+  });
+
+  it('GET returns 500 with error message when an Error is thrown', async () => {
+    const db = {
+      prepare: vi.fn(() => {
+        throw new Error('DB connection failed');
+      }),
+    } as unknown as D1Database;
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite'),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(500);
+    const body = await response.json() as { error: string };
+    expect(body.error).toBe('DB connection failed');
+  });
+
+  it('GET returns 500 with generic message when a non-Error is thrown', async () => {
+    const db = {
+      prepare: vi.fn(() => {
+        throw 'string error'; // eslint-disable-line no-throw-literal
+      }),
+    } as unknown as D1Database;
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite'),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestGet(ctx);
+    expect(response.status).toBe(500);
+    const body = await response.json() as { error: string };
+    expect(body.error).toBe('Internal server error');
+  });
+
+  it('POST returns 500 with generic message when request.json() throws a non-Error', async () => {
+    const { db } = createStatefulDb();
+
+    const request = new Request('http://localhost:8788/api/brand-voice/rewrite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    vi.spyOn(request, 'json').mockRejectedValue('parse failure');
+
+    const ctx = createMockContext({
+      request,
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(500);
+    const body = await response.json() as { error: string };
+    expect(body.error).toBe('Internal server error');
+  });
+
+  it('POST returns 500 when request.json() throws an Error', async () => {
+    const { db } = createStatefulDb();
+
+    const ctx = createMockContext({
+      request: new Request('http://localhost:8788/api/brand-voice/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'not valid json',
+      }),
+      env: { DB: db },
+      data: { user: internalUser() },
+    });
+
+    const response = await onRequestPost(ctx);
+    expect(response.status).toBe(500);
+  });
+
   it('uses empty brand settings when settings row is absent', async () => {
     const db = {
       prepare: vi.fn((query: string) => {

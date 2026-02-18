@@ -106,6 +106,66 @@ describe('VersionHistoryModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('shows subject for both type in version preview', async () => {
+    vi.mocked(fetchTemplateVersions).mockResolvedValue([
+      {
+        id: 'v1',
+        versionNumber: 1,
+        title: 'Both Template',
+        type: 'both',
+        subject: 'Both subject',
+        content: 'Both content',
+        changedByName: 'Admin',
+        createdAt: '2026-01-01T10:00:00.000Z',
+      },
+    ]);
+
+    render(
+      <VersionHistoryModal
+        templateId="template-1"
+        onClose={vi.fn()}
+        onRestore={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Both Template')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Both subject')).toBeInTheDocument();
+    expect(screen.getByText('Email + WA')).toBeInTheDocument();
+    expect(screen.getByText('Email + WA').className).toContain('bg-tertiary-container');
+  });
+
+  it('does not show subject for whatsapp type in version preview', async () => {
+    vi.mocked(fetchTemplateVersions).mockResolvedValue([
+      {
+        id: 'v1',
+        versionNumber: 1,
+        title: 'WA Template',
+        type: 'whatsapp',
+        subject: 'Hidden subject',
+        content: 'WA content',
+        changedByName: 'Admin',
+        createdAt: '2026-01-01T10:00:00.000Z',
+      },
+    ]);
+
+    render(
+      <VersionHistoryModal
+        templateId="template-1"
+        onClose={vi.fn()}
+        onRestore={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('WA Template')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Hidden subject')).not.toBeInTheDocument();
+  });
+
   it('handles malformed non-empty version payload without selecting an item', async () => {
     const malformed = {
       0: undefined,

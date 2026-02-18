@@ -16,8 +16,7 @@ export function ComposerBar({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const autoResize = useCallback(() => {
-    const el = textareaRef.current;
-    if (!el) return;
+    const el = textareaRef.current!;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, []);
@@ -25,9 +24,7 @@ export function ComposerBar({
   const handleSubmit = useCallback(async (): Promise<void> => {
     if (isLoading || message.trim().length === 0) return;
     await onSubmit();
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
+    textareaRef.current!.style.height = 'auto';
   }, [isLoading, message, onSubmit]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLTextAreaElement>): void => {

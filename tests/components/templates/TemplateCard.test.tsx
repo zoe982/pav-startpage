@@ -94,4 +94,56 @@ describe('TemplateCard', () => {
 
     expect(screen.getByText(`${'A'.repeat(120)}...`)).toBeInTheDocument();
   });
+
+  it('does not truncate content that is 120 chars or less', () => {
+    const shortContent = 'B'.repeat(120);
+    renderWithProviders(
+      <TemplateCard template={buildTemplate({ content: shortContent })} />,
+    );
+
+    expect(screen.getByText(shortContent)).toBeInTheDocument();
+  });
+
+  it('renders both type badge with tertiary-container styling', () => {
+    renderWithProviders(
+      <TemplateCard
+        template={buildTemplate({
+          type: 'both',
+          subject: 'Welcome',
+          content: 'Hello there',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Email + WA')).toBeInTheDocument();
+    expect(screen.getByText('Email + WA').className).toContain('bg-tertiary-container');
+  });
+
+  it('shows subject line for both type with subject', () => {
+    renderWithProviders(
+      <TemplateCard
+        template={buildTemplate({
+          type: 'both',
+          subject: 'Welcome back',
+          content: 'Hello',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Welcome back')).toBeInTheDocument();
+  });
+
+  it('does not show subject line for whatsapp type even with subject', () => {
+    renderWithProviders(
+      <TemplateCard
+        template={buildTemplate({
+          type: 'whatsapp',
+          subject: 'Hidden',
+          content: 'Hello',
+        })}
+      />,
+    );
+
+    expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
+  });
 });

@@ -409,6 +409,38 @@ describe('TemplateEditPage', () => {
     expect(addToast).toHaveBeenCalledWith('Restored version 4 — save to apply', 'success');
   });
 
+  it('shows both type badge with tertiary-container styling in view mode', () => {
+    vi.mocked(useTemplate).mockReturnValue({
+      template: buildTemplate({ type: 'both', subject: 'Welcome', content: 'Body' }),
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderPage();
+    expect(screen.getByText('Email + WA')).toBeInTheDocument();
+    expect(screen.getByText('Email + WA').className).toContain('bg-tertiary-container');
+  });
+
+  it('shows error toast when update fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useTemplate).mockReturnValue({
+      template: buildTemplate({ subject: 'Welcome', content: 'Body' }),
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+    vi.mocked(updateTemplate).mockRejectedValue(new Error('update failed'));
+
+    renderPage();
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(addToast).toHaveBeenCalledWith('Failed to save template', 'error');
+    });
+  });
+
   it('navigates back to templates from new-template cancel and top back button', async () => {
     const user = userEvent.setup();
     vi.mocked(useTemplate).mockReturnValue({
