@@ -15,7 +15,6 @@ interface TemplateFormProps {
 const TYPE_OPTIONS: { readonly value: TemplateType; readonly label: string }[] = [
   { value: 'email', label: 'Email' },
   { value: 'whatsapp', label: 'WhatsApp' },
-  { value: 'both', label: 'Both' },
 ];
 
 export function TemplateForm({
@@ -57,9 +56,20 @@ export function TemplateForm({
             <button
               key={opt.value}
               type="button"
-              onClick={() => { onChange({ ...formData, type: opt.value }); }}
+              onClick={() => {
+                const other: TemplateType = opt.value === 'email' ? 'whatsapp' : 'email';
+                if (formData.type === opt.value) {
+                  // Already the sole selection — do nothing (must keep at least one)
+                } else if (formData.type === 'both') {
+                  // Deselect this one, keep the other
+                  onChange({ ...formData, type: other });
+                } else {
+                  // Currently the other one is selected — selecting this means both
+                  onChange({ ...formData, type: 'both' });
+                }
+              }}
               className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-medium motion-standard ${
-                formData.type === opt.value
+                formData.type === opt.value || formData.type === 'both'
                   ? 'bg-secondary-container text-on-secondary-container'
                   : 'bg-pav-cream text-on-surface hover:bg-pav-tan/30'
               }`}

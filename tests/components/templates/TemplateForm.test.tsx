@@ -104,9 +104,66 @@ describe('TemplateForm', () => {
     });
 
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ title: 'Welcome updated' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'whatsapp' }));
+    // Email is already selected; clicking WhatsApp adds it → type becomes 'both'
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'both' }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ subject: 'Welcome {{client_name}}!' }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ content: 'Hi {{client_name}}, {{dog_name}} is ready. more' }));
+  });
+
+  it('does nothing when clicking the already-selected sole type', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <TemplateForm
+        formData={buildFormData({ type: 'email' })}
+        onChange={onChange}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        isSubmitting={false}
+        submitLabel="Save"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Email' }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('deselects one type when both are active, leaving the other', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <TemplateForm
+        formData={buildFormData({ type: 'both' })}
+        onChange={onChange}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        isSubmitting={false}
+        submitLabel="Save"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Email' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ type: 'whatsapp' }));
+  });
+
+  it('shows both buttons as selected when type is both', () => {
+    render(
+      <TemplateForm
+        formData={buildFormData({ type: 'both' })}
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        isSubmitting={false}
+        submitLabel="Save"
+      />,
+    );
+
+    const emailBtn = screen.getByRole('button', { name: 'Email' });
+    const whatsappBtn = screen.getByRole('button', { name: 'WhatsApp' });
+    expect(emailBtn.className).toContain('bg-secondary-container');
+    expect(whatsappBtn.className).toContain('bg-secondary-container');
   });
 
   it('shows saving label and keeps submit disabled while submitting', () => {
