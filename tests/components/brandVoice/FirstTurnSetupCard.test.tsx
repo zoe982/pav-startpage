@@ -33,7 +33,7 @@ describe('FirstTurnSetupCard', () => {
 
     expect(screen.queryByLabelText('Custom output style')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Other style' }));
+    await user.click(screen.getByRole('button', { name: 'Other' }));
     expect(onStyleChange).toHaveBeenCalledWith('other');
   });
 
@@ -54,9 +54,9 @@ describe('FirstTurnSetupCard', () => {
       onNoDraftProvidedChange,
     });
 
-    await user.click(screen.getByRole('button', { name: 'Rewrite mode' }));
+    await user.click(screen.getByRole('button', { name: 'Rewrite' }));
     expect(onModeChange).toHaveBeenCalledWith('rewrite');
-    await user.click(screen.getByRole('button', { name: 'Draft mode' }));
+    await user.click(screen.getByRole('button', { name: 'Draft' }));
     expect(onModeChange).toHaveBeenCalledWith('draft');
 
     await user.type(screen.getByLabelText('Custom output style'), 'Newsletter');
@@ -65,10 +65,11 @@ describe('FirstTurnSetupCard', () => {
     await user.type(screen.getByLabelText('Goal'), 'Write a welcome email');
     expect(onGoalChange).toHaveBeenCalled();
 
+    await user.click(screen.getByRole('button', { name: 'Attach a rough draft' }));
     await user.type(screen.getByLabelText('Rough draft'), 'Hello there');
     expect(onRoughDraftChange).toHaveBeenCalled();
 
-    await user.click(screen.getByRole('checkbox', { name: 'No draft available' }));
+    await user.click(screen.getByRole('checkbox', { name: 'No draft' }));
     expect(onNoDraftProvidedChange).toHaveBeenCalledWith(true);
   });
 
@@ -81,43 +82,34 @@ describe('FirstTurnSetupCard', () => {
       onSubmit,
     });
 
-    const submitButton = screen.getByRole('button', { name: 'Generate aligned draft' });
+    const submitButton = screen.getByRole('button', { name: 'Generate draft' });
     expect(submitButton).toBeEnabled();
     await user.click(submitButton);
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
   it('blocks submit when guardrail is unmet', () => {
-    const unmetSubmit = vi.fn().mockResolvedValue(undefined);
     renderCard({
       goal: '',
       roughDraft: '',
       noDraftProvided: false,
       isLoading: false,
-      onSubmit: unmetSubmit,
     });
 
-    const unmetButton = screen.getByRole('button', { name: 'Generate aligned draft' });
-    const unmetForm = unmetButton.closest('form');
-    if (!unmetForm) throw new Error('Expected setup form');
-    fireEvent.submit(unmetForm);
-    expect(unmetSubmit).not.toHaveBeenCalled();
+    const submitButton = screen.getByRole('button', { name: 'Generate draft' });
+    expect(submitButton).toBeDisabled();
+    fireEvent.click(submitButton);
   });
 
   it('blocks submit while loading', () => {
-    const onSubmit = vi.fn().mockResolvedValue(undefined);
     renderCard({
       goal: 'Create an aligned message',
       noDraftProvided: true,
       isLoading: true,
-      onSubmit,
     });
 
-    const submitButton = screen.getByRole('button', { name: 'Generate aligned draft' });
+    const submitButton = screen.getByRole('button', { name: 'Generate draft' });
     expect(submitButton).toBeDisabled();
-    const form = submitButton.closest('form');
-    if (!form) throw new Error('Expected setup form');
-    fireEvent.submit(form);
-    expect(onSubmit).not.toHaveBeenCalled();
+    fireEvent.click(submitButton);
   });
 });

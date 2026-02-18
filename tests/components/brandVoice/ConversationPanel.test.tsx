@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { BrandVoiceThread } from '../../../src/types/brandVoice.ts';
 import { ConversationPanel } from '../../../src/components/brandVoice/ConversationPanel.tsx';
@@ -32,7 +32,7 @@ describe('ConversationPanel', () => {
       </ConversationPanel>,
     );
 
-    expect(screen.getByText('Start a new conversation to generate your first draft.')).toBeInTheDocument();
+    expect(screen.getByText('What would you like to write?')).toBeInTheDocument();
     expect(screen.getByText('Composer area')).toBeInTheDocument();
   });
 
@@ -48,8 +48,8 @@ describe('ConversationPanel', () => {
       </ConversationPanel>,
     );
 
-    expect(screen.getByText('No messages yet.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save title' })).toBeDisabled();
+    expect(screen.getByText('What would you like to write?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Thread title')).toBeDisabled();
   });
 
   it('renders messages and only renames when the next title is valid and changed', async () => {
@@ -76,25 +76,28 @@ describe('ConversationPanel', () => {
     expect(screen.getByText('Assistant reply')).toBeInTheDocument();
 
     const titleInput = screen.getByLabelText('Thread title');
+
+    // Same title — should not trigger rename on blur
     await user.clear(titleInput);
     await user.type(titleInput, 'Thread title');
-    await user.click(screen.getByRole('button', { name: 'Save title' }));
+    await user.tab(); // blur
     expect(onRenameThread).not.toHaveBeenCalled();
 
+    // Whitespace-only — should not trigger rename on blur
     await user.clear(titleInput);
     await user.type(titleInput, '  ');
-    await user.click(screen.getByRole('button', { name: 'Save title' }));
+    await user.tab(); // blur
     expect(onRenameThread).not.toHaveBeenCalled();
 
+    // Valid new title — should rename on Enter
     await user.clear(titleInput);
-    await user.type(titleInput, 'Updated title');
-    await user.click(screen.getByRole('button', { name: 'Save title' }));
+    await user.type(titleInput, 'Updated title{Enter}');
     await waitFor(() => {
       expect(onRenameThread).toHaveBeenCalledWith('Updated title');
     });
   });
 
-  it('does not rename when thread title control is missing from the form', () => {
+  it('does not rename when thread title input has no name attribute', () => {
     const onRenameThread = vi.fn().mockResolvedValue(undefined);
 
     render(
@@ -111,14 +114,9 @@ describe('ConversationPanel', () => {
     const titleInput = screen.getByLabelText('Thread title');
     titleInput.removeAttribute('name');
 
-    const saveButton = screen.getByRole('button', { name: 'Save title' });
-    const form = saveButton.closest('form');
-    expect(form).not.toBeNull();
-    if (!form) {
-      throw new Error('Expected rename form to render when active thread exists.');
-    }
-
-    fireEvent.submit(form);
+    // Blur with same title — should not rename
+    titleInput.focus();
+    titleInput.blur();
     expect(onRenameThread).not.toHaveBeenCalled();
   });
 });

@@ -13,7 +13,7 @@ describe('ThreadRail', () => {
       />,
     );
 
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText('Threads (0)')).toBeInTheDocument();
     expect(screen.getByText('No threads yet. Start with your first prompt.')).toBeInTheDocument();
   });
 
@@ -32,7 +32,7 @@ describe('ThreadRail', () => {
       />,
     );
 
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('Threads (2)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Second thread' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'First thread' })).toHaveAttribute('aria-pressed', 'false');
 
