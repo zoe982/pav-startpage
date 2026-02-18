@@ -30,7 +30,7 @@ export function ConversationPanel({
   }, [handleTitleCommit]);
 
   return (
-    <section className="flex flex-col bg-surface">
+    <section className="flex min-h-0 flex-col overflow-hidden bg-surface">
       {activeThread && (
         <div className="flex items-center gap-3 px-6 py-3">
           <input

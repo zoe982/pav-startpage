@@ -513,25 +513,31 @@ export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async
   const denied = assertAppAccess(data.user, 'brand-voice');
   if (denied) return denied;
 
-  const url = new URL(request.url);
-  const threadId = url.searchParams.get('threadId');
+  try {
+    const url = new URL(request.url);
+    const threadId = url.searchParams.get('threadId');
 
-  if (threadId) {
-    return await buildThreadPayload(env, threadId);
+    if (threadId) {
+      return await buildThreadPayload(env, threadId);
+    }
+
+    const { results } = await env.DB.prepare(
+      `SELECT id, title
+       FROM brand_voice_threads
+       ORDER BY last_message_at DESC, updated_at DESC`,
+    ).all<{ id: string; title: string }>();
+
+    return Response.json({
+      threads: results.map((row) => ({
+        id: row.id,
+        title: row.title,
+      })),
+    });
+  } catch (err) {
+    console.error('Brand voice GET error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return Response.json({ error: message }, { status: 500 });
   }
-
-  const { results } = await env.DB.prepare(
-    `SELECT id, title
-     FROM brand_voice_threads
-     ORDER BY last_message_at DESC, updated_at DESC`,
-  ).all<{ id: string; title: string }>();
-
-  return Response.json({
-    threads: results.map((row) => ({
-      id: row.id,
-      title: row.title,
-    })),
-  });
 };
 
 export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
@@ -539,6 +545,7 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
   const denied = assertAppAccess(data.user, 'brand-voice');
   if (denied) return denied;
 
+  try {
   const body: RewriteBody = await request.json();
   const action = typeof body.action === 'string' ? body.action : '';
 
@@ -905,4 +912,9 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
   }
 
   return Response.json({ error: 'Unsupported action' }, { status: 400 });
+  } catch (err) {
+    console.error('Brand voice POST error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return Response.json({ error: message }, { status: 500 });
+  }
 };

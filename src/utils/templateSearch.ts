@@ -21,7 +21,7 @@ function getSearchableText(template: Template): string {
     template.content,
   ];
 
-  if (template.type === 'email' && template.subject) {
+  if ((template.type === 'email' || template.type === 'both') && template.subject) {
     parts.push(template.subject);
   }
 
@@ -39,7 +39,7 @@ export function filterTemplatesForList(
   const tokens = toSearchTokens(filter.q);
 
   return templates.filter((template) => {
-    if (filter.type !== 'all' && template.type !== filter.type) {
+    if (filter.type !== 'all' && template.type !== filter.type && template.type !== 'both') {
       return false;
     }
 

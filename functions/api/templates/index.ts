@@ -32,7 +32,7 @@ export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async
 
   const bindings: string[] = [];
   if (typeFilter === 'email' || typeFilter === 'whatsapp') {
-    sql += ' WHERE t.type = ?';
+    sql += ` WHERE (t.type = ? OR t.type = 'both')`;
     bindings.push(typeFilter);
   }
 
@@ -83,8 +83,8 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
   if (!title) {
     return Response.json({ error: 'Title is required' }, { status: 400 });
   }
-  if (type !== 'email' && type !== 'whatsapp') {
-    return Response.json({ error: 'Type must be email or whatsapp' }, { status: 400 });
+  if (type !== 'email' && type !== 'whatsapp' && type !== 'both') {
+    return Response.json({ error: 'Type must be email, whatsapp, or both' }, { status: 400 });
   }
 
   const id = crypto.randomUUID();

@@ -95,8 +95,8 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
   if (!title) {
     return Response.json({ error: 'Title is required' }, { status: 400 });
   }
-  if (type !== 'email' && type !== 'whatsapp') {
-    return Response.json({ error: 'Type must be email or whatsapp' }, { status: 400 });
+  if (type !== 'email' && type !== 'whatsapp' && type !== 'both') {
+    return Response.json({ error: 'Type must be email, whatsapp, or both' }, { status: 400 });
   }
 
   const existing = await env.DB.prepare('SELECT id FROM templates WHERE id = ?')

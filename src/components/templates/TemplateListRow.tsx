@@ -32,7 +32,7 @@ export function TemplateListRow({
 }: TemplateListRowProps): JSX.Element {
   const variableNames = extractTemplateVariables(template.subject, template.content);
   const hasVariables = variableNames.length > 0;
-  const subjectPreview = template.type === 'email' && template.subject && template.subject.trim().length > 0
+  const subjectPreview = (template.type === 'email' || template.type === 'both') && template.subject && template.subject.trim().length > 0
     ? template.subject
     : null;
   const variableText = `${variableNames.length} variable${variableNames.length === 1 ? '' : 's'}`;
@@ -78,9 +78,11 @@ export function TemplateListRow({
         <span className={`justify-self-start rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
           template.type === 'email'
             ? 'bg-primary-container text-on-primary-container'
-            : 'bg-success-container text-on-success-container'
+            : template.type === 'both'
+              ? 'bg-tertiary-container text-on-tertiary-container'
+              : 'bg-success-container text-on-success-container'
         }`}>
-          {template.type}
+          {template.type === 'both' ? 'Email + WA' : template.type}
         </span>
 
         <span className="justify-self-start rounded-full bg-surface-container px-2 py-1 text-xs font-medium text-on-surface-variant">

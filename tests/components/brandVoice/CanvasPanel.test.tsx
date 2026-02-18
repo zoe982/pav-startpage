@@ -35,7 +35,7 @@ describe('CanvasPanel', () => {
     const onApplyAssistantUpdate = vi.fn();
     renderPanel({ pendingAssistantDraft: true, onApplyAssistantUpdate });
 
-    await user.click(screen.getByRole('button', { name: 'Apply assistant update' }));
+    await user.click(screen.getByRole('button', { name: 'Apply update' }));
     expect(onApplyAssistantUpdate).toHaveBeenCalledTimes(1);
   });
 
@@ -59,16 +59,16 @@ describe('CanvasPanel', () => {
     await user.type(screen.getByLabelText('Canvas draft'), ' updated');
     expect(onCanvasChange).toHaveBeenCalled();
 
-    await user.click(screen.getByRole('button', { name: 'Version history' }));
+    await user.click(screen.getByRole('button', { name: 'History' }));
     expect(onOpenVersionHistory).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: 'Undo edit' }));
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(onUndo).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: 'Copy draft' }));
+    await user.click(screen.getByRole('button', { name: 'Copy' }));
     expect(onCopy).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: 'Use this draft' }));
+    await user.click(screen.getByRole('button', { name: 'Pin draft' }));
     expect(onPin).toHaveBeenCalledTimes(1);
   });
 

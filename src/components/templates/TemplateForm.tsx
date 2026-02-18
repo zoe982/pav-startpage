@@ -15,6 +15,7 @@ interface TemplateFormProps {
 const TYPE_OPTIONS: { readonly value: TemplateType; readonly label: string }[] = [
   { value: 'email', label: 'Email' },
   { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'both', label: 'Both' },
 ];
 
 export function TemplateForm({

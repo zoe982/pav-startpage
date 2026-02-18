@@ -199,9 +199,11 @@ export function TemplateEditPage(): JSX.Element {
                   <span className={`rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
                     template.type === 'email'
                       ? 'bg-primary-container text-on-primary-container'
-                      : 'bg-success-container text-on-success-container'
+                      : template.type === 'both'
+                        ? 'bg-tertiary-container text-on-tertiary-container'
+                        : 'bg-success-container text-on-success-container'
                   }`}>
-                    {template.type}
+                    {template.type === 'both' ? 'Email + WA' : template.type}
                   </span>
                   <h1 className="text-2xl font-bold text-pav-blue">{template.title}</h1>
                 </div>

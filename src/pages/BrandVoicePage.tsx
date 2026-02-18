@@ -351,7 +351,7 @@ export function BrandVoicePage(): JSX.Element {
 
   return (
     <AppShell>
-      <div className="brand-voice-page flex h-[calc(100vh-4rem)] flex-col">
+      <div className="brand-voice-page flex h-[calc(100vh-8rem)] flex-col">
         <header className="flex items-center justify-between gap-4 px-4 py-2">
           <h1 className="text-sm font-semibold text-on-surface-variant">Brand Voice</h1>
           <div className="flex items-center gap-2">

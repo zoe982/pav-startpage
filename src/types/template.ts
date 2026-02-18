@@ -1,4 +1,4 @@
-export type TemplateType = 'email' | 'whatsapp';
+export type TemplateType = 'email' | 'whatsapp' | 'both';
 
 export interface Template {
   readonly id: string;

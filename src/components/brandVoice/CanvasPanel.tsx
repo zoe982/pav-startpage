@@ -60,7 +60,7 @@ export function CanvasPanel({
   onPin,
 }: CanvasPanelProps): JSX.Element {
   return (
-    <section className="flex flex-col border-l border-outline-variant/30 bg-surface-container-lowest">
+    <section className="flex min-h-0 flex-col border-l border-outline-variant/30 bg-surface-container-lowest">
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         <div className="flex items-center gap-3">
           <h2 className="text-xs font-semibold text-on-surface-variant">Canvas</h2>

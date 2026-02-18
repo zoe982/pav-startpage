@@ -101,12 +101,14 @@ export function VersionHistoryModal({
                         <span className={`rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
                           selected.type === 'email'
                             ? 'bg-primary-container text-on-primary-container'
-                            : 'bg-success-container text-on-success-container'
+                            : selected.type === 'both'
+                              ? 'bg-tertiary-container text-on-tertiary-container'
+                              : 'bg-success-container text-on-success-container'
                         }`}>
-                          {selected.type}
+                          {selected.type === 'both' ? 'Email + WA' : selected.type}
                         </span>
                       </div>
-                      {selected.type === 'email' && selected.subject && (
+                      {(selected.type === 'email' || selected.type === 'both') && selected.subject && (
                         <p className="mt-2 text-sm text-on-surface-variant">
                           <span className="font-medium">Subject:</span> {selected.subject}
                         </p>

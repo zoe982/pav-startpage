@@ -36,9 +36,11 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
           <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
             template.type === 'email'
               ? 'bg-primary-container text-on-primary-container'
-              : 'bg-success-container text-on-success-container'
+              : template.type === 'both'
+                ? 'bg-tertiary-container text-on-tertiary-container'
+                : 'bg-success-container text-on-success-container'
           }`}>
-            {template.type}
+            {template.type === 'both' ? 'Email + WA' : template.type}
           </span>
           <h3 className="truncate text-sm font-semibold text-pav-blue group-hover:text-pav-terra">
             {template.title}
@@ -55,7 +57,7 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
           <CopyButton text={getCopyText(template)} />
         )}
       </div>
-      {template.type === 'email' && template.subject && (
+      {(template.type === 'email' || template.type === 'both') && template.subject && (
         <p className="text-xs text-on-surface-variant">
           <span className="font-medium">Subject:</span> {template.subject}
         </p>
