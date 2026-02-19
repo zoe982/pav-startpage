@@ -17,10 +17,10 @@ export function WikiNav({
           <Link
             key={page.id}
             to={`/wiki/${page.slug}`}
-            className={`state-layer touch-target block rounded-md px-3 py-2 text-sm motion-standard ${
+            className={`state-layer touch-target block rounded-xl px-3 py-2 text-sm motion-standard ${
               isActive
-                ? 'bg-pav-gold/20 font-medium text-pav-blue'
-                : 'text-pav-grey hover:bg-pav-cream/50'
+                ? 'bg-secondary-container font-medium text-on-secondary-container'
+                : 'text-on-surface-variant hover:bg-surface-container'
             }`}
           >
             {page.title}

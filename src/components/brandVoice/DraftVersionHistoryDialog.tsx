@@ -22,7 +22,7 @@ export function DraftVersionHistoryDialog({
 
   return (
     <div role="dialog" aria-label="Draft version history" className="fixed inset-0 z-40 grid place-items-center bg-scrim/35 px-3">
-      <div className="w-full max-w-2xl rounded-3xl border border-outline-variant bg-surface p-5 shadow-[var(--shadow-elevation-3)]">
+      <div className="glass-card w-full max-w-2xl p-5 shadow-[var(--shadow-elevation-3)]">
         <h3 className="text-xl font-semibold text-on-surface">Draft version history</h3>
         <div className="mt-4 space-y-2 text-sm text-on-surface">
           {versions.length === 0 && (
@@ -33,7 +33,7 @@ export function DraftVersionHistoryDialog({
           {versions.map((version) => {
             const restoreDisabled = isLoading || version.versionNumber === newestVersionNumber;
             return (
-              <article key={version.id} className="rounded-xl border border-outline-variant/70 bg-surface-container-low px-3 py-2">
+              <article key={version.id} className="rounded-xl border border-outline-variant/70 bg-surface-container-low p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-on-surface">
                     {`v${version.versionNumber} · ${version.source}`}
@@ -56,7 +56,7 @@ export function DraftVersionHistoryDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-outline px-4 py-2 text-sm text-on-surface"
+            className="rounded-full bg-surface-container-high px-4 py-2 text-sm text-on-surface hover:bg-surface-container-highest"
           >
             Close
           </button>

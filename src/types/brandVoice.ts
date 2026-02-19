@@ -25,6 +25,8 @@ export interface RefineRequest {
 export interface BrandVoiceThreadSummary {
   readonly id: string;
   readonly title: string;
+  readonly createdByEmail: string | null;
+  readonly createdAt: string;
 }
 
 export type BrandVoiceMessageRole = 'user' | 'assistant';

@@ -20,22 +20,22 @@ export function WikiViewPage(): JSX.Element {
           <div className="mb-4">
             <Link
               to="/wiki"
-              className="state-layer touch-target inline-flex items-center rounded-md px-2 py-2 text-sm text-pav-blue hover:text-pav-gold"
+              className="state-layer touch-target inline-flex items-center rounded-md px-2 py-2 text-sm text-primary hover:text-secondary"
             >
               &larr; All pages
             </Link>
           </div>
           {isLoading && (
             <div className="space-y-3">
-              <div className="h-8 w-48 animate-pulse rounded bg-pav-tan/30" />
-              <div className="h-4 w-full animate-pulse rounded bg-pav-tan/30" />
-              <div className="h-4 w-3/4 animate-pulse rounded bg-pav-tan/30" />
+              <div className="h-8 w-48 animate-pulse rounded bg-surface-container" />
+              <div className="h-4 w-full animate-pulse rounded bg-surface-container" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-surface-container" />
             </div>
           )}
           {error && <p className="text-sm text-error">{error}</p>}
           {page && (
             <article>
-              <h1 className="text-3xl font-bold text-pav-blue">
+              <h1 className="text-3xl font-bold font-display text-primary">
                 {page.title}
               </h1>
               <div className="mt-6">

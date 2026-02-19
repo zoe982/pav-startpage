@@ -28,6 +28,14 @@ export async function deleteTemplate(id: string): Promise<void> {
   await apiFetch<undefined>(`/api/templates/${id}`, { method: 'DELETE' });
 }
 
+export async function approveTemplate(id: string): Promise<Template> {
+  return await apiFetch<Template>(`/api/templates/${id}/approve`, { method: 'POST' });
+}
+
+export async function unapproveTemplate(id: string): Promise<Template> {
+  return await apiFetch<Template>(`/api/templates/${id}/approve`, { method: 'DELETE' });
+}
+
 export async function fetchTemplateVersions(id: string): Promise<TemplateVersion[]> {
   return await apiFetch<TemplateVersion[]>(`/api/templates/${id}/versions`);
 }

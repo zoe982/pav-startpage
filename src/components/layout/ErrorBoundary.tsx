@@ -19,13 +19,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('ErrorBoundary caught:', error, info);
+
+    // Auto-reload on stale chunk errors (e.g. after a new deployment)
+    if (
+      error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('Importing a module script failed')
+    ) {
+      window.location.reload();
+    }
   }
 
   override render(): ReactNode {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-surface-container-lowest">
-          <h1 className="text-2xl font-bold text-pav-blue">
+          <h1 className="text-2xl font-bold font-display text-primary">
             Something went wrong
           </h1>
           <p className="mt-2 text-sm text-on-surface-variant">
@@ -45,9 +53,9 @@ export class ErrorBoundary extends Component<Props, State> {
           )}
           <button
             onClick={() => {
-              this.setState({ hasError: false, error: null });
+              window.location.reload();
             }}
-            className="state-layer touch-target mt-4 rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
+            className="state-layer touch-target mt-4 rounded-md bg-tertiary px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-tertiary/85"
           >
             Try again
           </button>

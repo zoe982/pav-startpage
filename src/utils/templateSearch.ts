@@ -1,9 +1,10 @@
 import type { Template } from '../types/template.ts';
-import type { TemplateListViewState, TemplateSortKey } from './templateListQuery.ts';
+import type { TemplateApprovalFilter, TemplateListViewState, TemplateSortKey } from './templateListQuery.ts';
 
 interface TemplateListFilterInput {
   readonly q: string;
   readonly type: TemplateListViewState['type'];
+  readonly approval?: TemplateApprovalFilter;
 }
 
 function normalizeSearchText(value: string): string {
@@ -40,6 +41,13 @@ export function filterTemplatesForList(
 
   return templates.filter((template) => {
     if (filter.type !== 'all' && template.type !== filter.type && template.type !== 'both') {
+      return false;
+    }
+
+    if (filter.approval === 'approved' && !template.approvedByEmail) {
+      return false;
+    }
+    if (filter.approval === 'unapproved' && template.approvedByEmail) {
       return false;
     }
 

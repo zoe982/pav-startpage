@@ -27,7 +27,7 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
     : template.content;
 
   return (
-    <div className="state-layer group relative flex flex-col gap-2 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]">
+    <div className="state-layer group relative flex flex-col gap-2 rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-secondary hover:shadow-[var(--shadow-elevation-2)]">
       <div className="flex items-center justify-between gap-2">
         <Link
           to={`/templates/${template.id}`}
@@ -42,7 +42,7 @@ export function TemplateCard({ template }: { readonly template: Template }): JSX
           }`}>
             {template.type === 'both' ? 'Email + WA' : template.type}
           </span>
-          <h3 className="truncate text-sm font-semibold text-pav-blue group-hover:text-pav-terra">
+          <h3 className="truncate text-sm font-semibold text-primary group-hover:text-tertiary">
             {template.title}
           </h3>
         </Link>

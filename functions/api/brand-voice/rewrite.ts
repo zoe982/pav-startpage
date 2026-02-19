@@ -98,11 +98,9 @@ function sanitizeTitle(rawTitle: string): string {
   return cleaned.slice(0, MAX_TITLE_LENGTH);
 }
 
-function formatThreadTitle(baseTitle: string | null, userName: string): string {
+function formatThreadTitle(baseTitle: string | null): string {
   const fallbackTitle = 'Brand Voice Thread';
-  const safeBase = sanitizeTitle(baseTitle ?? '') || fallbackTitle;
-  const safeUser = sanitizeTitle(userName) || 'User';
-  return sanitizeTitle(`${safeBase} (${safeUser})`);
+  return sanitizeTitle(baseTitle ?? '') || fallbackTitle;
 }
 
 function extractJsonObject(text: string): Record<string, unknown> | null {
@@ -522,19 +520,63 @@ export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async
     }
 
     const { results } = await env.DB.prepare(
-      `SELECT id, title
-       FROM brand_voice_threads
-       ORDER BY last_message_at DESC, updated_at DESC`,
-    ).all<{ id: string; title: string }>();
+      `SELECT t.id, t.title, t.created_at, u.email AS created_by_email
+       FROM brand_voice_threads t
+       LEFT JOIN users u ON t.created_by = u.id
+       ORDER BY t.created_at DESC`,
+    ).all<{ id: string; title: string; created_at: string; created_by_email: string | null }>();
 
     return Response.json({
       threads: results.map((row) => ({
         id: row.id,
         title: row.title,
+        createdByEmail: row.created_by_email ?? null,
+        createdAt: row.created_at,
       })),
     });
   } catch (err) {
     console.error('Brand voice GET error:', err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return Response.json({ error: message }, { status: 500 });
+  }
+};
+
+export const onRequestDelete: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
+  const { env, request, data } = context;
+  const denied = assertAppAccess(data.user, 'brand-voice');
+  if (denied) return denied;
+
+  try {
+    const url = new URL(request.url);
+    const threadId = url.searchParams.get('threadId');
+
+    if (!threadId) {
+      return Response.json({ error: 'threadId is required' }, { status: 400 });
+    }
+
+    const existing = await env.DB.prepare('SELECT id FROM brand_voice_threads WHERE id = ?')
+      .bind(threadId)
+      .first();
+
+    if (!existing) {
+      return Response.json({ error: 'Thread not found' }, { status: 404 });
+    }
+
+    await env.DB.prepare('DELETE FROM brand_voice_draft_versions WHERE thread_id = ?')
+      .bind(threadId)
+      .run();
+
+    await env.DB.prepare('DELETE FROM brand_voice_messages WHERE thread_id = ?')
+      .bind(threadId)
+      .run();
+
+    await env.DB.prepare('DELETE FROM brand_voice_threads WHERE id = ?')
+      .bind(threadId)
+      .run();
+
+    return new Response(null, { status: 204 });
+  } catch (err) {
+    console.error('Brand voice DELETE error:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }
@@ -588,7 +630,7 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
     const threadId = crypto.randomUUID();
     const userMessageId = crypto.randomUUID();
     const assistantMessageId = crypto.randomUUID();
-    const threadTitle = formatThreadTitle(aiResult.threadTitle, data.user.name);
+    const threadTitle = formatThreadTitle(aiResult.threadTitle);
 
     await env.DB.prepare(
       `INSERT INTO brand_voice_threads

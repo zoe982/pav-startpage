@@ -33,7 +33,7 @@ describe('WikiNav', () => {
       route: '/wiki/active-page',
     });
     const link = screen.getByText('Active');
-    expect(link.className).toContain('bg-pav-gold');
+    expect(link.className).toContain('bg-secondary-container');
   });
 
   it('does not highlight non-active page', () => {
@@ -45,6 +45,6 @@ describe('WikiNav', () => {
       route: '/wiki/different',
     });
     const link = screen.getByText('Other');
-    expect(link.className).not.toContain('bg-pav-gold');
+    expect(link.className).not.toContain('bg-secondary-container');
   });
 });

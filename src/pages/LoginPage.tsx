@@ -21,7 +21,7 @@ export function LoginPage(): JSX.Element {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-pav-blue border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -32,7 +32,7 @@ export function LoginPage(): JSX.Element {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-container-lowest">
-      <div className="w-full max-w-md space-y-8 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-8 shadow-[var(--shadow-elevation-3)]">
+      <div className="w-full max-w-md glass-card space-y-8 rounded-3xl p-10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
         <div className="text-center">
           <img
             src="/pav-wordmark-horizontal.png"

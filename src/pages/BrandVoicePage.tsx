@@ -37,9 +37,9 @@ export function BrandVoicePage(): JSX.Element {
     saveActiveDraft,
     restoreActiveDraftVersion,
     clearActiveThread,
+    deleteThread,
   } = useBrandVoice();
 
-  const [mode, setMode] = useState<BrandMode>('draft');
   const [style, setStyle] = useState<OutputStyle>('email');
   const [customStyleDescription, setCustomStyleDescription] = useState('');
   const [goal, setGoal] = useState('');
@@ -138,10 +138,6 @@ export function BrandVoicePage(): JSX.Element {
   const isExpanded = layoutMode === 'expanded';
   const isCompact = layoutMode === 'compact';
 
-  const contextLabel = activeThread
-    ? `Context: ${activeThread.mode} · ${activeThread.style}`
-    : null;
-
   const handleSelectThread = useCallback((threadId: string): void => {
     void selectThread(threadId);
     setIsThreadSheetOpen(false);
@@ -153,12 +149,14 @@ export function BrandVoicePage(): JSX.Element {
     if (!trimmedGoal) return;
     if (!trimmedRoughDraft && !noDraftProvided) return;
 
+    const inferredMode: BrandMode = trimmedRoughDraft ? 'rewrite' : 'draft';
+
     await startThread({
       goal: trimmedGoal,
       ...(trimmedRoughDraft ? { roughDraft: trimmedRoughDraft } : {}),
       noDraftProvided,
       style,
-      mode,
+      mode: inferredMode,
       ...(style === 'other' && customStyleDescription.trim().length > 0
         ? { customStyleDescription: customStyleDescription.trim() }
         : {}),
@@ -172,7 +170,6 @@ export function BrandVoicePage(): JSX.Element {
   }, [
     customStyleDescription,
     goal,
-    mode,
     noDraftProvided,
     roughDraft,
     startThread,
@@ -188,7 +185,6 @@ export function BrandVoicePage(): JSX.Element {
 
   const handleNewThread = useCallback((): void => {
     clearActiveThread();
-    setMode('draft');
     setStyle('email');
     setCustomStyleDescription('');
     setGoal('');
@@ -202,6 +198,10 @@ export function BrandVoicePage(): JSX.Element {
     setSaveStatus('Idle');
     setCompactPanel('chat');
   }, [clearActiveThread]);
+
+  const handleDeleteThread = useCallback(async (threadId: string): Promise<void> => {
+    await deleteThread(threadId);
+  }, [deleteThread]);
 
   const handleCanvasChange = useCallback((nextText: string): void => {
     setUndoStack((current) => {
@@ -262,7 +262,6 @@ export function BrandVoicePage(): JSX.Element {
   const chatPane = useMemo(() => (
     <ConversationPanel
       activeThread={activeThread}
-      contextLabel={contextLabel}
       isLoading={isLoading}
       onRenameThread={renameActiveThread}
     >
@@ -275,14 +274,12 @@ export function BrandVoicePage(): JSX.Element {
         />
       ) : (
         <FirstTurnSetupCard
-          mode={mode}
           style={style}
           customStyleDescription={customStyleDescription}
           goal={goal}
           roughDraft={roughDraft}
           noDraftProvided={noDraftProvided}
           isLoading={isLoading}
-          onModeChange={setMode}
           onStyleChange={setStyle}
           onCustomStyleDescriptionChange={setCustomStyleDescription}
           onGoalChange={setGoal}
@@ -292,25 +289,18 @@ export function BrandVoicePage(): JSX.Element {
               setNoDraftProvided(false);
             }
           }}
-          onNoDraftProvidedChange={(value) => {
-            setNoDraftProvided(value);
-            if (value) {
-              setRoughDraft('');
-            }
-          }}
+          onNoDraftProvidedChange={setNoDraftProvided}
           onSubmit={handleStartThread}
         />
       )}
     </ConversationPanel>
   ), [
     activeThread,
-    contextLabel,
     customStyleDescription,
     goal,
     handleSendRevision,
     handleStartThread,
     isLoading,
-    mode,
     noDraftProvided,
     renameActiveThread,
     revisionMessage,
@@ -353,7 +343,7 @@ export function BrandVoicePage(): JSX.Element {
     <AppShell>
       <div className="brand-voice-page flex h-[calc(100vh-8rem)] flex-col">
         <header className="flex items-center justify-between gap-4 px-4 py-2">
-          <h1 className="text-sm font-semibold text-on-surface-variant">Brand Voice</h1>
+          <h1 className="text-lg font-display font-semibold text-on-surface">Brand Voice</h1>
           <div className="flex items-center gap-2">
             {!isExpanded && (
               <button
@@ -367,7 +357,7 @@ export function BrandVoicePage(): JSX.Element {
             <button
               type="button"
               onClick={handleNewThread}
-              className="state-layer touch-target rounded-lg bg-surface-container-high px-4 py-1.5 text-sm font-semibold text-on-surface"
+              className="state-layer touch-target rounded-full bg-tertiary px-4 py-1.5 text-sm font-semibold text-on-primary"
             >
               New thread
             </button>
@@ -394,12 +384,13 @@ export function BrandVoicePage(): JSX.Element {
 
         {isThreadSheetOpen && !isExpanded && (
           <div role="dialog" aria-label="Thread list" className="fixed inset-0 z-30 grid place-items-center bg-scrim/35 px-3">
-            <div className="w-full max-w-sm rounded-2xl border border-outline-variant/30 bg-surface p-4 shadow-[var(--shadow-elevation-3)]">
+            <div className="glass-card w-full max-w-sm p-4 shadow-[var(--shadow-elevation-3)]">
               <h3 className="mb-3 text-sm font-semibold text-on-surface">Thread list</h3>
               <ThreadRail
                 threads={threads}
                 activeThreadId={activeThread?.id ?? null}
                 onSelectThread={handleSelectThread}
+                onDeleteThread={handleDeleteThread}
               />
               <div className="mt-4 flex justify-end">
                 <button
@@ -415,14 +406,17 @@ export function BrandVoicePage(): JSX.Element {
         )}
 
         {isExpanded && (
-          <div className="grid min-h-0 flex-1 grid-cols-[260px_minmax(0,1.2fr)_minmax(0,1fr)] gap-0">
-            <ThreadRail
-              threads={threads}
-              activeThreadId={activeThread?.id ?? null}
-              onSelectThread={handleSelectThread}
-            />
-            {chatPane}
-            {canvasPane}
+          <div className="glass-card min-h-0 flex-1 overflow-hidden rounded-3xl">
+            <div className="grid h-full grid-cols-[280px_minmax(0,1fr)_minmax(0,1.4fr)] gap-0">
+              <ThreadRail
+                threads={threads}
+                activeThreadId={activeThread?.id ?? null}
+                onSelectThread={handleSelectThread}
+                onDeleteThread={handleDeleteThread}
+              />
+              {chatPane}
+              {canvasPane}
+            </div>
           </div>
         )}
 

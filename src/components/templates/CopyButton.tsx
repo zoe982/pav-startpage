@@ -25,7 +25,7 @@ export function CopyButton({ text, className, disabled = false }: CopyButtonProp
       className={className ?? `state-layer touch-target rounded-md px-3 py-2 text-xs font-medium motion-standard ${
         copied
           ? 'bg-success-container text-on-success-container'
-          : 'text-on-surface-variant hover:bg-pav-tan/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent'
+          : 'text-on-surface-variant hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent'
       }`}
     >
       {copied ? 'Copied!' : 'Copy'}

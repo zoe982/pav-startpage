@@ -116,7 +116,7 @@ export function ManageAccessPage(): JSX.Element {
       <div className="flex gap-8">
         <Sidebar />
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-pav-blue">User Access</h1>
+          <h1 className="font-display text-2xl font-bold text-on-surface">User Access</h1>
 
           {/* Tab selector */}
           <div className="mt-4 flex gap-1 rounded-full bg-surface-container-high p-1 ring-1 ring-outline-variant w-fit">
@@ -153,15 +153,15 @@ export function ManageAccessPage(): JSX.Element {
           ) : tab === 'guests' ? (
             <div className="mt-6 space-y-6">
               {/* Add guest form */}
-              <div className="rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6">
-                <h2 className="mb-4 text-lg font-semibold text-pav-blue">Add Guest</h2>
+              <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6">
+                <h2 className="mb-4 font-display text-lg font-semibold text-on-surface">Add Guest</h2>
                 <div className="space-y-4">
                   <input
                     type="email"
                     value={newEmail}
                     onChange={(e) => { setNewEmail(e.target.value); }}
                     placeholder="guest@example.com"
-                    className="touch-target w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-pav-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pav-blue/30"
+                    className="touch-target w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface motion-standard placeholder:text-outline focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                   />
                   <fieldset>
                     <legend className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Apps</legend>
@@ -193,7 +193,7 @@ export function ManageAccessPage(): JSX.Element {
                     data-testid="add-guest-submit"
                     onClick={() => { void handleAddGuest(); }}
                     disabled={isSubmitting || !newEmail.trim() || selectedApps.size === 0}
-                    className="state-layer touch-target rounded-full bg-pav-terra px-6 py-2 text-sm font-semibold text-on-primary motion-standard hover:bg-pav-terra-hover disabled:cursor-not-allowed disabled:opacity-40"
+                    className="state-layer touch-target rounded-full bg-tertiary px-6 py-2 text-sm font-semibold text-on-primary motion-standard hover:bg-tertiary/85 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {isSubmitting ? 'Adding\u2026' : 'Add Guest'}
                   </button>
@@ -210,10 +210,10 @@ export function ManageAccessPage(): JSX.Element {
                     return (
                       <div
                         key={email}
-                        className="rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
+                        className="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3"
                       >
                         <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-pav-blue">{email}</h3>
+                          <h3 className="text-sm font-medium text-primary">{email}</h3>
                           <span className="text-xs text-on-surface-variant">
                             Added {createdAt}
                           </span>
@@ -222,13 +222,13 @@ export function ManageAccessPage(): JSX.Element {
                           {emailGrants.map((grant) => (
                             <span
                               key={grant.id}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-pav-gold/20 px-3 py-1 text-xs font-medium text-pav-blue"
+                              className="inline-flex items-center gap-1.5 rounded-full bg-secondary-container px-3 py-1 text-xs font-medium text-on-secondary-container"
                             >
                               {APP_OPTIONS.find((o) => o.key === grant.appKey)?.label ?? grant.appKey}
                               <button
                                 type="button"
                                 onClick={() => { void handleRemoveGrant(grant.id); }}
-                                className="state-layer touch-target-icon rounded-full p-1 text-pav-grey motion-standard hover:bg-error-container hover:text-error"
+                                className="state-layer touch-target-icon rounded-full p-1 text-on-surface-variant motion-standard hover:bg-error-container hover:text-error"
                                 aria-label={`Remove ${grant.appKey} access`}
                               >
                                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
@@ -252,18 +252,18 @@ export function ManageAccessPage(): JSX.Element {
                 users.map((u) => (
                   <div
                     key={u.id}
-                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
                       {u.pictureUrl ? (
                         <img src={u.pictureUrl} alt="" className="h-8 w-8 rounded-full" referrerPolicy="no-referrer" crossOrigin="anonymous" />
                       ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pav-terra text-sm font-semibold text-on-primary">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary text-sm font-semibold text-on-primary">
                           {u.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                       <div>
-                        <h3 className="text-sm font-medium text-pav-blue">{u.name}</h3>
+                        <h3 className="text-sm font-medium text-primary">{u.name}</h3>
                         <p className="text-xs text-on-surface-variant">{u.email}</p>
                       </div>
                     </div>
@@ -273,7 +273,7 @@ export function ManageAccessPage(): JSX.Element {
                       onClick={() => { void handleToggleAdmin(u.id, u.isAdmin); }}
                       className={`state-layer touch-target rounded-full px-4 py-2 text-xs font-semibold motion-standard ${
                         u.isAdmin
-                          ? 'bg-pav-terra text-on-primary hover:bg-pav-terra-hover'
+                          ? 'bg-tertiary text-on-primary hover:bg-tertiary/85'
                           : 'border border-outline-variant text-on-surface-variant hover:bg-surface-container'
                       }`}
                     >

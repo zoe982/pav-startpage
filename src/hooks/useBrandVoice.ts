@@ -15,6 +15,7 @@ import {
   pinThreadDraft as pinThreadDraftRequest,
   saveThreadDraft as saveThreadDraftRequest,
   restoreThreadDraftVersion as restoreThreadDraftVersionRequest,
+  deleteThread as deleteThreadRequest,
 } from '../api/brandVoice.ts';
 
 interface UseBrandVoiceReturn {
@@ -31,6 +32,7 @@ interface UseBrandVoiceReturn {
   readonly saveActiveDraft: (draftText: string) => Promise<void>;
   readonly restoreActiveDraftVersion: (versionId: string) => Promise<void>;
   readonly clearActiveThread: () => void;
+  readonly deleteThread: (threadId: string) => Promise<void>;
 }
 
 function normalizeErrorMessage(message: string): string | null {
@@ -115,9 +117,14 @@ export function useBrandVoice(): UseBrandVoiceReturn {
   const applyThreadUpdate = useCallback((thread: BrandVoiceThread) => {
     setActiveThread(thread);
     setThreads((previous) => {
-      const summary = { id: thread.id, title: thread.title } as const;
-      const withoutCurrent = previous.filter((item) => item.id !== thread.id);
-      return [summary, ...withoutCurrent];
+      const existingIndex = previous.findIndex((item) => item.id === thread.id);
+      const existing = existingIndex >= 0 ? previous[existingIndex] : undefined;
+      if (existing) {
+        const updated: BrandVoiceThreadSummary = { id: thread.id, title: thread.title, createdByEmail: existing.createdByEmail, createdAt: existing.createdAt };
+        return previous.map((item, i) => i === existingIndex ? updated : item);
+      }
+      const summary: BrandVoiceThreadSummary = { id: thread.id, title: thread.title, createdByEmail: null, createdAt: new Date().toISOString() };
+      return [summary, ...previous];
     });
   }, []);
 
@@ -243,6 +250,20 @@ export function useBrandVoice(): UseBrandVoiceReturn {
     setActiveThread(null);
   }, []);
 
+  const deleteThread = useCallback(async (threadId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await deleteThreadRequest(threadId);
+      setThreads((previous) => previous.filter((t) => t.id !== threadId));
+      setActiveThread((current) => (current?.id === threadId ? null : current));
+    } catch (err) {
+      setError(toErrorMessage(err, 'Failed to delete thread'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     threads,
     activeThread,
@@ -257,6 +278,7 @@ export function useBrandVoice(): UseBrandVoiceReturn {
     saveActiveDraft,
     restoreActiveDraftVersion,
     clearActiveThread,
+    deleteThread,
   } as const;
 }
 

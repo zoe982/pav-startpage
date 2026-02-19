@@ -66,6 +66,7 @@ function mockHook(overrides: Partial<ReturnType<typeof useBrandVoice>> = {}): vo
     saveActiveDraft: vi.fn(),
     restoreActiveDraftVersion: vi.fn(),
     clearActiveThread: vi.fn(),
+    deleteThread: vi.fn(),
     ...overrides,
   } as ReturnType<typeof useBrandVoice>);
 }
@@ -103,7 +104,7 @@ describe('BrandVoicePage', () => {
     await user.type(screen.getByLabelText('Goal'), 'Create a welcome message for new clients');
     expect(submitButton).toBeDisabled();
 
-    await user.click(screen.getByRole('checkbox', { name: 'No draft' }));
+    await user.click(screen.getByRole('button', { name: 'No draft' }));
 
     expect(submitButton).toBeEnabled();
     await user.click(submitButton);
@@ -129,11 +130,9 @@ describe('BrandVoicePage', () => {
       auth: { user: mockUser(), isAuthenticated: true },
     });
 
-    await user.click(screen.getByRole('button', { name: 'Rewrite' }));
     await user.click(screen.getByRole('button', { name: 'Other' }));
     await user.type(screen.getByLabelText('Custom output style'), 'Newsletter-friendly style');
     await user.type(screen.getByLabelText('Goal'), 'Turn this into a short newsletter update');
-    await user.click(screen.getByText('Attach a rough draft'));
     await user.type(screen.getByLabelText('Rough draft'), 'Hello everyone, here is a quick update...');
 
     await user.click(screen.getByRole('button', { name: 'Generate draft' }));
@@ -263,6 +262,7 @@ describe('BrandVoicePage', () => {
       saveActiveDraft: vi.fn(),
       restoreActiveDraftVersion: vi.fn(),
       clearActiveThread: vi.fn(),
+      deleteThread: vi.fn(),
     } as ReturnType<typeof useBrandVoice>));
 
     const view = renderWithProviders(<BrandVoicePage />, {
@@ -314,6 +314,7 @@ describe('BrandVoicePage', () => {
       saveActiveDraft: vi.fn(),
       restoreActiveDraftVersion: vi.fn(),
       clearActiveThread: vi.fn(),
+      deleteThread: vi.fn(),
     } as ReturnType<typeof useBrandVoice>));
 
     const view = renderWithProviders(<BrandVoicePage />, {
@@ -467,6 +468,7 @@ describe('BrandVoicePage', () => {
       saveActiveDraft: vi.fn(),
       restoreActiveDraftVersion: vi.fn(),
       clearActiveThread,
+      deleteThread: vi.fn(),
     } as ReturnType<typeof useBrandVoice>));
 
     const view = renderWithProviders(<BrandVoicePage />, {

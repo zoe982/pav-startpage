@@ -93,11 +93,11 @@ export function ManageLinksPage(): JSX.Element {
         <Sidebar />
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-pav-blue">Manage Links</h1>
+            <h1 className="font-display text-2xl font-bold text-on-surface">Manage Links</h1>
             {!showForm && !editingLink && (
               <button
                 onClick={() => { setShowForm(true); }}
-                className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
+                className="state-layer touch-target rounded-md bg-tertiary px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-tertiary/85"
               >
                 Add Link
               </button>
@@ -105,8 +105,8 @@ export function ManageLinksPage(): JSX.Element {
           </div>
 
           {(showForm || editingLink) && (
-            <div className="mt-6 rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6">
-              <h2 className="mb-4 text-lg font-semibold text-pav-blue">
+            <div className="mt-6 rounded-xl border border-outline-variant bg-surface-container-lowest p-6">
+              <h2 className="mb-4 font-display text-lg font-semibold text-on-surface">
                 {editingLink ? 'Edit Link' : 'New Link'}
               </h2>
               <LinkForm
@@ -140,17 +140,17 @@ export function ManageLinksPage(): JSX.Element {
                 {links.map((link) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3"
                   >
                     <div>
-                      <h3 className="text-sm font-medium text-pav-blue">
+                      <h3 className="text-sm font-medium text-primary">
                         {link.title}
                       </h3>
                       <p className="text-xs text-on-surface-variant">{link.url}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {!link.isVisible && (
-                        <span className="rounded bg-pav-gold/20 px-2 py-1 text-xs text-pav-blue">
+                        <span className="rounded bg-secondary-container px-2 py-1 text-xs text-on-secondary-container">
                           Hidden
                         </span>
                       )}
@@ -159,7 +159,7 @@ export function ManageLinksPage(): JSX.Element {
                           setEditingLink(link);
                           setShowForm(false);
                         }}
-                        className="state-layer touch-target rounded px-3 py-2 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
+                        className="state-layer touch-target rounded px-3 py-2 text-xs text-primary motion-standard hover:bg-secondary-container"
                       >
                         Edit
                       </button>

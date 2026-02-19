@@ -7,7 +7,7 @@ import { CopyButton } from '../components/templates/CopyButton.tsx';
 import { VersionHistoryModal } from '../components/templates/VersionHistoryModal.tsx';
 import { useTemplate } from '../hooks/useTemplates.ts';
 import { useToast } from '../hooks/useToast.ts';
-import { createTemplate, updateTemplate, deleteTemplate } from '../api/templates.ts';
+import { approveTemplate, unapproveTemplate, createTemplate, updateTemplate, deleteTemplate } from '../api/templates.ts';
 import type { TemplateFormData, TemplateVersion } from '../types/template.ts';
 import {
   applyTemplateVariables,
@@ -70,6 +70,12 @@ export function TemplateEditPage(): JSX.Element {
   }, [template?.id, template?.updatedAt]);
 
   const handleSave = async (): Promise<void> => {
+    if (!isNew && template?.approvedByEmail) {
+      const confirmed = window.confirm(
+        'This template is currently approved. Saving will remove the approval. Continue?',
+      );
+      if (!confirmed) return;
+    }
     setIsSubmitting(true);
     try {
       if (isNew) {
@@ -87,6 +93,28 @@ export function TemplateEditPage(): JSX.Element {
       addToast('Failed to save template', 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleApprove = async (): Promise<void> => {
+    if (!id) return;
+    try {
+      await approveTemplate(id);
+      addToast('Template approved', 'success');
+      window.location.reload();
+    } catch {
+      addToast('Failed to approve template', 'error');
+    }
+  };
+
+  const handleUnapprove = async (): Promise<void> => {
+    if (!id) return;
+    try {
+      await unapproveTemplate(id);
+      addToast('Approval removed', 'success');
+      window.location.reload();
+    } catch {
+      addToast('Failed to remove approval', 'error');
     }
   };
 
@@ -116,11 +144,11 @@ export function TemplateEditPage(): JSX.Element {
     return (
       <AppShell>
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-2xl font-bold text-pav-blue">Template Not Found</h1>
+          <h1 className="text-2xl font-bold font-display text-primary">Template Not Found</h1>
           <button
             type="button"
             onClick={() => void navigate('/templates')}
-            className="mt-4 text-sm text-pav-terra hover:underline"
+            className="mt-4 text-sm text-tertiary hover:underline"
           >
             Back to templates
           </button>
@@ -169,14 +197,14 @@ export function TemplateEditPage(): JSX.Element {
         <button
           type="button"
           onClick={() => void navigate('/templates')}
-          className="state-layer touch-target mb-4 rounded-md px-2 py-2 text-sm text-on-surface-variant motion-standard hover:text-pav-blue"
+          className="state-layer touch-target mb-4 rounded-md px-2 py-2 text-sm text-on-surface-variant motion-standard hover:text-primary"
         >
           &larr; Back to templates
         </button>
 
         {isEditing ? (
           <>
-            <h1 className="text-2xl font-bold text-pav-blue">
+            <h1 className="text-2xl font-bold font-display text-primary">
               {isNew ? 'New Template' : 'Edit Template'}
             </h1>
             <div className="mt-6">
@@ -205,7 +233,7 @@ export function TemplateEditPage(): JSX.Element {
                   }`}>
                     {template.type === 'both' ? 'Email + WA' : template.type}
                   </span>
-                  <h1 className="text-2xl font-bold text-pav-blue">{template.title}</h1>
+                  <h1 className="text-2xl font-bold font-display text-primary">{template.title}</h1>
                 </div>
                 <p className="mt-1 text-xs text-outline">
                   Updated by {template.updatedByName} on{' '}
@@ -221,17 +249,34 @@ export function TemplateEditPage(): JSX.Element {
                   text={resolvedTemplateForView.copyText}
                   disabled={variableNames.length > 0 && resolvedTemplateForView.unresolved.length > 0}
                 />
+                {template.approvedByEmail ? (
+                  <button
+                    type="button"
+                    onClick={() => { void handleUnapprove(); }}
+                    className="state-layer touch-target rounded-md bg-success-container px-3 py-2 text-xs font-medium text-on-success-container motion-standard hover:bg-success-container/80"
+                  >
+                    Approved by {template.approvedByEmail}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { void handleApprove(); }}
+                    className="state-layer touch-target rounded-md px-3 py-2 text-xs font-medium text-on-surface-variant motion-standard hover:bg-surface-container"
+                  >
+                    Approve
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => { setShowVersions(true); }}
-                  className="state-layer touch-target rounded-md px-3 py-2 text-xs font-medium text-on-surface-variant motion-standard hover:bg-pav-tan/20"
+                  className="state-layer touch-target rounded-md px-3 py-2 text-xs font-medium text-on-surface-variant motion-standard hover:bg-surface-container"
                 >
                   History
                 </button>
                 <button
                   type="button"
                   onClick={() => { setIsEditing(true); }}
-                  className="state-layer touch-target rounded-md bg-pav-blue px-3 py-2 text-xs font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
+                  className="state-layer touch-target rounded-md bg-primary px-3 py-2 text-xs font-medium text-on-primary motion-standard hover:bg-primary/90"
                 >
                   Edit
                 </button>
@@ -247,7 +292,7 @@ export function TemplateEditPage(): JSX.Element {
 
             {variableNames.length > 0 && (
               <section className="mt-6 rounded-xl border border-outline-variant bg-surface-container-low p-5 shadow-[var(--shadow-elevation-1)]">
-                <h2 className="text-lg font-semibold text-pav-blue">Fill Variables</h2>
+                <h2 className="text-lg font-semibold text-primary">Fill Variables</h2>
                 <p className="mt-1 text-sm text-on-surface-variant">
                   Enter values for each variable to generate a copy-ready message.
                 </p>
@@ -271,7 +316,7 @@ export function TemplateEditPage(): JSX.Element {
                             return next;
                           });
                         }}
-                        className="touch-target mt-1 block w-full rounded-md border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+                        className="touch-target mt-1 block w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:outline-none"
                         placeholder={`Enter ${toTemplateVariableLabel(variableName).toLowerCase()}`}
                       />
                     </div>
@@ -281,9 +326,9 @@ export function TemplateEditPage(): JSX.Element {
             )}
 
             {/* Content */}
-            <div className="mt-6 rounded-lg border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)]">
+            <div className="mt-6 rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)]">
               {resolvedTemplateForView.subject && resolvedTemplateForView.subject.trim().length > 0 && (
-                <div className="mb-4 border-b border-pav-tan/20 pb-4">
+                <div className="mb-4 border-b border-outline-variant/60 pb-4">
                   <span className="text-xs font-medium text-outline">SUBJECT</span>
                   <p className="mt-1 text-sm font-medium text-on-surface">{resolvedTemplateForView.subject}</p>
                 </div>

@@ -9,7 +9,7 @@ export function AuthGuard({ children }: { readonly children: ReactNode }): JSX.E
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-pav-blue border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -21,7 +21,7 @@ export function AuthGuard({ children }: { readonly children: ReactNode }): JSX.E
           <div className="rounded-lg bg-error-container p-4 max-w-md">
             <p className="text-sm font-medium text-on-error-container">{authError}</p>
           </div>
-          <a href="/login" className="state-layer touch-target inline-flex items-center rounded-md px-3 py-2 text-sm text-pav-blue hover:underline">Go to login</a>
+          <a href="/login" className="state-layer touch-target inline-flex items-center rounded-md px-3 py-2 text-sm text-primary hover:underline">Go to login</a>
         </div>
       );
     }

@@ -19,7 +19,7 @@ describe('Sidebar', () => {
       route: '/admin',
     });
     const dashboardLink = screen.getByText('Dashboard');
-    expect(dashboardLink.className).toContain('bg-pav-gold');
+    expect(dashboardLink.className).toContain('bg-secondary-container');
   });
 
   it('does not highlight inactive routes', () => {
@@ -28,6 +28,6 @@ describe('Sidebar', () => {
       route: '/admin',
     });
     const linksLink = screen.getByText('Manage Links');
-    expect(linksLink.className).not.toContain('bg-pav-gold');
+    expect(linksLink.className).not.toContain('bg-secondary-container');
   });
 });

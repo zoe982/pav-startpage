@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TemplatesPage } from '../../src/pages/TemplatesPage.tsx';
 import type { Template } from '../../src/types/template.ts';
@@ -24,6 +24,8 @@ function buildTemplate(overrides: Partial<Template> = {}): Template {
     updatedByName: 'User',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    approvedByEmail: null,
+    approvedAt: null,
     ...overrides,
   };
 }
@@ -153,21 +155,20 @@ describe('TemplatesPage', () => {
     expect(screen.getByText('WhatsApp update')).toBeInTheDocument();
   });
 
-  it('keeps only one row expanded at a time', async () => {
-    const user = userEvent.setup();
+  it('always shows content preview for all cards without expand/collapse', () => {
     vi.mocked(useTemplates).mockReturnValue({
       templates: [
         buildTemplate({
           id: 'template-1',
           title: 'First row',
-          content: 'First expanded preview',
+          content: 'First preview text',
           type: 'email',
           subject: null,
         }),
         buildTemplate({
           id: 'template-2',
           title: 'Second row',
-          content: 'Second expanded preview',
+          content: 'Second preview text',
           type: 'email',
           subject: null,
         }),
@@ -182,15 +183,47 @@ describe('TemplatesPage', () => {
       route: '/templates',
     });
 
-    await user.click(screen.getByRole('button', { name: 'Expand First row' }));
-    expect(screen.getByText('First expanded preview')).toBeInTheDocument();
+    expect(screen.getByText('First preview text')).toBeInTheDocument();
+    expect(screen.getByText('Second preview text')).toBeInTheDocument();
+  });
 
-    await user.click(screen.getByRole('button', { name: 'Expand Second row' }));
-    expect(screen.queryByText('First expanded preview')).not.toBeInTheDocument();
-    expect(screen.getByText('Second expanded preview')).toBeInTheDocument();
+  it('filters templates by approved status', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useTemplates).mockReturnValue({
+      templates: [
+        buildTemplate({ id: 'approved-1', title: 'Approved Template', approvedByEmail: 'alice@example.com', approvedAt: '2026-01-10T00:00:00.000Z' }),
+        buildTemplate({ id: 'unapproved-1', title: 'Unapproved Template', approvedByEmail: null }),
+      ],
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
 
-    await user.click(screen.getByRole('button', { name: 'Collapse Second row' }));
-    expect(screen.queryByText('Second expanded preview')).not.toBeInTheDocument();
+    renderWithProviders(<TemplatesPage />, {
+      auth: { user: mockUser(), isAuthenticated: true },
+      route: '/templates',
+    });
+
+    expect(screen.getByText('Approved Template')).toBeInTheDocument();
+    expect(screen.getByText('Unapproved Template')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Approved' }));
+    await waitFor(() => {
+      expect(screen.queryByText('Unapproved Template')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Approved Template')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Unapproved' }));
+    await waitFor(() => {
+      expect(screen.queryByText('Approved Template')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Unapproved Template')).toBeInTheDocument();
+
+    await user.click(screen.getAllByRole('button', { name: 'All' })[1]);
+    await waitFor(() => {
+      expect(screen.getByText('Approved Template')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Unapproved Template')).toBeInTheDocument();
   });
 
   it('falls back to default sort when an invalid sort value is received', () => {

@@ -88,7 +88,7 @@ export function EditWikiPage(): JSX.Element {
         <div className="flex gap-8">
           <Sidebar />
           <div className="flex-1">
-            <div className="h-8 w-48 animate-pulse rounded bg-pav-tan/30" />
+            <div className="h-8 w-48 animate-pulse rounded bg-surface-container" />
           </div>
         </div>
       </AppShell>
@@ -100,7 +100,7 @@ export function EditWikiPage(): JSX.Element {
       <div className="flex gap-8">
         <Sidebar />
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-pav-blue">
+          <h1 className="text-2xl font-bold font-display text-primary">
             {isEditing ? 'Edit Page' : 'New Page'}
           </h1>
 
@@ -108,7 +108,7 @@ export function EditWikiPage(): JSX.Element {
             <div>
               <label
                 htmlFor="wiki-title"
-                className="block text-sm font-medium text-pav-grey"
+                className="block text-sm font-medium text-on-surface-variant"
               >
                 Title
               </label>
@@ -118,14 +118,14 @@ export function EditWikiPage(): JSX.Element {
                 required
                 value={formData.title}
                 onChange={(e) => { handleTitleChange(e.target.value); }}
-                className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+                className="touch-target mt-1 block w-full rounded-xl border border-outline-variant px-4 py-2 text-sm focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:outline-none"
               />
             </div>
 
             <div>
               <label
                 htmlFor="wiki-slug"
-                className="block text-sm font-medium text-pav-grey"
+                className="block text-sm font-medium text-on-surface-variant"
               >
                 Slug
               </label>
@@ -139,13 +139,13 @@ export function EditWikiPage(): JSX.Element {
                     setAutoSlug(false);
                     setFormData((prev) => ({ ...prev, slug: e.target.value }));
                   }}
-                  className="touch-target mt-1 block w-full rounded-md border border-pav-grey/30 px-4 py-2 text-sm focus-visible:border-pav-gold focus-visible:ring-1 focus-visible:ring-pav-gold focus-visible:outline-none"
+                  className="touch-target mt-1 block w-full rounded-xl border border-outline-variant px-4 py-2 text-sm focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-pav-grey">
+              <label className="block text-sm font-medium text-on-surface-variant">
                 Content
               </label>
               <div className="mt-1">
@@ -170,9 +170,9 @@ export function EditWikiPage(): JSX.Element {
                       isPublished: e.target.checked,
                     }));
                   }}
-                  className="touch-target-icon h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
+                  className="touch-target-icon h-4 w-4 rounded border-outline-variant text-primary"
                 />
-                <label htmlFor="isPublished" className="text-sm text-pav-grey">
+                <label htmlFor="isPublished" className="text-sm text-on-surface-variant">
                   Published
                 </label>
               </div>
@@ -187,16 +187,16 @@ export function EditWikiPage(): JSX.Element {
                       showOnStart: e.target.checked,
                     }));
                   }}
-                  className="touch-target-icon h-4 w-4 rounded border-pav-grey/30 text-pav-blue"
+                  className="touch-target-icon h-4 w-4 rounded border-outline-variant text-primary"
                 />
-                <label htmlFor="showOnStart" className="text-sm text-pav-grey">
+                <label htmlFor="showOnStart" className="text-sm text-on-surface-variant">
                   Pin to start page
                 </label>
               </div>
               <div className="flex items-center gap-2">
                 <label
                   htmlFor="wiki-sortOrder"
-                  className="text-sm text-pav-grey"
+                  className="text-sm text-on-surface-variant"
                 >
                   Sort order
                 </label>
@@ -210,7 +210,7 @@ export function EditWikiPage(): JSX.Element {
                       sortOrder: parseInt(e.target.value, 10) || 0,
                     }));
                   }}
-                  className="touch-target w-24 rounded-md border border-pav-grey/30 px-4 py-2 text-sm"
+                  className="touch-target w-24 rounded-xl border border-outline-variant px-4 py-2 text-sm"
                 />
               </div>
             </div>
@@ -219,14 +219,14 @@ export function EditWikiPage(): JSX.Element {
               <button
                 type="button"
                 onClick={() => void navigate('/admin/wiki')}
-                className="state-layer touch-target rounded-md border border-pav-grey/30 px-4 py-2 text-sm text-pav-grey motion-standard hover:bg-pav-cream/50"
+                className="state-layer touch-target rounded-md border border-outline-variant px-4 py-2 text-sm text-on-surface-variant motion-standard hover:bg-surface-container"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover disabled:opacity-50"
+                className="state-layer touch-target rounded-md bg-tertiary px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-tertiary/85 disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Save'}
               </button>

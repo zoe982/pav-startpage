@@ -200,7 +200,7 @@ describe('PUT /api/templates/:id', () => {
 
   it('returns 404 when template does not exist', async () => {
     const prepare = createPrepareMock((query: string) => {
-      if (query === 'SELECT id FROM templates WHERE id = ?') {
+      if (query.includes('SELECT id, title, type, subject, content, approved_by_email FROM templates')) {
         return { first: null };
       }
       return {};
@@ -225,8 +225,8 @@ describe('PUT /api/templates/:id', () => {
     randomUuidSpy.mockReturnValue('version-1' as ReturnType<typeof crypto.randomUUID>);
     const batch = vi.fn(async () => []);
     const prepare = createPrepareMock((query: string) => {
-      if (query === 'SELECT id FROM templates WHERE id = ?') {
-        return { first: { id: 'template-1' } };
+      if (query.includes('SELECT id, title, type, subject, content, approved_by_email FROM templates')) {
+        return { first: { id: 'template-1', title: 'Welcome', type: 'email', subject: null, content: 'Hi', approved_by_email: null } };
       }
       if (query === 'SELECT MAX(version_number) AS max_ver FROM template_versions WHERE template_id = ?') {
         return { first: { max_ver: null } };
@@ -257,8 +257,8 @@ describe('PUT /api/templates/:id', () => {
     randomUuidSpy.mockReturnValue('version-2' as ReturnType<typeof crypto.randomUUID>);
     const batch = vi.fn(async () => []);
     const prepare = createPrepareMock((query: string) => {
-      if (query === 'SELECT id FROM templates WHERE id = ?') {
-        return { first: { id: 'template-1' } };
+      if (query.includes('SELECT id, title, type, subject, content, approved_by_email FROM templates')) {
+        return { first: { id: 'template-1', title: 'Updated', type: 'whatsapp', subject: 'Hello', content: 'Hi there', approved_by_email: null } };
       }
       if (query === 'SELECT MAX(version_number) AS max_ver FROM template_versions WHERE template_id = ?') {
         return { first: { max_ver: 5 } };
@@ -277,6 +277,8 @@ describe('PUT /api/templates/:id', () => {
             updated_by_name: 'Test User',
             created_at: '2026-01-01T00:00:00.000Z',
             updated_at: '2026-01-02T00:00:00.000Z',
+            approved_by_email: null,
+            approved_at: null,
           },
         };
       }
@@ -316,8 +318,8 @@ describe('PUT /api/templates/:id', () => {
     randomUuidSpy.mockReturnValue('version-3' as ReturnType<typeof crypto.randomUUID>);
     const batch = vi.fn(async () => []);
     const prepare = createPrepareMock((query: string) => {
-      if (query === 'SELECT id FROM templates WHERE id = ?') {
-        return { first: { id: 'template-1' } };
+      if (query.includes('SELECT id, title, type, subject, content, approved_by_email FROM templates')) {
+        return { first: { id: 'template-1', title: 'Updated', type: 'email', subject: null, content: '', approved_by_email: null } };
       }
       if (query === 'SELECT MAX(version_number) AS max_ver FROM template_versions WHERE template_id = ?') {
         return { first: { max_ver: 2 } };
@@ -336,6 +338,8 @@ describe('PUT /api/templates/:id', () => {
             updated_by_name: 'Test User',
             created_at: '2026-01-01T00:00:00.000Z',
             updated_at: '2026-01-02T00:00:00.000Z',
+            approved_by_email: null,
+            approved_at: null,
           },
         };
       }

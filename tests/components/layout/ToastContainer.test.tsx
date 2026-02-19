@@ -38,7 +38,7 @@ describe('ToastContainer', () => {
       toast: { toasts },
     });
     const toastEl = screen.getByText('Info!').closest('div');
-    expect(toastEl?.className).toContain('bg-pav-blue');
+    expect(toastEl?.className).toContain('bg-primary');
   });
 
   it('calls removeToast when dismiss is clicked', async () => {

@@ -18,6 +18,8 @@ function buildTemplate(overrides: Partial<Template>): Template {
     updatedByName: 'User 1',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    approvedByEmail: null,
+    approvedAt: null,
     ...overrides,
   };
 }
@@ -69,6 +71,36 @@ describe('templateSearch', () => {
     });
 
     expect(result.map((template) => template.id)).toEqual(['email-1']);
+  });
+
+  it('filters by approval status: approved shows only approved templates', () => {
+    const templates: Template[] = [
+      buildTemplate({ id: 'approved-1', approvedByEmail: 'alice@example.com', approvedAt: '2026-01-10T00:00:00.000Z' }),
+      buildTemplate({ id: 'unapproved-1', approvedByEmail: null }),
+    ];
+
+    const result = filterTemplatesForList(templates, {
+      q: '',
+      type: 'all',
+      approval: 'approved',
+    });
+
+    expect(result.map((t) => t.id)).toEqual(['approved-1']);
+  });
+
+  it('filters by approval status: unapproved shows only unapproved templates', () => {
+    const templates: Template[] = [
+      buildTemplate({ id: 'approved-1', approvedByEmail: 'alice@example.com', approvedAt: '2026-01-10T00:00:00.000Z' }),
+      buildTemplate({ id: 'unapproved-1', approvedByEmail: null }),
+    ];
+
+    const result = filterTemplatesForList(templates, {
+      q: '',
+      type: 'all',
+      approval: 'unapproved',
+    });
+
+    expect(result.map((t) => t.id)).toEqual(['unapproved-1']);
   });
 
   it('filters by selected template type', () => {

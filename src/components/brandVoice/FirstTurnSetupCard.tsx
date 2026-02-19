@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, type JSX, type KeyboardEvent } from 'react';
-import type { BrandMode, OutputStyle } from '../../types/brandVoice.ts';
+import { useRef, useCallback, type JSX, type KeyboardEvent } from 'react';
+import type { OutputStyle } from '../../types/brandVoice.ts';
 
 const OUTPUT_STYLES: readonly { value: OutputStyle; label: string }[] = [
   { value: 'email', label: 'Email' },
@@ -11,14 +11,12 @@ const OUTPUT_STYLES: readonly { value: OutputStyle; label: string }[] = [
 ] as const;
 
 interface FirstTurnSetupCardProps {
-  readonly mode: BrandMode;
   readonly style: OutputStyle;
   readonly customStyleDescription: string;
   readonly goal: string;
   readonly roughDraft: string;
   readonly noDraftProvided: boolean;
   readonly isLoading: boolean;
-  readonly onModeChange: (mode: BrandMode) => void;
   readonly onStyleChange: (style: OutputStyle) => void;
   readonly onCustomStyleDescriptionChange: (value: string) => void;
   readonly onGoalChange: (value: string) => void;
@@ -28,14 +26,12 @@ interface FirstTurnSetupCardProps {
 }
 
 export function FirstTurnSetupCard({
-  mode,
   style,
   customStyleDescription,
   goal,
   roughDraft,
   noDraftProvided,
   isLoading,
-  onModeChange,
   onStyleChange,
   onCustomStyleDescriptionChange,
   onGoalChange,
@@ -43,7 +39,6 @@ export function FirstTurnSetupCard({
   onNoDraftProvidedChange,
   onSubmit,
 }: FirstTurnSetupCardProps): JSX.Element {
-  const [isDraftExpanded, setIsDraftExpanded] = useState(false);
   const goalRef = useRef<HTMLTextAreaElement>(null);
   const canSubmit = goal.trim().length > 0 && (roughDraft.trim().length > 0 || noDraftProvided);
 
@@ -66,45 +61,18 @@ export function FirstTurnSetupCard({
 
   return (
     <div className="space-y-3">
-      {/* Mode + Style chips */}
+      {/* Style chips */}
       <div className="flex flex-wrap items-center gap-1.5">
-        <button
-          type="button"
-          aria-pressed={mode === 'rewrite'}
-          onClick={() => { onModeChange('rewrite'); }}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
-            mode === 'rewrite'
-              ? 'bg-secondary-container text-on-secondary-container'
-              : 'bg-surface-container-high/60 text-on-surface-variant hover:bg-surface-container-high'
-          }`}
-        >
-          Rewrite
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === 'draft'}
-          onClick={() => { onModeChange('draft'); }}
-          className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
-            mode === 'draft'
-              ? 'bg-secondary-container text-on-secondary-container'
-              : 'bg-surface-container-high/60 text-on-surface-variant hover:bg-surface-container-high'
-          }`}
-        >
-          Draft
-        </button>
-
-        <span className="text-outline-variant" aria-hidden="true">|</span>
-
         {OUTPUT_STYLES.map((option) => (
           <button
             key={option.value}
             type="button"
             aria-pressed={style === option.value}
             onClick={() => { onStyleChange(option.value); }}
-            className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               style === option.value
                 ? 'bg-secondary-container text-on-secondary-container'
-                : 'bg-surface-container-high/60 text-on-surface-variant hover:bg-surface-container-high'
+                : 'border border-outline-variant/40 bg-surface-container-high/60 text-on-surface-variant hover:bg-surface-container-high'
             }`}
           >
             {option.label}
@@ -125,26 +93,46 @@ export function FirstTurnSetupCard({
 
       {/* Composer-style container */}
       <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]">
-        {/* Collapsible draft area */}
+        {/* Draft area */}
         <div className="px-4 pt-3">
-          <button
-            type="button"
-            onClick={() => { setIsDraftExpanded(!isDraftExpanded); }}
-            className="mb-2 text-xs text-primary hover:underline"
-          >
-            {isDraftExpanded || roughDraft.trim().length > 0 ? 'Draft attached' : 'Attach a rough draft'}
-          </button>
-
-          {(isDraftExpanded || roughDraft.trim().length > 0) && (
-            <textarea
-              aria-label="Rough draft"
-              rows={4}
-              value={roughDraft}
-              onChange={(event) => { onRoughDraftChange(event.target.value); }}
-              placeholder="Paste a rough draft..."
-              className="mb-2 w-full resize-none rounded-lg bg-surface-container-high/30 p-2 text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50"
-            />
-          )}
+          <div className="mb-2 flex items-start gap-2">
+            {noDraftProvided ? (
+              <p className="flex-1 py-1 text-sm text-on-surface-variant/60">
+                No draft provided —{' '}
+                <button
+                  type="button"
+                  onClick={() => { onNoDraftProvidedChange(false); }}
+                  className="underline hover:text-on-surface-variant"
+                >
+                  add draft
+                </button>
+              </p>
+            ) : (
+              <textarea
+                aria-label="Rough draft"
+                rows={2}
+                value={roughDraft}
+                onChange={(event) => {
+                  onRoughDraftChange(event.target.value);
+                  autoResize(event.target);
+                }}
+                placeholder="Quickly provide a rough draft..."
+                className="max-h-48 flex-1 resize-none rounded-lg bg-surface-container-high/30 p-2 text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50"
+              />
+            )}
+            {!noDraftProvided && (
+              <button
+                type="button"
+                onClick={() => {
+                  onNoDraftProvidedChange(true);
+                  onRoughDraftChange('');
+                }}
+                className="shrink-0 rounded-full px-2 py-1 text-xs text-on-surface-variant/60 hover:bg-surface-container-high/60 hover:text-on-surface-variant"
+              >
+                No draft
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Goal textarea + send icon */}
@@ -173,21 +161,6 @@ export function FirstTurnSetupCard({
               <path d="M3 13V9.5L7 8L3 6.5V3L14 8L3 13Z" fill="currentColor" />
             </svg>
           </button>
-        </div>
-
-        {/* No draft checkbox footer */}
-        <div className="flex items-center gap-2 border-t border-outline-variant/30 px-4 py-2">
-          <input
-            id="no-draft-toggle"
-            type="checkbox"
-            aria-label="No draft"
-            checked={noDraftProvided}
-            onChange={(event) => { onNoDraftProvidedChange(event.target.checked); }}
-            className="h-3.5 w-3.5 rounded border-outline"
-          />
-          <label htmlFor="no-draft-toggle" className="text-xs text-on-surface-variant">
-            No draft
-          </label>
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ export function ComposerBar({
   onMessageChange,
   onSubmit,
 }: ComposerBarProps): JSX.Element {
-  const textareaRef = useRef<HTMLTextAreaElement>(document.createElement('textarea'));
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>): void => {
     onMessageChange(event.target.value);
@@ -28,7 +28,7 @@ export function ComposerBar({
   const handleSubmit = useCallback(async (): Promise<void> => {
     if (isLoading || message.trim().length === 0) return;
     await onSubmit();
-    textareaRef.current.style.height = 'auto';
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }, [isLoading, message, onSubmit]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLTextAreaElement>): void => {

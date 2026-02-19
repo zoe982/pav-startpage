@@ -52,7 +52,7 @@ export function ManageBrandRulesPage(): JSX.Element {
         <div className="flex gap-8">
           <Sidebar />
           <div className="flex-1">
-            <div className="h-8 w-48 animate-pulse rounded bg-pav-tan/30" />
+            <div className="h-8 w-48 animate-pulse rounded bg-surface-container" />
           </div>
         </div>
       </AppShell>
@@ -64,20 +64,20 @@ export function ManageBrandRulesPage(): JSX.Element {
       <div className="flex gap-8">
         <Sidebar />
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-pav-blue">Brand Voice Rules</h1>
+          <h1 className="font-display text-2xl font-bold text-on-surface">Brand Voice Rules</h1>
           <p className="mt-1 text-sm text-on-surface-variant">
             Manage the brand guidelines and services description used by the AI writer.
           </p>
 
           {/* Tabs */}
-          <div className="mt-6 flex gap-1 rounded-lg bg-pav-cream p-1 w-fit">
+          <div className="mt-6 flex gap-1 rounded-lg bg-surface-container p-1 w-fit">
             <button
               type="button"
               onClick={() => { setActiveTab('voice'); }}
               className={`state-layer touch-target rounded-md px-4 py-2 text-sm font-medium motion-standard ${
                 activeTab === 'voice'
-                  ? 'bg-surface-container-lowest text-pav-blue shadow-[var(--shadow-elevation-1)]'
-                  : 'text-pav-grey hover:text-pav-blue'
+                  ? 'bg-surface-container-lowest text-primary shadow-[var(--shadow-elevation-1)]'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               Voice Guide
@@ -87,8 +87,8 @@ export function ManageBrandRulesPage(): JSX.Element {
               onClick={() => { setActiveTab('services'); }}
               className={`state-layer touch-target rounded-md px-4 py-2 text-sm font-medium motion-standard ${
                 activeTab === 'services'
-                  ? 'bg-surface-container-lowest text-pav-blue shadow-[var(--shadow-elevation-1)]'
-                  : 'text-pav-grey hover:text-pav-blue'
+                  ? 'bg-surface-container-lowest text-primary shadow-[var(--shadow-elevation-1)]'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               Services Description
@@ -98,7 +98,7 @@ export function ManageBrandRulesPage(): JSX.Element {
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             {activeTab === 'voice' && (
               <div>
-                <label className="block text-sm font-medium text-pav-grey">
+                <label className="block text-sm font-medium text-on-surface-variant">
                   Brand Voice Guidelines (Markdown)
                 </label>
                 <p className="mt-1 text-xs text-outline">
@@ -115,7 +115,7 @@ export function ManageBrandRulesPage(): JSX.Element {
 
             {activeTab === 'services' && (
               <div>
-                <label className="block text-sm font-medium text-pav-grey">
+                <label className="block text-sm font-medium text-on-surface-variant">
                   Services Description (Markdown)
                 </label>
                 <p className="mt-1 text-xs text-outline">
@@ -134,7 +134,7 @@ export function ManageBrandRulesPage(): JSX.Element {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover disabled:opacity-50"
+                className="state-layer touch-target rounded-md bg-tertiary px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-tertiary/85 disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Save All'}
               </button>

@@ -12,6 +12,8 @@ export interface Template {
   readonly updatedByName: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly approvedByEmail: string | null;
+  readonly approvedAt: string | null;
 }
 
 export interface TemplateFormData {

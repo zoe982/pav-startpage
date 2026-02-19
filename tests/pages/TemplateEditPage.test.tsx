@@ -18,6 +18,8 @@ vi.mock('../../src/api/templates.ts', () => ({
   createTemplate: vi.fn(),
   updateTemplate: vi.fn(),
   deleteTemplate: vi.fn(),
+  approveTemplate: vi.fn(),
+  unapproveTemplate: vi.fn(),
 }));
 
 vi.mock('../../src/components/templates/VersionHistoryModal.tsx', () => ({
@@ -79,7 +81,7 @@ vi.mock('../../src/components/templates/VersionHistoryModal.tsx', () => ({
 
 import { useTemplate } from '../../src/hooks/useTemplates.ts';
 import { useToast } from '../../src/hooks/useToast.ts';
-import { createTemplate, updateTemplate, deleteTemplate } from '../../src/api/templates.ts';
+import { approveTemplate, unapproveTemplate, createTemplate, updateTemplate, deleteTemplate } from '../../src/api/templates.ts';
 
 function buildTemplate(overrides: Partial<Template> = {}): Template {
   return {
@@ -94,6 +96,8 @@ function buildTemplate(overrides: Partial<Template> = {}): Template {
     updatedByName: 'User',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    approvedByEmail: null,
+    approvedAt: null,
     ...overrides,
   };
 }
@@ -120,6 +124,8 @@ describe('TemplateEditPage', () => {
     vi.mocked(createTemplate).mockReset();
     vi.mocked(updateTemplate).mockReset();
     vi.mocked(deleteTemplate).mockReset();
+    vi.mocked(approveTemplate).mockReset();
+    vi.mocked(unapproveTemplate).mockReset();
     addToast.mockReset();
 
     vi.mocked(useToast).mockReturnValue({
@@ -407,6 +413,94 @@ describe('TemplateEditPage', () => {
     expect(screen.getByRole('heading', { name: 'Edit Template' })).toBeInTheDocument();
     expect(screen.getByLabelText('Subject Line')).toHaveValue('');
     expect(addToast).toHaveBeenCalledWith('Restored version 4 — save to apply', 'success');
+  });
+
+  it('shows Approve button when template is unapproved', () => {
+    vi.mocked(useTemplate).mockReturnValue({
+      template: buildTemplate({ subject: 'Welcome', content: 'Body', approvedByEmail: null }),
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderPage();
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+  });
+
+  it('shows approved button with email when template is approved', () => {
+    vi.mocked(useTemplate).mockReturnValue({
+      template: buildTemplate({ subject: 'Welcome', content: 'Body', approvedByEmail: 'alice@example.com', approvedAt: '2026-01-10T00:00:00.000Z' }),
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderPage();
+    expect(screen.getByRole('button', { name: 'Approved by alice@example.com' })).toBeInTheDocument();
+  });
+
+  it('calls approveTemplate and shows success toast', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useTemplate).mockReturnValue({
+      template: buildTemplate({ subject: 'Welcome', content: 'Body', approvedByEmail: null }),
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+    vi.mocked(approveTemplate).mockResolvedValue(buildTemplate({ approvedByEmail: 'alice@example.com', approvedAt: '2026-01-10T00:00:00.000Z' }));
+
+    renderPage();
+    await user.click(screen.getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => {
+      expect(approveTemplate).toHaveBeenCalledWith('template-1');
+    });
+    expect(addToast).toHaveBeenCalledWith('Template approved', 'success');
+  });
+
+  it('calls unapproveTemplate when clicking approved button', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useTemplate).mockReturnValue({
+      template: buildTemplate({ subject: 'Welcome', content: 'Body', approvedByEmail: 'alice@example.com', approvedAt: '2026-01-10T00:00:00.000Z' }),
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+    vi.mocked(unapproveTemplate).mockResolvedValue(buildTemplate({ approvedByEmail: null }));
+
+    renderPage();
+    await user.click(screen.getByRole('button', { name: 'Approved by alice@example.com' }));
+
+    await waitFor(() => {
+      expect(unapproveTemplate).toHaveBeenCalledWith('template-1');
+    });
+    expect(addToast).toHaveBeenCalledWith('Approval removed', 'success');
+  });
+
+  it('prompts confirmation before saving an approved template', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useTemplate).mockReturnValue({
+      template: buildTemplate({ subject: 'Welcome', content: 'Body', approvedByEmail: 'alice@example.com', approvedAt: '2026-01-10T00:00:00.000Z' }),
+      isLoading: false,
+      error: null,
+      refresh: vi.fn(),
+    });
+    vi.mocked(updateTemplate).mockResolvedValue(buildTemplate({ subject: 'Welcome', content: 'Body' }));
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    renderPage();
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(updateTemplate).not.toHaveBeenCalled();
+
+    confirmSpy.mockReturnValue(true);
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(updateTemplate).toHaveBeenCalledWith('template-1', expect.any(Object));
+    });
   });
 
   it('shows both type badge with tertiary-container styling in view mode', () => {

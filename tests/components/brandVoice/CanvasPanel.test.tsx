@@ -72,8 +72,15 @@ describe('CanvasPanel', () => {
     expect(onPin).toHaveBeenCalledTimes(1);
   });
 
-  it('shows pinned confirmation when pinned draft exists', () => {
+  it('shows Pinned label when pinned draft exists', () => {
     renderPanel({ pinnedDraft: 'Pinned body' });
-    expect(screen.getByText('Draft pinned and ready to use.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pinned' })).toBeInTheDocument();
+  });
+
+  it('renders Unsaved status without error color', () => {
+    renderPanel({ saveStatus: 'Unsaved' });
+    const unsavedEl = screen.getByText('Unsaved');
+    expect(unsavedEl).toBeInTheDocument();
+    expect(unsavedEl.className).not.toContain('text-error');
   });
 });

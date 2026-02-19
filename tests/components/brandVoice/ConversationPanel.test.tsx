@@ -24,7 +24,6 @@ describe('ConversationPanel', () => {
     render(
       <ConversationPanel
         activeThread={null}
-        contextLabel={null}
         isLoading={false}
         onRenameThread={vi.fn()}
       >
@@ -33,6 +32,7 @@ describe('ConversationPanel', () => {
     );
 
     expect(screen.getByText('What would you like to write?')).toBeInTheDocument();
+    expect(screen.getByText(/Start a new thread to draft or rewrite/)).toBeInTheDocument();
     expect(screen.getByText('Composer area')).toBeInTheDocument();
   });
 
@@ -40,7 +40,6 @@ describe('ConversationPanel', () => {
     render(
       <ConversationPanel
         activeThread={buildThread()}
-        contextLabel="Context: draft · email"
         isLoading
         onRenameThread={vi.fn()}
       >
@@ -64,7 +63,6 @@ describe('ConversationPanel', () => {
             { id: 'assistant-1', role: 'assistant', content: 'Assistant reply' },
           ],
         })}
-        contextLabel="Context: draft · email"
         isLoading={false}
         onRenameThread={onRenameThread}
       >
@@ -103,7 +101,6 @@ describe('ConversationPanel', () => {
     render(
       <ConversationPanel
         activeThread={buildThread()}
-        contextLabel="Context: draft · email"
         isLoading={false}
         onRenameThread={onRenameThread}
       >
@@ -118,5 +115,38 @@ describe('ConversationPanel', () => {
     titleInput.focus();
     titleInput.blur();
     expect(onRenameThread).not.toHaveBeenCalled();
+  });
+
+  it('renders context chips for mode and style', () => {
+    render(
+      <ConversationPanel
+        activeThread={buildThread({ mode: 'draft', style: 'email' })}
+        isLoading={false}
+        onRenameThread={vi.fn()}
+      >
+        <div>Composer area</div>
+      </ConversationPanel>,
+    );
+
+    expect(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.getByText('Email')).toBeInTheDocument();
+  });
+
+  it('shows typing indicator when loading with active messages', () => {
+    render(
+      <ConversationPanel
+        activeThread={buildThread({
+          messages: [
+            { id: 'user-1', role: 'user', content: 'User message' },
+          ],
+        })}
+        isLoading
+        onRenameThread={vi.fn()}
+      >
+        <div>Composer area</div>
+      </ConversationPanel>,
+    );
+
+    expect(screen.getByLabelText('Generating response')).toBeInTheDocument();
   });
 });

@@ -45,10 +45,10 @@ export function ManageWikiPage(): JSX.Element {
         <Sidebar />
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-pav-blue">Manage Wiki</h1>
+            <h1 className="font-display text-2xl font-bold text-on-surface">Manage Wiki</h1>
             <Link
               to="/admin/wiki/new"
-              className="state-layer touch-target rounded-md bg-pav-terra px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-terra-hover"
+              className="state-layer touch-target rounded-md bg-tertiary px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-tertiary/85"
             >
               New Page
             </Link>
@@ -73,10 +73,10 @@ export function ManageWikiPage(): JSX.Element {
                 {pages.map((page) => (
                   <div
                     key={page.id}
-                    className="flex items-center justify-between rounded-lg border border-pav-tan/30 bg-surface-container-lowest px-4 py-3"
+                    className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3"
                   >
                     <div>
-                      <h3 className="text-sm font-medium text-pav-blue">
+                      <h3 className="text-sm font-medium text-primary">
                         {page.title}
                       </h3>
                       <p className="text-xs text-on-surface-variant">/{page.slug}</p>
@@ -94,7 +94,7 @@ export function ManageWikiPage(): JSX.Element {
                       )}
                       <Link
                         to={`/admin/wiki/${page.slug}/edit`}
-                        className="state-layer touch-target rounded px-3 py-2 text-xs text-pav-blue motion-standard hover:bg-pav-gold/20"
+                        className="state-layer touch-target rounded px-3 py-2 text-xs text-primary motion-standard hover:bg-secondary-container"
                       >
                         Edit
                       </Link>

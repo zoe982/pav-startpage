@@ -47,12 +47,12 @@ export function Header(): JSX.Element {
     'touch-target rounded-full px-4 py-2 text-sm font-medium';
 
   return (
-    <header className="border-b border-outline-variant/60 bg-surface-container-low">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="bg-surface-container-low/90 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link
             to="/"
-            className="state-layer touch-target flex items-center gap-3 rounded-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="state-layer touch-target flex items-center gap-3 rounded-2xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <img src="/pav_logo_clean_flat_2048.webp" alt="" className="h-10 w-10" />
             <div className="flex flex-col leading-tight">

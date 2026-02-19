@@ -9,13 +9,13 @@ export function WikiListPage(): JSX.Element {
   return (
     <AppShell>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-pav-blue">Wiki</h1>
+        <h1 className="font-display text-2xl font-bold text-on-surface">Wiki</h1>
         {isLoading && (
           <div className="space-y-2">
             {Array.from({ length: 5 }, (_, i) => (
               <div
                 key={i}
-                className="h-10 animate-pulse rounded-md bg-pav-tan/30"
+                className="h-10 animate-pulse rounded-md bg-surface-container"
               />
             ))}
           </div>

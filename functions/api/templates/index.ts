@@ -13,6 +13,8 @@ interface TemplateRow {
   updated_by_name: string;
   created_at: string;
   updated_at: string;
+  approved_by_email: string | null;
+  approved_at: string | null;
 }
 
 export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async (context) => {
@@ -25,7 +27,8 @@ export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async
   let sql = `SELECT t.id, t.title, t.type, t.subject, t.content,
       t.created_by, cu.name AS created_by_name,
       t.updated_by, uu.name AS updated_by_name,
-      t.created_at, t.updated_at
+      t.created_at, t.updated_at,
+      t.approved_by_email, t.approved_at
     FROM templates t
     JOIN users cu ON t.created_by = cu.id
     JOIN users uu ON t.updated_by = uu.id`;
@@ -56,6 +59,8 @@ export const onRequestGet: PagesFunction<Env, string, AuthenticatedData> = async
     updatedByName: row.updated_by_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    approvedByEmail: row.approved_by_email,
+    approvedAt: row.approved_at,
   }));
 
   return Response.json(templates);
@@ -115,6 +120,8 @@ export const onRequestPost: PagesFunction<Env, string, AuthenticatedData> = asyn
       updatedByName: data.user.name,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      approvedByEmail: null,
+      approvedAt: null,
     },
     { status: 201 },
   );

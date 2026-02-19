@@ -63,7 +63,7 @@ describe('MarkdownPreview', () => {
     expect(container.querySelector('ol')?.className).toContain('list-decimal');
     expect(container.querySelector('blockquote')?.className).toContain('border-l-4');
     expect(container.querySelector('hr')?.className).toContain('border-outline-variant');
-    expect(container.querySelector('pre')?.className).toContain('bg-pav-blue');
+    expect(container.querySelector('pre')?.className).toContain('bg-primary');
     expect(container.querySelector('code.language-ts')).toBeInTheDocument();
     expect(container.querySelector('code:not(.language-ts)')?.className).toContain('rounded');
     expect(container.querySelector('table')).toBeInTheDocument();

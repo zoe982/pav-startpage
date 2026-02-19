@@ -6,14 +6,12 @@ import { FirstTurnSetupCard } from '../../../src/components/brandVoice/FirstTurn
 function renderCard(overrides: Partial<Parameters<typeof FirstTurnSetupCard>[0]> = {}): void {
   render(
     <FirstTurnSetupCard
-      mode="draft"
       style="email"
       customStyleDescription=""
       goal=""
       roughDraft=""
       noDraftProvided={false}
       isLoading={false}
-      onModeChange={vi.fn()}
       onStyleChange={vi.fn()}
       onCustomStyleDescriptionChange={vi.fn()}
       onGoalChange={vi.fn()}
@@ -37,27 +35,18 @@ describe('FirstTurnSetupCard', () => {
     expect(onStyleChange).toHaveBeenCalledWith('other');
   });
 
-  it('updates mode, custom style, and rough draft fields', async () => {
+  it('updates custom style, and rough draft fields', async () => {
     const user = userEvent.setup();
-    const onModeChange = vi.fn();
     const onCustomStyleDescriptionChange = vi.fn();
     const onRoughDraftChange = vi.fn();
     const onGoalChange = vi.fn();
-    const onNoDraftProvidedChange = vi.fn();
 
     renderCard({
       style: 'other',
-      onModeChange,
       onCustomStyleDescriptionChange,
       onRoughDraftChange,
       onGoalChange,
-      onNoDraftProvidedChange,
     });
-
-    await user.click(screen.getByRole('button', { name: 'Rewrite' }));
-    expect(onModeChange).toHaveBeenCalledWith('rewrite');
-    await user.click(screen.getByRole('button', { name: 'Draft' }));
-    expect(onModeChange).toHaveBeenCalledWith('draft');
 
     await user.type(screen.getByLabelText('Custom output style'), 'Newsletter');
     expect(onCustomStyleDescriptionChange).toHaveBeenCalled();
@@ -65,12 +54,40 @@ describe('FirstTurnSetupCard', () => {
     await user.type(screen.getByLabelText('Goal'), 'Write a welcome email');
     expect(onGoalChange).toHaveBeenCalled();
 
-    await user.click(screen.getByRole('button', { name: 'Attach a rough draft' }));
     await user.type(screen.getByLabelText('Rough draft'), 'Hello there');
     expect(onRoughDraftChange).toHaveBeenCalled();
+  });
 
-    await user.click(screen.getByRole('checkbox', { name: 'No draft' }));
+  it('"No draft" button appears in draft row and calls onNoDraftProvidedChange(true)', async () => {
+    const user = userEvent.setup();
+    const onNoDraftProvidedChange = vi.fn();
+    const onRoughDraftChange = vi.fn();
+    renderCard({ onNoDraftProvidedChange, onRoughDraftChange });
+
+    const noDraftButton = screen.getByRole('button', { name: 'No draft' });
+    expect(noDraftButton).toBeInTheDocument();
+
+    await user.click(noDraftButton);
     expect(onNoDraftProvidedChange).toHaveBeenCalledWith(true);
+    expect(onRoughDraftChange).toHaveBeenCalledWith('');
+  });
+
+  it('"add draft" link appears when noDraftProvided is true and calls onNoDraftProvidedChange(false)', async () => {
+    const user = userEvent.setup();
+    const onNoDraftProvidedChange = vi.fn();
+    renderCard({ noDraftProvided: true, onNoDraftProvidedChange });
+
+    expect(screen.queryByLabelText('Rough draft')).not.toBeInTheDocument();
+    expect(screen.getByText(/No draft provided/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'add draft' }));
+    expect(onNoDraftProvidedChange).toHaveBeenCalledWith(false);
+  });
+
+  it('"No draft" button is hidden when noDraftProvided is true', () => {
+    renderCard({ noDraftProvided: true });
+
+    expect(screen.queryByRole('button', { name: 'No draft' })).not.toBeInTheDocument();
   });
 
   it('enables submit only when guardrail is satisfied and loading is false', async () => {
@@ -142,22 +159,22 @@ describe('FirstTurnSetupCard', () => {
     expect(screen.getByRole('button', { name: 'Generate draft' })).toBeDisabled();
   });
 
-  it('shows draft textarea when roughDraft has content even without expanding', () => {
+  it('draft textarea is visible when noDraftProvided is false', () => {
     renderCard({
-      roughDraft: 'existing draft',
+      roughDraft: '',
+      noDraftProvided: false,
     });
 
     expect(screen.getByLabelText('Rough draft')).toBeInTheDocument();
-    expect(screen.getByText('Draft attached')).toBeInTheDocument();
   });
 
-  it('does not show draft textarea when not expanded and roughDraft is empty', () => {
+  it('draft textarea is hidden when noDraftProvided is true', () => {
     renderCard({
       roughDraft: '',
+      noDraftProvided: true,
     });
 
     expect(screen.queryByLabelText('Rough draft')).not.toBeInTheDocument();
-    expect(screen.getByText('Attach a rough draft')).toBeInTheDocument();
   });
 
   it('submits on Enter key without Shift in goal textarea', async () => {
@@ -240,10 +257,10 @@ describe('FirstTurnSetupCard', () => {
     expect(screen.getByRole('button', { name: 'Email' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('marks the active mode button as pressed', () => {
-    renderCard({ mode: 'rewrite' });
+  it('does not render Rewrite or Draft mode buttons', () => {
+    renderCard();
 
-    expect(screen.getByRole('button', { name: 'Rewrite' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Draft' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: 'Rewrite' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Draft' })).not.toBeInTheDocument();
   });
 });

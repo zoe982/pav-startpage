@@ -194,3 +194,10 @@ export async function restoreThreadDraftVersion(
     }),
   });
 }
+
+export async function deleteThread(threadId: string): Promise<void> {
+  const params = new URLSearchParams({ threadId });
+  await apiFetch<void>(`/api/brand-voice/rewrite?${params.toString()}`, {
+    method: 'DELETE',
+  });
+}

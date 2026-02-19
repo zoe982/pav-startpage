@@ -12,7 +12,7 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps): JSX.El
   return (
     <Suspense
       fallback={
-        <div className="flex h-64 items-center justify-center rounded-md border border-pav-grey/30 bg-pav-cream/30">
+        <div className="flex h-64 items-center justify-center rounded-md border border-outline-variant bg-surface-container/50">
           <span className="text-sm text-on-surface-variant">Loading editor...</span>
         </div>
       }

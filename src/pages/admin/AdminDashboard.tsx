@@ -9,13 +9,13 @@ export function AdminDashboard(): JSX.Element {
       <div className="flex gap-8">
         <Sidebar />
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-pav-blue">Admin Dashboard</h1>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <h1 className="font-display text-2xl font-bold text-on-surface">Admin Dashboard</h1>
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Link
               to="/admin/links"
-              className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+              className="state-layer glass-card glass-card-interactive p-6 motion-standard"
             >
-              <h2 className="text-lg font-semibold text-pav-blue">
+              <h2 className="font-display text-lg font-semibold text-on-surface">
                 Manage Links
               </h2>
               <p className="mt-1 text-sm text-on-surface-variant">
@@ -24,9 +24,9 @@ export function AdminDashboard(): JSX.Element {
             </Link>
             <Link
               to="/admin/wiki"
-              className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+              className="state-layer glass-card glass-card-interactive p-6 motion-standard"
             >
-              <h2 className="text-lg font-semibold text-pav-blue">
+              <h2 className="font-display text-lg font-semibold text-on-surface">
                 Manage Wiki
               </h2>
               <p className="mt-1 text-sm text-on-surface-variant">
@@ -35,9 +35,9 @@ export function AdminDashboard(): JSX.Element {
             </Link>
             <Link
               to="/admin/brand-rules"
-              className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+              className="state-layer glass-card glass-card-interactive p-6 motion-standard"
             >
-              <h2 className="text-lg font-semibold text-pav-blue">
+              <h2 className="font-display text-lg font-semibold text-on-surface">
                 Brand Voice Rules
               </h2>
               <p className="mt-1 text-sm text-on-surface-variant">
@@ -46,9 +46,9 @@ export function AdminDashboard(): JSX.Element {
             </Link>
             <Link
               to="/admin/access"
-              className="state-layer rounded-xl border border-pav-tan/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-elevation-1)] motion-standard hover:border-pav-gold hover:shadow-[var(--shadow-elevation-2)]"
+              className="state-layer glass-card glass-card-interactive p-6 motion-standard"
             >
-              <h2 className="text-lg font-semibold text-pav-blue">
+              <h2 className="font-display text-lg font-semibold text-on-surface">
                 User Access
               </h2>
               <p className="mt-1 text-sm text-on-surface-variant">

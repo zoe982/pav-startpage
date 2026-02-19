@@ -13,6 +13,8 @@ interface TemplateRow {
   updated_by_name: string;
   created_at: string;
   updated_at: string;
+  approved_by_email: string | null;
+  approved_at: string | null;
 }
 
 interface TemplateResponse {
@@ -27,6 +29,8 @@ interface TemplateResponse {
   updatedByName: string;
   createdAt: string;
   updatedAt: string;
+  approvedByEmail: string | null;
+  approvedAt: string | null;
 }
 
 function toTemplate(row: TemplateRow): TemplateResponse {
@@ -42,6 +46,8 @@ function toTemplate(row: TemplateRow): TemplateResponse {
     updatedByName: row.updated_by_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    approvedByEmail: row.approved_by_email,
+    approvedAt: row.approved_at,
   };
 }
 
@@ -56,7 +62,8 @@ export const onRequestGet: PagesFunction<Env, 'id', AuthenticatedData> = async (
     `SELECT t.id, t.title, t.type, t.subject, t.content,
       t.created_by, cu.name AS created_by_name,
       t.updated_by, uu.name AS updated_by_name,
-      t.created_at, t.updated_at
+      t.created_at, t.updated_at,
+      t.approved_by_email, t.approved_at
     FROM templates t
     JOIN users cu ON t.created_by = cu.id
     JOIN users uu ON t.updated_by = uu.id
@@ -99,13 +106,22 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
     return Response.json({ error: 'Type must be email, whatsapp, or both' }, { status: 400 });
   }
 
-  const existing = await env.DB.prepare('SELECT id FROM templates WHERE id = ?')
+  const existing = await env.DB.prepare(
+    'SELECT id, title, type, subject, content, approved_by_email FROM templates WHERE id = ?',
+  )
     .bind(id)
-    .first();
+    .first<{ id: string; title: string; type: string; subject: string | null; content: string; approved_by_email: string | null }>();
 
   if (!existing) {
     return Response.json({ error: 'Template not found' }, { status: 404 });
   }
+
+  const contentChanged =
+    existing.title !== title ||
+    existing.type !== type ||
+    (existing.subject ?? '') !== (subject ?? '') ||
+    existing.content !== content;
+  const shouldClearApproval = contentChanged && existing.approved_by_email !== null;
 
   // Get current max version number
   const maxRow = await env.DB.prepare(
@@ -118,12 +134,17 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
   const versionId = crypto.randomUUID();
   const userId = data.user.id;
 
-  await env.DB.batch([
-    env.DB.prepare(
-      `UPDATE templates
+  const updateSql = shouldClearApproval
+    ? `UPDATE templates
+       SET title = ?, type = ?, subject = ?, content = ?, updated_by = ?, updated_at = datetime('now'),
+           approved_by_email = NULL, approved_at = NULL
+       WHERE id = ?`
+    : `UPDATE templates
        SET title = ?, type = ?, subject = ?, content = ?, updated_by = ?, updated_at = datetime('now')
-       WHERE id = ?`,
-    ).bind(title, type, subject, content, userId, id),
+       WHERE id = ?`;
+
+  await env.DB.batch([
+    env.DB.prepare(updateSql).bind(title, type, subject, content, userId, id),
     env.DB.prepare(
       `INSERT INTO template_versions (id, template_id, version_number, title, type, subject, content, changed_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -135,7 +156,8 @@ export const onRequestPut: PagesFunction<Env, 'id', AuthenticatedData> = async (
     `SELECT t.id, t.title, t.type, t.subject, t.content,
       t.created_by, cu.name AS created_by_name,
       t.updated_by, uu.name AS updated_by_name,
-      t.created_at, t.updated_at
+      t.created_at, t.updated_at,
+      t.approved_by_email, t.approved_at
     FROM templates t
     JOIN users cu ON t.created_by = cu.id
     JOIN users uu ON t.updated_by = uu.id

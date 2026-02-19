@@ -40,12 +40,12 @@ export function VersionHistoryModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40">
       <div className="mx-4 flex max-h-[80vh] w-full max-w-4xl flex-col rounded-xl bg-surface-container-lowest shadow-[var(--shadow-elevation-4)]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-pav-tan/30 px-6 py-4">
-          <h2 className="text-lg font-bold text-pav-blue">Version History</h2>
+        <div className="flex items-center justify-between border-b border-outline-variant px-6 py-4">
+          <h2 className="text-lg font-bold text-primary">Version History</h2>
           <button
             type="button"
             onClick={onClose}
-            className="state-layer touch-target-icon rounded-md p-2 text-outline motion-standard hover:bg-pav-tan/20 hover:text-on-surface"
+            className="state-layer touch-target-icon rounded-md p-2 text-outline motion-standard hover:bg-surface-container hover:text-on-surface"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
               <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -57,7 +57,7 @@ export function VersionHistoryModal({
         <div className="flex flex-1 overflow-hidden">
           {isLoading ? (
             <div className="flex flex-1 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-pav-blue border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
           ) : versions.length === 0 ? (
             <div className="flex flex-1 items-center justify-center">
@@ -66,19 +66,19 @@ export function VersionHistoryModal({
           ) : (
             <>
               {/* Version list */}
-              <div className="w-64 shrink-0 overflow-y-auto border-r border-pav-tan/30">
+              <div className="w-64 shrink-0 overflow-y-auto border-r border-outline-variant">
                 {versions.map((v) => (
                   <button
                     key={v.id}
                     type="button"
                     onClick={() => { setSelected(v); }}
-                    className={`state-layer touch-target w-full border-b border-pav-tan/20 px-4 py-2 text-left motion-standard ${
+                    className={`state-layer touch-target w-full border-b border-outline-variant/60 px-4 py-2 text-left motion-standard ${
                       selected?.id === v.id
-                        ? 'bg-pav-gold/10'
-                        : 'hover:bg-pav-cream/50'
+                        ? 'bg-secondary-container/50'
+                        : 'hover:bg-surface-container'
                     }`}
                   >
-                    <p className="text-sm font-medium text-pav-blue">
+                    <p className="text-sm font-medium text-primary">
                       v{v.versionNumber}
                     </p>
                     <p className="mt-1 text-xs text-on-surface-variant">
@@ -96,7 +96,7 @@ export function VersionHistoryModal({
                 {selected && (
                   <>
                     <div className="flex-1 overflow-y-auto p-6">
-                      <h3 className="font-semibold text-pav-blue">{selected.title}</h3>
+                      <h3 className="font-semibold text-primary">{selected.title}</h3>
                       <div className="mt-1 flex items-center gap-2">
                         <span className={`rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
                           selected.type === 'email'
@@ -119,11 +119,11 @@ export function VersionHistoryModal({
                     </div>
                     {/* Restore button - don't show for latest version */}
                     {selected.versionNumber !== versions[0]?.versionNumber && (
-                      <div className="border-t border-pav-tan/30 px-6 py-3">
+                      <div className="border-t border-outline-variant px-6 py-3">
                         <button
                           type="button"
                           onClick={() => { onRestore(selected); }}
-                          className="state-layer touch-target rounded-md bg-pav-blue px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-pav-blue/90"
+                          className="state-layer touch-target rounded-md bg-primary px-4 py-2 text-sm font-medium text-on-primary motion-standard hover:bg-primary/90"
                         >
                           Restore this version
                         </button>
