@@ -23,6 +23,22 @@ interface InternalApp {
   readonly key: AppKey;
 }
 
+interface ExternalApp {
+  readonly title: string;
+  readonly description: string;
+  readonly href: string;
+  readonly icon: string;
+}
+
+const EXTERNAL_APPS: ExternalApp[] = [
+  {
+    title: 'Humans',
+    description: 'Customer relationship management',
+    href: 'https://humans.pavinfo.app',
+    icon: 'M12 12.75c1.63 0 3.07.39 4.24.9 1.08.48 1.76 1.56 1.76 2.73V18H6v-1.61c0-1.18.68-2.26 1.76-2.73 1.17-.52 2.61-.91 4.24-.91zM4 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm1.13 1.1c-.37-.06-.74-.1-1.13-.1-.99 0-1.93.21-2.78.58C.48 14.9 0 15.62 0 16.43V18h4.5v-1.61c0-.83.23-1.61.63-2.29zM20 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85-.85-.37-1.79-.58-2.78-.58-.39 0-.76.04-1.13.1.4.68.63 1.46.63 2.29V18H24v-1.57zM12 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3z',
+  },
+];
+
 const INTERNAL_APPS: InternalApp[] = [
   {
     title: 'Brand Voice',
@@ -108,11 +124,22 @@ export function StartPage(): JSX.Element {
     );
   }, [search, accessibleApps]);
 
-  const hasNoResults = search.trim().length > 0 && filteredLinks.length === 0 && filteredInternalApps.length === 0;
+  const filteredExternalApps = useMemo(() => {
+    if (!isInternal) return [];
+    if (!search.trim()) return EXTERNAL_APPS;
+    const query = search.toLowerCase();
+    return EXTERNAL_APPS.filter(
+      (app) =>
+        app.title.toLowerCase().includes(query) ||
+        app.description.toLowerCase().includes(query),
+    );
+  }, [search, isInternal]);
+
+  const hasNoResults = search.trim().length > 0 && filteredLinks.length === 0 && filteredInternalApps.length === 0 && filteredExternalApps.length === 0;
 
   return (
     <AppShell>
-      <div className="animate-fade-up space-y-8">
+      <div className="animate-fade-up space-y-10">
         <div>
           <div className="mb-6">
             <div className="relative mx-auto max-w-xl">
@@ -134,7 +161,7 @@ export function StartPage(): JSX.Element {
                 placeholder="Search apps..."
                 autoFocus
                 ariaLabel="Search apps"
-                className="touch-target w-full rounded-2xl border border-outline-variant bg-surface-container-lowest py-4 pl-12 pr-16 text-base text-on-surface shadow-[var(--shadow-elevation-1)]"
+                className="touch-target w-full py-4 pl-12 pr-16 text-base text-on-surface"
                 dataTestId="start-search-field"
               />
               {search ? (
@@ -158,9 +185,9 @@ export function StartPage(): JSX.Element {
             </div>
           </div>
 
-          {filteredInternalApps.length > 0 && (
+          {(filteredInternalApps.length > 0 || filteredExternalApps.length > 0) && (
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-on-surface">
+              <h2 className="font-display text-xl font-semibold text-on-surface">
                 {search ? `Results for "${search}"` : 'Team Tools'}
               </h2>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -168,7 +195,7 @@ export function StartPage(): JSX.Element {
                   <M3ElevatedCard
                     key={app.to}
                     dataTestId={`internal-app-card-${app.key}`}
-                    className="rounded-2xl border border-outline-variant/70 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]"
+                    className="glass-card"
                   >
                     <Link
                       to={app.to}
@@ -193,13 +220,42 @@ export function StartPage(): JSX.Element {
                     </Link>
                   </M3ElevatedCard>
                 ))}
+                {filteredExternalApps.map((app) => (
+                  <M3ElevatedCard
+                    key={app.href}
+                    dataTestId={`external-app-card-${app.title.toLowerCase()}`}
+                    className="glass-card"
+                  >
+                    <a
+                      href={app.href}
+                      className="state-layer group flex h-full flex-col gap-2 rounded-2xl p-6"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            className="h-5 w-5 text-on-secondary-container"
+                            aria-hidden="true"
+                          >
+                            <path d={app.icon} />
+                          </svg>
+                        </div>
+                        <h3 className="text-sm font-semibold text-on-surface group-hover:text-tertiary">
+                          {app.title}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-on-surface-variant">{app.description}</p>
+                    </a>
+                  </M3ElevatedCard>
+                ))}
               </div>
             </div>
           )}
 
           {isInternal && (!search || filteredLinks.length > 0) && (
             <>
-              <h2 className="text-xl font-semibold text-on-surface">
+              <h2 className="font-display text-xl font-semibold text-on-surface">
                 {search && filteredInternalApps.length > 0 ? 'Quick Links' : search ? `Results for "${search}"` : 'Quick Links'}
               </h2>
               {linksLoading ? (
@@ -228,14 +284,14 @@ export function StartPage(): JSX.Element {
 
         {pinnedPages.length > 0 && (
           <div>
-            <h2 className="text-xl font-semibold text-on-surface">
+            <h2 className="font-display text-xl font-semibold text-on-surface">
               Pinned Wiki Pages
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               {pinnedPages.map((page) => (
                 <M3ElevatedCard
                   key={page.id}
-                  className="rounded-2xl border border-outline-variant/70 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]"
+                  className="glass-card"
                 >
                   <Link
                     to={`/wiki/${page.slug}`}

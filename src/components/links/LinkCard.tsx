@@ -105,16 +105,14 @@ export function LinkCard({ link }: { readonly link: Link }): JSX.Element {
   const favicon = !icon ? (link.iconUrl ?? getFaviconUrl(link.url)) : '';
 
   return (
-    <M3ElevatedCard className="rounded-2xl border border-outline-variant/70 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]">
+    <M3ElevatedCard className="glass-card">
       <a
         href={link.url}
-        target="_blank"
-        rel="noopener noreferrer"
         className="state-layer group flex h-full flex-col gap-2 rounded-2xl p-6"
       >
         <div className="flex items-center gap-3">
           {icon ? (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary-container">
               <SvgIcon name={icon} />
             </div>
           ) : favicon ? (
@@ -125,7 +123,7 @@ export function LinkCard({ link }: { readonly link: Link }): JSX.Element {
               loading="lazy"
             />
           ) : (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-sm font-bold text-on-secondary-container">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary-container text-sm font-bold text-on-secondary-container">
               {link.title.charAt(0).toUpperCase()}
             </div>
           )}
